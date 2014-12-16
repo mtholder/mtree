@@ -91,11 +91,7 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
     const unsigned numPatterns = patternCounts.size();
-    std::set<unsigned> culledSet;
-    const unsigned numCulled = culledSet.size();
-    
-    
-    std::cout << "#NEXUS\nBEGIN DATA;\n\tDimensions ntax = " << ntaxTotal << " nchar = " << numPatterns - numCulled << ";\n\t";
+    std::cout << "#NEXUS\nBEGIN DATA;\n\tDimensions ntax = " << ntaxTotal << " nchar = " << numPatterns << ";\n\t";
     charBlock->WriteFormatCommand(std::cout);
     std::cout << "Matrix\n";
     const unsigned width = taxaBlock->GetMaxTaxonLabelLength();
@@ -108,20 +104,11 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
         for (unsigned k = 0; k < diff+5; k++)
             std::cout << ' ';
         NxsCDiscreteStateSet * matrixRow = matrixAlias[i];
-        /*
-        for (unsigned j = 0; j < numPatterns; ++j)
-            std::cout << ' ' << (int) matrixRow[j] ;
-        std::cout << '\n';
-        */
         for (unsigned j = 0; j < numPatterns; ++j)
             {
-            if (culledSet.find(j) == culledSet.end()) 
-                dm->WriteStateCodeAsNexusString(std::cout, matrixRow[j], true);
+            cout << (int) matrixRow[j] << '\n';
+           // dm->WriteStateCodeAsNexusString(std::cout, matrixRow[j], true);
             }
-        /*
-        for (unsigned j = 0; j < numPatterns; ++j)
-            std::cout << ' ' << (int) matrixRow[j];
-        */
         std::cout << '\n';
         }
     const char * sp = (hasWeights ? " " : " * ");
@@ -130,8 +117,7 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
     std::cout << ";\nEND;\nBEGIN ASSUMPTIONS;\n\tWTSET" << sp << " counts ( vector ) =";
     for (std::vector<unsigned>::const_iterator cIt = patternCounts.begin(); cIt != patternCounts.end(); ++cIt, ++ind)
         {
-        if (culledSet.find(ind) == culledSet.end()) 
-            std::cout << ' ' << *cIt;
+        std::cout << ' ' << *cIt;
         }
     std::cout << ";\n";
     if (hasWeights)
@@ -142,16 +128,14 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
             for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind)
                 {
                 int w = int(0.01 + *cIt);
-                if (culledSet.find(ind) == culledSet.end()) 
-                    std::cout << ' ' << w;
+                std::cout << ' ' << w;
                 }
 
             }
         else
             for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind)
                 {
-                if (culledSet.find(ind) == culledSet.end()) 
-                    std::cout << ' ' << *cIt;
+                std::cout << ' ' << *cIt;
                 }
         std::cout << ";\n";
         }

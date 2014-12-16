@@ -27,6 +27,11 @@ int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *
 MultiFormatReader * instantiateReader();
 MultiFormatReader * gNexusReader = NULL;
 
+
+void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper, const NxsCDiscreteStateSet ** compressedMatrix, const NxsSimpleTree & tree) {
+
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // Takes NxsReader that has successfully read a file, and processes the
 //  information stored in the reader.
@@ -52,6 +57,12 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
     if (nCharBlocks != 1)
         {
         std::cerr << "Expecting a file with exactly 1 CHARACTERS/DATA block, but found " << nCharBlocks << " in the file " << gFilename << ".\n";
+        return 3;
+        }
+    const unsigned nTreesBlocks = nexusReader.GetNumTreesBlocks(taxaBlock);
+    if (nTreesBlocks != 1)
+        {
+        std::cerr << "Expecting a file with exactly 1 TREES block, but found " << nTreesBlocks << " in the file " << gFilename << ".\n";
         return 3;
         }
     const  NxsCharactersBlock * charBlock = nexusReader.GetCharactersBlock(taxaBlock, 0);
@@ -106,7 +117,7 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
         NxsCDiscreteStateSet * matrixRow = matrixAlias[i];
         for (unsigned j = 0; j < numPatterns; ++j)
             {
-            cout << (int) matrixRow[j] << '\n';
+            cout << (int) matrixRow[j] << ' ';
            // dm->WriteStateCodeAsNexusString(std::cout, matrixRow[j], true);
             }
         std::cout << '\n';
@@ -140,6 +151,11 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
         std::cout << ";\n";
         }
     std::cout << "END;\n";
+    const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
+    for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
+        const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
+        calcLnL(dm, (const NxsCDiscreteStateSet **) matrixAlias, nst);
+    }
     return 0;
 }
 

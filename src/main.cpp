@@ -1,159 +1,132 @@
+#include <cassert>
 #include "ncl/ncl.h"
 #include "ncl/nxsblock.h"
 #include "ncl/nxspublicblocks.h"
 #include "ncl/nxscxxdiscretematrix.h"
 #include "ncl/nxsmultiformat.h"
-
-#include <cassert>
 using namespace std;
-//#include "ncl/nxscxxdiscretematrix.h"
+
+void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
+             const NxsCDiscreteStateSet ** compressedMatrix,
+             const double *patternWeights,
+             const NxsSimpleTree & tree);
+
 
 bool gQuietMode = false;
-std::ofstream gCommonFileStream;
-std::ostream * gCommonOstream = 0L;
 long gStrictLevel = 2;
-bool gUnderscoresToSpaces = false;
 bool gValidateInternals = true;
-bool gTreesViaInMemoryStruct = true;
-long gInterleaveLen = -1;
-bool blocksReadInValidation = false;
-bool gSuppressingNameTranslationFile = false;
-bool gAllowNumericInterpretationOfTaxLabels = true;
 enum ProcessActionsEnum {
     SCORE_ACTION=0
 };
 
+
 int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, ProcessActionsEnum currentAction);
 MultiFormatReader * instantiateReader();
-MultiFormatReader * gNexusReader = NULL;
-
 
 void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
              const double *patternWeights,
              const NxsSimpleTree & tree) {
-
+    std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
+    for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
+        const NxsSimpleNode *nd = *ndIt;
+        std::cout << "address = " << (long) nd << " is leaf = " << nd->IsTip() << " index = " << nd->GetTaxonIndex() << " parent address = " << (long) nd->GetEdgeToParent().GetParent() << std::endl;
+    }
 }
 
-////////////////////////////////////////////////////////////////////////////////
-// Takes NxsReader that has successfully read a file, and processes the
-//  information stored in the reader.
-//
-// The caller is responsibel for calling DeleteBlocksFromFactories() to clean
-//  up (if the reader uses the factory API).
-////////////////////////////////////////////////////////////////////////////////
-int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::ostream *os, ProcessActionsEnum currentAction) {
+int processContent(PublicNexusReader & nexusReader,
+                   const char *gFilename,
+                   std::ostream *os,
+                   ProcessActionsEnum ) {
     BlockReaderList blocks = nexusReader.GetUsedBlocksInOrder();
     if (blocks.size() == 0) {
         cerr << "Error:\n No understandable content was found.\n";
         exit(1);
     }
-
     const unsigned numTaxaBlocks = nexusReader.GetNumTaxaBlocks();
-    if (numTaxaBlocks != 1)
-        {
+    if (numTaxaBlocks != 1) {
         std::cerr << "Expecting a file with exactly 1 TAXA block, but found " << numTaxaBlocks << " in the file " << gFilename << ".\n";
         return 2;
-        }
+    }
     NxsTaxaBlock * taxaBlock = nexusReader.GetTaxaBlock(0);
     const unsigned nCharBlocks = nexusReader.GetNumCharactersBlocks(taxaBlock);
-    if (nCharBlocks != 1)
-        {
+    if (nCharBlocks != 1) {
         std::cerr << "Expecting a file with exactly 1 CHARACTERS/DATA block, but found " << nCharBlocks << " in the file " << gFilename << ".\n";
         return 3;
-        }
+    }
     const unsigned nTreesBlocks = nexusReader.GetNumTreesBlocks(taxaBlock);
-    if (nTreesBlocks != 1)
-        {
+    if (nTreesBlocks != 1) {
         std::cerr << "Expecting a file with exactly 1 TREES block, but found " << nTreesBlocks << " in the file " << gFilename << ".\n";
         return 3;
-        }
+    }
     const  NxsCharactersBlock * charBlock = nexusReader.GetCharactersBlock(taxaBlock, 0);
-    
     std::vector<const NxsDiscreteDatatypeMapper *> mappers = charBlock->GetAllDatatypeMappers();
-    if (mappers.size() != 1)
-        {
+    if (mappers.size() != 1) {
         std::cerr << "Expecting an unmixed characters block, but found a matrix with datatype = mixed or a datatype with augmented symbols\n";
         return 4;
-        }
-    
+    }
     const NxsDiscreteDatatypeMapper * dm = mappers[0];
-    
     ScopedTwoDMatrix<NxsCDiscreteStateSet> compressedMatrix;
     std::vector<unsigned> patternCounts;
     std::vector<double> patternWeights;
     bool hasWeights = true;
     bool hasIntWeights = true;
-    
     std::vector<NxsCharacterPattern> compressedTransposedMatrix;
-    if (true)
-        {
+    std::vector<std::set<unsigned> > compressedIndexToOriginal;
+    if (true) {
         std::vector<int> originalIndexToCompressed;
-        std::vector<std::set<unsigned> > compressedIndexToOriginal;
-        if (true) 
-            {
+        if (true) {
             NxsCXXDiscreteMatrix cxxMat(*charBlock, false, 0L, false);
-
             hasWeights = cxxMat.hasWeights();
             hasIntWeights = cxxMat.hasIntWeights();
             NxsCompressDiscreteMatrix(cxxMat, compressedTransposedMatrix, &originalIndexToCompressed, &compressedIndexToOriginal);
-            }
+        }
        std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);   
        NxsTransposeCompressedMatrix(compressedTransposedMatrix, compressedMatrix, &patternCounts, wtsPtr);
-       }
-    
+    }
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
     const unsigned numPatterns = patternCounts.size();
-    std::cout << "#NEXUS\nBEGIN DATA;\n\tDimensions ntax = " << ntaxTotal << " nchar = " << numPatterns << ";\n\t";
-    charBlock->WriteFormatCommand(std::cout);
-    std::cout << "Matrix\n";
+    *os << "#NEXUS\nBEGIN DATA;\n\tDimensions ntax = " << ntaxTotal << " nchar = " << numPatterns << ";\n\t";
+    charBlock->WriteFormatCommand(*os);
+    *os << "Matrix\n";
     const unsigned width = taxaBlock->GetMaxTaxonLabelLength();
-    for (unsigned i = 0; i < ntaxTotal; i++)
-        {
+    for (unsigned i = 0; i < ntaxTotal; i++) {
         const std::string currTaxonLabel = NxsString::GetEscaped(taxaBlock->GetTaxonLabel(i));
-        std::cout << currTaxonLabel;
+        *os << currTaxonLabel;
         unsigned currTaxonLabelLen = (unsigned)currTaxonLabel.size();
         unsigned diff = width - currTaxonLabelLen;
-        for (unsigned k = 0; k < diff+5; k++)
-            std::cout << ' ';
+        for (unsigned k = 0; k < diff+5; k++) {
+            *os << ' ';
+        }
         NxsCDiscreteStateSet * matrixRow = matrixAlias[i];
-        for (unsigned j = 0; j < numPatterns; ++j)
-            {
-            cout << (int) matrixRow[j] << ' ';
-           // dm->WriteStateCodeAsNexusString(std::cout, matrixRow[j], true);
-            }
-        std::cout << '\n';
+        for (unsigned j = 0; j < numPatterns; ++j) {
+            *os << (int) matrixRow[j] << ' ';
         }
+        *os << '\n';
+    }
     const char * sp = (hasWeights ? " " : " * ");
-
     unsigned ind = 0;
-    std::cout << ";\nEND;\nBEGIN ASSUMPTIONS;\n\tWTSET" << sp << " counts ( vector ) =";
-    for (std::vector<unsigned>::const_iterator cIt = patternCounts.begin(); cIt != patternCounts.end(); ++cIt, ++ind)
-        {
-        std::cout << ' ' << *cIt;
-        }
-    std::cout << ";\n";
-    if (hasWeights)
-        {
-        std::cout << "\tWTSET * sum_of_weights ( vector ) =";
-        if (hasIntWeights)
-            {
-            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind)
-                {
+    *os << ";\nEND;\nBEGIN ASSUMPTIONS;\n\tWTSET" << sp << " counts ( vector ) =";
+    for (std::vector<unsigned>::const_iterator cIt = patternCounts.begin(); cIt != patternCounts.end(); ++cIt, ++ind) {
+        *os << ' ' << *cIt;
+    }
+    *os << ";\n";
+    if (hasWeights) {
+        *os << "\tWTSET * sum_of_weights ( vector ) =";
+        if (hasIntWeights) {
+            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind) {
                 int w = int(0.01 + *cIt);
-                std::cout << ' ' << w;
-                }
-
+                *os << ' ' << w;
             }
-        else
-            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind)
-                {
-                std::cout << ' ' << *cIt;
-                }
-        std::cout << ";\n";
+        } else {
+            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind) {
+                *os << ' ' << *cIt;
+            }
         }
-    std::cout << "END;\n";
+        *os << ";\n";
+    }
+    *os << "END;\n";
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
@@ -163,129 +136,102 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
 }
 
 
-MultiFormatReader * instantiateReader()
-{
+MultiFormatReader * instantiateReader() {
     MultiFormatReader * nexusReader = new MultiFormatReader(-1, NxsReader::WARNINGS_TO_STDERR);
-    if (gQuietMode)
+    if (gQuietMode) {
         nexusReader->SetWarningOutputLevel(NxsReader::SKIPPING_CONTENT_WARNING);
-    if (gStrictLevel != 2)
+    }
+    if (gStrictLevel != 2) {
         nexusReader->SetWarningToErrorThreshold((int)NxsReader::FATAL_WARNING + 1 - (int) gStrictLevel);
-    if (gUnderscoresToSpaces) 
-        nexusReader->SetCoerceUnderscoresToSpaces(true);
+    }
     NxsCharactersBlock * charsB = nexusReader->GetCharactersBlockTemplate();
     NxsDataBlock * dataB = nexusReader->GetDataBlockTemplate();
     charsB->SetAllowAugmentingOfSequenceSymbols(true);
     dataB->SetAllowAugmentingOfSequenceSymbols(true);
-    if (gInterleaveLen > 0)
-        {
-        assert(charsB);
-        charsB->SetWriteInterleaveLen(gInterleaveLen);
-        dataB->SetWriteInterleaveLen(gInterleaveLen);
-        }
-
     NxsTreesBlock * treesB = nexusReader->GetTreesBlockTemplate();
     assert(treesB);
-    if (gStrictLevel < 2)
+    if (gStrictLevel < 2) {
         treesB->SetAllowImplicitNames(true);
-    treesB->SetWriteFromNodeEdgeDataStructure(gTreesViaInMemoryStruct);
+    }
     treesB->setValidateInternalNodeLabels(gValidateInternals);
-    treesB->setAllowNumericInterpretationOfTaxLabels(gAllowNumericInterpretationOfTaxLabels);
-    if (gStrictLevel < 2)
-        {
+    treesB->setAllowNumericInterpretationOfTaxLabels(true);
+    if (gStrictLevel < 2) {
         NxsStoreTokensBlockReader *storerB =  nexusReader->GetUnknownBlockTemplate();
         assert(storerB);
         storerB->SetTolerateEOFInBlock(true);
-        }
+    }
     nexusReader->conversionOutputRecord.addNumbersToDisambiguateNames = true;
-    
-    if (gSuppressingNameTranslationFile)
-        nexusReader->conversionOutputRecord.writeNameTranslationFile = false;
     return nexusReader;
 }
-
 
 int processFilepath(
     const char * filename, // name of the file to be read
     std::ostream * os, // output stream to use (NULL for no output). Not that cerr is used to report errors.
     MultiFormatReader::DataFormatType fmt, // enum indicating the file format to expect.
-    ProcessActionsEnum currentAction) // enum that is passed on to processContent to indicate what should be done with the content of the file.
-    {
+    ProcessActionsEnum currentAction) {
     assert(filename);
     int rc;
-    try
-        {
+    try {
         MultiFormatReader * nexusReader;
         nexusReader = instantiateReader();
-
-        if (!gQuietMode)
+        if (!gQuietMode) {
             cerr << "Executing" << endl;
+        }
         try {
             nexusReader->DemoteBlocks();
             nexusReader->ReadFilepath(filename, fmt);
             rc = processContent(*nexusReader, filename, os, currentAction);
-            }
-        catch(...)
-            {
+        } catch(...) {
             nexusReader->DeleteBlocksFromFactories();
             delete nexusReader;
             throw;
-            }
+        }
         nexusReader->DeleteBlocksFromFactories();
         delete nexusReader;
         return rc;
-        }
-    catch (const NxsException &x)
-        {
+    } catch (const NxsException &x) {
         cerr << "Error:\n " << x.msg << endl;
-        if (x.line > 0 || x.pos > 0)
+        if (x.line > 0 || x.pos > 0) {
             cerr << "at line " << x.line << ", column (approximately) " << x.col << " (and file position "<< x.pos << ")" << endl;
-        return 2;
         }
+        return 2;
     }
+}
 
-/*! \returns 0 on success*/
-int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction)
-    {
-    if (!gQuietMode)
+int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction) {
+    if (!gQuietMode) {
         cerr << "[Reading " << filename << "     ]" << endl;
+    }
     try {
         std::ostream * outStream = 0L;
         outStream = &cout;
         return processFilepath(filename, outStream, fmt, currentAction);
-
-        }
-    catch (...)
-        {
+    } catch (...) {
         cerr << "Normalizing of " << filename << " failed (with an exception)" << endl;
         return 1;
-        }
     }
+}
 
-/*! \returns 0 on success*/
-int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction)
-    {
+int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction) {
     ifstream masterStream(masterFilepath, ios::binary);
-    if (masterStream.bad())
-        {
+    if (masterStream.bad()) {
         cerr << "Could not open " << masterFilepath << "." << endl;
         exit(3);
-        }
+    }
     char filename[1024];
-    while ((!masterStream.eof())  && masterStream.good())
-        {
+    while ((!masterStream.eof())  && masterStream.good()) {
         masterStream.getline(filename, 1024);
-        if (strlen(filename) > 0 && filename[0] != '#')
-            {
+        if (strlen(filename) > 0 && filename[0] != '#') {
             int rc = readFilepathAsNEXUS(filename, fmt, currentAction);
-            if (rc != 0)
+            if (rc != 0) {
                 return rc;
             }
         }
-    return 0;
     }
+    return 0;
+}
 
 const char * gExeName = "mtree";
-
 void printHelp(std::ostream & out) {
     out << "mtree takes reads a NEXUS file.\n";
     out << "\nThe most common usage is simply:\n    " << gExeName << " <path to NEXUS file>\n";
@@ -297,100 +243,80 @@ void printHelp(std::ostream & out) {
     out << "            -frnafasta  RNA data in fasta\n";
     out << "        The complete list of format names that can follow the -f flag is:\n";
     std::vector<std::string> fmtNames =  MultiFormatReader::getFormatNames();
-    for (std::vector<std::string>::const_iterator n = fmtNames.begin(); n != fmtNames.end(); ++n)
-        {
+    for (std::vector<std::string>::const_iterator n = fmtNames.begin(); n != fmtNames.end(); ++n) {
         out << "            "<< *n << "\n";
-        }
+    }
     out << "    -h help. on the command line shows this help message\n\n";
     out << "    -q quiet. suppress NCL status messages while reading files\n\n";
     out << "    -x do NOT validate internal labels in trees as taxa labels\n\n";
     out << "    -X do NOT treat numbers in trees as taxon numbers, treat them as arbitrary\n        labels (should not be used with NEXUS files).\n\n";
-    }
+}
 
-int do_main(int argc, char *argv[])
-    {
+int do_main(int argc, char *argv[]) {
     ProcessActionsEnum currentAction= SCORE_ACTION;
     NxsReader::setNCLCatchesSignals(true);
     MultiFormatReader::DataFormatType f(MultiFormatReader::NEXUS_FORMAT);
-    for (int i = 1; i < argc; ++i)
-        {
+    for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];
         const unsigned slen = strlen(filepath);
-        if (slen < 2 || filepath[0] != '-')
+        if (slen < 2 || filepath[0] != '-') {
             continue;
-        if (filepath[1] == 'h')
-            {
+        }
+        if (filepath[1] == 'h') {
             printHelp(cout);
             return 1;
-            }
-        else if (filepath[1] == 'q')
+        } else if (filepath[1] == 'q') {
             gQuietMode = true;
-        else if (filepath[1] == 'x')
+        } else if (filepath[1] == 'x') {
             gValidateInternals = false;
-        else if (filepath[1] == 'X')
-            gAllowNumericInterpretationOfTaxLabels = false;
-        else if (filepath[1] == 'u')
-            gUnderscoresToSpaces = true;
-        else if (filepath[1] == 'j')
-            gSuppressingNameTranslationFile = true;
-        else if (filepath[1] == 'f')
-            {
+        } else if (filepath[1] == 'f') {
             f = MultiFormatReader::UNSUPPORTED_FORMAT;
-            if (slen > 2)
-                {
+            if (slen > 2) {
                 std::string fmtName(filepath + 2, slen - 2);
                 f =  MultiFormatReader::formatNameToCode(fmtName);
-                if (f == MultiFormatReader::UNSUPPORTED_FORMAT)
-                    {
+                if (f == MultiFormatReader::UNSUPPORTED_FORMAT) {
                     cerr << "Unknown format \"" << fmtName << "\" after -f\n" << endl;
                     printHelp(cerr);
                     return 3;
-                    }
                 }
-            if (f == MultiFormatReader::UNSUPPORTED_FORMAT)
-                {
+            }
+            if (f == MultiFormatReader::UNSUPPORTED_FORMAT) {
                 cerr << "Expecting a format after -f\n" << endl;
                 printHelp(cerr);
                 return 2;
-                }
             }
         }
+    }
     bool readfile = false;
-    for (int i = 1; i < argc; ++i)
-        {
+    for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];
         const unsigned slen = strlen(filepath);
         if (slen < 1)
             continue;
-        if (strlen(filepath) > 2 && filepath[0] == '-' && filepath[1] == 'l')
-            {
+        if (strlen(filepath) > 2 && filepath[0] == '-' && filepath[1] == 'l') {
             readfile = true;
             int rc = readFilesListedIsFile(filepath+2, f, currentAction);
-            if (rc != 0)
+            if (rc != 0) {
                 return rc;
             }
-        else if (filepath[0] != '-')
-            {
+        } else if (filepath[0] != '-') {
             readfile = true;
             int rc = readFilepathAsNEXUS(filepath, f, currentAction);
-            if (rc != 0)
+            if (rc != 0) {
                 return rc;
             }
         }
-
-    if (!readfile)
-        {
+    }
+    if (!readfile) {
         cerr << "Expecting the path to NEXUS file as the only command line argument!\n" << endl;
         printHelp(cerr);
         return 1;
-        }
+    }
     return 0;
 }
 
 int main(int argc, char *argv[]) {
     int rc = do_main(argc, argv);
-    if (gCommonOstream != 0L && gCommonOstream == &gCommonFileStream)
-        gCommonFileStream.close();
     return rc;
 }
 

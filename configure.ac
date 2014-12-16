@@ -4,7 +4,6 @@
 
 AC_PREREQ(2.59)
 AC_INIT([mtree], [0.0.0], [mtholder@gmail.com])
-
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADER([config.h])
 
@@ -19,7 +18,7 @@ AC_CANONICAL_TARGET
 #		this macro should be after AC_INIT but before AM_INIT_AUTOMAKE
 ################################################################################
 
-AM_INIT_AUTOMAKE([1.9 foreign dist-tarZ tar-ustar filename-length-max=299])
+AM_INIT_AUTOMAKE
 
 # Checks for programs.
 AC_PROG_LN_S
@@ -29,7 +28,7 @@ INP_CXXFLAGS="$CXXFLAGS"
 AC_PROG_CXX
 
 # Initialize CXXFLAGS to prevent it from defaulting to "-g -O2"
-CXXFLAGS="$INP_CXXFLAGS -DUNIX -DNCL_CONST_FUNCS"
+CXXFLAGS="$INP_CXXFLAGS -DNCL_CONST_FUNCS"
 
 # required because we are building a library 
 AC_PROG_RANLIB
@@ -62,16 +61,9 @@ AC_ARG_ENABLE(profiler, AC_HELP_STRING([--enable-profiler], [built in runtime pr
 [AC_DEFINE([ENABLE_CUSTOM_PROFILER], [1], [profiler for assessing execution times])],
 [])
 
-AC_ARG_ENABLE(leak_detection, AC_HELP_STRING([--enable-leak-detection], [memory leak detection is turned on]),
-[AC_DEFINE([MONITORING_ALLOCATION], [1], [monitors all allocation/deallocation, writes report])],
-[])
-
-
 #--------------------------------------------------------------------------------------------------#
 #  Set CXXFLAGS                                                                                    #
 #--------------------------------------------------------------------------------------------------#
-
-
 # Check for debugging mode.
 AC_ARG_ENABLE(debugging,
 	AC_HELP_STRING([--enable-debugging],[build for debugging]), , [enable_debugging=no])
@@ -80,7 +72,6 @@ if test "$enable_debugging" = yes; then
 	   *** NOTE: debugging is enabled; optimization is suppressed!
 	   ])
 fi
-
 
 # we tell NCL that we will ignore asserts
 NCL_ASSERT_FLAG="-DIGNORE_NXS_ASSERT"
@@ -135,7 +126,7 @@ elif test "$CC" = "xlc"; then
 		CXXFLAGS_OPTIM_SPEED="-O3 -qarch=$arch -qtune=$arch -qalias=ansi -qunroll=yes"
 	fi
 elif test "x$GCC" = "xyes" ; then
-	CXXFLAGS="$CXXFLAGS -Wno-uninitialized"
+	CXXFLAGS="$CXXFLAGS -Wno-uninitialized -std=c++11"
 	if test "$enable_debugging" = yes; then
 		CXXFLAGS_OPTIM_SPEED="-O0 -Wimplicit"
 	else
@@ -223,8 +214,8 @@ AC_TRY_LINK(
 [], 
 [AC_MSG_ERROR([NCL must be compiled with the NCL_CONST_FUNCS macro defined. Usually adding -DNCL_CONST_FUNCS to CPPFLAGS in your invocation of the NCL configure script is the solution.])]) 
 
-AC_COMPILE_IFELSE( 
-[#include "ncl/nxsdefs.h" 
+AC_COMPILE_IFELSE(
+    [AC_LANG_SOURCE([#include "ncl/nxsdefs.h" 
 # if ! defined(NCL_MAJOR_VERSION) ||  NCL_MAJOR_VERSION < 2
 #	error "need at least v2"
 # else
@@ -232,7 +223,7 @@ AC_COMPILE_IFELSE(
 #		error "need at least v2.1"
 #	 endif
 # endif
-], 
+])], 
 [], 
 [AC_MSG_ERROR([Sorry. NCL 2.1 or greater is required.])]) 
 

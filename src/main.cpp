@@ -4,6 +4,7 @@
 #include "ncl/nxspublicblocks.h"
 #include "ncl/nxscxxdiscretematrix.h"
 #include "ncl/nxsmultiformat.h"
+#include "mt_tree.h"
 using namespace std;
 
 void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
@@ -26,7 +27,8 @@ MultiFormatReader * instantiateReader();
 void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
              const double *patternWeights,
-             const NxsSimpleTree & tree) {
+             const NxsSimpleTree & tree,
+             const mt:ModelDescription & md) {
     std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;
@@ -73,15 +75,15 @@ int processContent(PublicNexusReader & nexusReader,
     bool hasIntWeights = true;
     std::vector<NxsCharacterPattern> compressedTransposedMatrix;
     std::vector<std::set<unsigned> > compressedIndexToOriginal;
+    std::vector<int> originalIndexToCompressed;
     if (true) {
-        std::vector<int> originalIndexToCompressed;
         if (true) {
             NxsCXXDiscreteMatrix cxxMat(*charBlock, false, 0L, false);
             hasWeights = cxxMat.hasWeights();
             hasIntWeights = cxxMat.hasIntWeights();
             NxsCompressDiscreteMatrix(cxxMat, compressedTransposedMatrix, &originalIndexToCompressed, &compressedIndexToOriginal);
         }
-       std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);   
+       std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);
        NxsTransposeCompressedMatrix(compressedTransposedMatrix, compressedMatrix, &patternCounts, wtsPtr);
     }
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();

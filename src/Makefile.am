@@ -4,7 +4,7 @@ AM_LDFLAGS  = @LDFLAGS@
 bin_PROGRAMS = mtree
 
 noinst_HEADERS = \
-	tree.h
+	mt_tree.h
 
 mtree_SOURCES = \
 	main.cpp

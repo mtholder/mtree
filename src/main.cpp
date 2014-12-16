@@ -17,12 +17,13 @@ long gInterleaveLen = -1;
 bool blocksReadInValidation = false;
 bool gSuppressingNameTranslationFile = false;
 bool gAllowNumericInterpretationOfTaxLabels = true;
-TranslatingConventions gTranslatingConventions;
+enum ProcessActionsEnum {
+	SCORE_ACTION=0
+};
 
-void processContent(PublicNexusReader & nexusReader, ostream *os, ProcessActionsEnum currentAction);
+void processContent(PublicNexusReader & nexusReader, std::ostream *os, ProcessActionsEnum currentAction);
 MultiFormatReader * instantiateReader();
 MultiFormatReader * gNexusReader = NULL;
-
 
 ////////////////////////////////////////////////////////////////////////////////
 // Takes NxsReader that has successfully read a file, and processes the
@@ -31,7 +32,7 @@ MultiFormatReader * gNexusReader = NULL;
 // The caller is responsibel for calling DeleteBlocksFromFactories() to clean
 //	up (if the reader uses the factory API).
 ////////////////////////////////////////////////////////////////////////////////
-void processContent(PublicNexusReader & nexusReader, ostream *os, ProcessActionsEnum currentAction) {
+void processContent(PublicNexusReader & nexusReader, std::ostream *os, ProcessActionsEnum currentAction) {
 	BlockReaderList blocks = nexusReader.GetUsedBlocksInOrder();
 	if (blocks.size() == 0) {
 		cerr << "Error:\n No understandable content was found.\n";
@@ -66,12 +67,7 @@ MultiFormatReader * instantiateReader()
 		treesB->SetAllowImplicitNames(true);
 	treesB->SetWriteFromNodeEdgeDataStructure(gTreesViaInMemoryStruct);
 	treesB->setValidateInternalNodeLabels(gValidateInternals);
-	if (!gValidateInternals) {
-		gTranslatingConventions.treatNodeLabelsAsStrings = true;
-	}
 	treesB->setAllowNumericInterpretationOfTaxLabels(gAllowNumericInterpretationOfTaxLabels);
-	if (gAltNexus)
-		treesB->setWriteTranslateTable(false);
 	if (gStrictLevel < 2)
 		{
 		NxsStoreTokensBlockReader *storerB =  nexusReader->GetUnknownBlockTemplate();
@@ -88,9 +84,9 @@ MultiFormatReader * instantiateReader()
 
 int processFilepath(
 	const char * filename, // name of the file to be read
-	ostream * , // output stream to use (NULL for no output). Not that cerr is used to report errors.
+	std::ostream * os, // output stream to use (NULL for no output). Not that cerr is used to report errors.
 	MultiFormatReader::DataFormatType fmt, // enum indicating the file format to expect.
-	ProcessActionsEnum ) // enum that is passed on to processContent to indicate what should be done with the content of the file.
+	ProcessActionsEnum currentAction) // enum that is passed on to processContent to indicate what should be done with the content of the file.
 	{
 	assert(filename);
 	try
@@ -130,9 +126,8 @@ int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType 
 	if (!gQuietMode)
 		cerr << "[Reading " << filename << "	 ]" << endl;
 	try {
-		ostream * outStream = 0L;
-		if (currentAction != VALIDATE_ONLY)
-			outStream = &cout;
+		std::ostream * outStream = 0L;
+		outStream = &cout;
 		return processFilepath(filename, outStream, fmt, currentAction);
 
 		}
@@ -168,7 +163,7 @@ int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFor
 
 const char * gExeName = "mtree";
 
-void printHelp(ostream & out) {
+void printHelp(std::ostream & out) {
 	out << "mtree takes reads a NEXUS file.\n";
 	out << "\nThe most common usage is simply:\n    " << gExeName << " <path to NEXUS file>\n";
 	out << "\nCommand-line flags:\n\n";
@@ -191,6 +186,7 @@ void printHelp(ostream & out) {
 
 int do_main(int argc, char *argv[])
 	{
+	ProcessActionsEnum currentAction= SCORE_ACTION;
 	NxsReader::setNCLCatchesSignals(true);
 	MultiFormatReader::DataFormatType f(MultiFormatReader::NEXUS_FORMAT);
 	for (int i = 1; i < argc; ++i)

@@ -28,7 +28,10 @@ MultiFormatReader * instantiateReader();
 MultiFormatReader * gNexusReader = NULL;
 
 
-void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper, const NxsCDiscreteStateSet ** compressedMatrix, const NxsSimpleTree & tree) {
+void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
+             const NxsCDiscreteStateSet ** compressedMatrix,
+             const double *patternWeights,
+             const NxsSimpleTree & tree) {
 
 }
 
@@ -154,7 +157,7 @@ int processContent(PublicNexusReader & nexusReader, const char *gFilename, std::
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
-        calcLnL(dm, (const NxsCDiscreteStateSet **) matrixAlias, nst);
+        calcLnL(dm, (const NxsCDiscreteStateSet **) matrixAlias, &patternWeights[0], nst);
     }
     return 0;
 }

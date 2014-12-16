@@ -8,9 +8,6 @@ AC_INIT([mtree], [0.0.0], [mtholder@gmail.com])
 AC_CONFIG_SRCDIR([src/main.cpp])
 AC_CONFIG_HEADER([config.h])
 
-#	Directory that contains install-sh and other auxiliary files
-AC_CONFIG_AUX_DIR([config])
-
 ################################################################################
 # Checks for build-platform and target info
 #	this defines the "target" variable that is used later in this file

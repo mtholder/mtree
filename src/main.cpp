@@ -7,10 +7,11 @@
 #include "mt_tree.h"
 using namespace std;
 
-void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
+void ncl2mt(const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
              const double *patternWeights,
-             const NxsSimpleTree & tree);
+             const NxsSimpleTree & tree,
+             const mt::ModelDescription & md);
 
 
 bool gQuietMode = false;
@@ -24,11 +25,11 @@ enum ProcessActionsEnum {
 int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, ProcessActionsEnum currentAction);
 MultiFormatReader * instantiateReader();
 
-void calcLnL(const NxsDiscreteDatatypeMapper * dataMapper,
+void ncl2mt(const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
              const double *patternWeights,
              const NxsSimpleTree & tree,
-             const mt:ModelDescription & md) {
+             const mt::ModelDescription & md) {
     std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;
@@ -130,9 +131,10 @@ int processContent(PublicNexusReader & nexusReader,
     }
     *os << "END;\n";
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
+    mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
-        calcLnL(dm, (const NxsCDiscreteStateSet **) matrixAlias, &patternWeights[0], nst);
+        ncl2mt(dm, (const NxsCDiscreteStateSet **) matrixAlias, &patternWeights[0], nst, md);
     }
     return 0;
 }

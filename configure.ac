@@ -128,7 +128,7 @@ elif test "$CC" = "xlc"; then
 elif test "x$GCC" = "xyes" ; then
 	CXXFLAGS="$CXXFLAGS -Wno-uninitialized -std=c++11"
 	if test "$enable_debugging" = yes; then
-		CXXFLAGS_OPTIM_SPEED="-O0 -Wimplicit"
+		CXXFLAGS_OPTIM_SPEED="-O0"
 	else
 		CXXFLAGS_OPTIM_SPEED="-O3 -ffast-math -funroll-loops -fstrict-aliasing"
 	fi

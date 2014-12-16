@@ -1,0 +1,31 @@
+#NEXUS
+begin data;
+dimensions ntax=4 nchar=13;
+format datatype = dna ; 
+matrix
+Taxon1 AAAAAAAAAAAAA
+Taxon2 AAAAAACCCCCCA
+Taxon3 CCCCCCCCCCAAA
+Taxon4 CCCCCCAAAACCA
+;
+end;
+
+set storebr;
+
+begin trees;
+    [
+    tree t = [&U] (Taxon3:0.013695378,(Taxon2:0.013695378,Taxon4:0.013695378):0.013695378,Taxon1:0.013695378);
+    tree t = [&U] (Taxon3:0.047675186,(Taxon2:0.047675186,Taxon4:0.047675186):0.047675186,Taxon1:0.047675186);
+    ]
+    [
+    tree t = [&U] (Taxon3:0.1,(Taxon2:0.1,Taxon4:0.1):0.1,Taxon1:0.1);
+    ]
+    [
+    tree t = [&U] (Taxon3:0.238629436,(Taxon2:0.238629436,Taxon4:0.238629436):0.238629436,Taxon1:0.238629436);
+]
+    tree t = [&U] (Taxon3:1.1251861107735557,(Taxon2:1.1251861107735557,Taxon4:1.1251861107735557):1.1251861107735557,Taxon1:1.1251861107735557);
+ [   ]
+end;
+
+lset userbr basefreq = eq rates = gamma shape = 1;
+lscore /sitelike scorefile=paupLike.txt;

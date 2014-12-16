@@ -21,7 +21,6 @@ AC_CANONICAL_TARGET
 #	According to (http://www.mail-archive.com/autoconf@gnu.org/msg14232.html)
 #		this macro should be after AC_INIT but before AM_INIT_AUTOMAKE
 ################################################################################
-AC_CONFIG_MACRO_DIR(config)
 
 AM_INIT_AUTOMAKE([1.9 foreign dist-tarZ tar-ustar filename-length-max=299])
 

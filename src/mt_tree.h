@@ -1,6 +1,7 @@
 #if !defined(__TREE_H__)
 #define __TREE_H__
 #include <cassert>
+#include <stack>
 #include <climits>
 #include <iostream>
 #include <vector>
@@ -137,6 +138,7 @@ class Node {
             this->data[i] = d;
         }
     private:
+    public:
         Node * parent;
         Node * leftChild;
         Node * rightSib;
@@ -219,6 +221,121 @@ class MkCharModel: public CharModel {
         }
 };
 void doAnalysis(Tree &tree, CharModel &cm);
+class NodeIterator {
+    public:
+        NodeIterator(Node *c) 
+            : curr(c) {
+        }
+        virtual ~NodeIterator(){}
+        Node * get() {
+            return this->curr;
+        }
+        Node * next() {
+            this->advance();
+            return this->get();
+        }
+        virtual void advance() = 0;
+    protected:
+        Node * curr;
+};
+class PostorderNodeIterator:public NodeIterator {
+    public:
+        PostorderNodeIterator(Node * r, Node * avoidNode)
+            :NodeIterator(r),
+             avoid(avoidNode) {
+            this->reset(r, avoidNode);
+        }
+        void reset(Node *r, Node *avoidNode) {
+            while (!ancStack.empty()) {
+                ancStack.pop();
+            }
+            avoid = avoidNode;
+            curr = r;
+            if (curr && curr->leftChild != nullptr) {
+                if (curr->leftChild == avoid) {
+                    curr = curr->leftChild->rightSib;
+                    if (curr == nullptr) {
+                        curr = r;
+                    } else {
+                        this->addAncs(curr);
+                    }
+                } else {
+                    this->addAncs(curr);
+                }
+            }
+        }
+        void advance() {
+            if (curr->rightSib) {
+                if (curr->rightSib == avoid) {
+                    if (avoid->rightSib) {
+                        curr = avoid->rightSib;
+                        this->addAncs(curr);
+                        return;
+                    }
+                }
+            }
+            if (ancStack.empty()) {
+                curr = nullptr;
+            } else {
+                curr = ancStack.top();
+                ancStack.pop();
+            }
+        }
+    private:
+        void addAncs(Node *c) {
+            curr = c;
+            while (curr->leftChild) {
+                ancStack.push(curr);
+                curr = curr->leftChild;
+            }
+        }
+    Node * avoid;
+    Node * curr;
+    std::stack<Node *>ancStack;
 
+};
+class PostorderForNodeIterator: public NodeIterator {
+    public:
+        PostorderForNodeIterator(Node * vr)
+            :NodeIterator(vr),
+            refNode(vr),
+            post(nullptr, nullptr) {
+            assert(vr);
+            assert(vr->parent);
+            curr = vr;
+            while (curr->parent) {
+                toRoot.push(curr);
+                curr = curr->parent;
+            }
+            avoid = toRoot.top();
+            toRoot.pop();
+            post.reset(curr, avoid);
+            curr = post.get();
+            belowNode = true;
+        }
+        void advance() {
+            curr = post.get();
+            if (curr == nullptr && belowNode) {
+                if (avoid == refNode) {
+                    belowNode = false;
+                    post.reset(refNode, nullptr);
+                    curr = post.get();
+                } else {
+                    curr = avoid;
+                    avoid = toRoot.top();
+                    toRoot.pop();
+                    post.reset(curr, avoid);
+                    curr = post.get();
+                }
+                assert(curr != nullptr);
+            }
+        }
+    private:
+        Node * refNode;
+        Node * avoid;
+        std::stack<Node *> toRoot;
+        PostorderNodeIterator post;
+        bool belowNode;
+};
 }
 #endif

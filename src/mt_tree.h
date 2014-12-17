@@ -253,6 +253,7 @@ class PostorderNodeIterator:public NodeIterator {
             curr = r;
             if (curr && curr->leftChild != nullptr) {
                 if (curr->leftChild == avoid) {
+                    ancStack.push(curr);
                     curr = curr->leftChild->rightSib;
                     if (curr == nullptr) {
                         curr = r;
@@ -272,6 +273,10 @@ class PostorderNodeIterator:public NodeIterator {
                         this->addAncs(curr);
                         return;
                     }
+                } else {
+                    curr = curr->rightSib;
+                    this->addAncs(curr);
+                    return;
                 }
             }
             if (ancStack.empty()) {
@@ -290,7 +295,6 @@ class PostorderNodeIterator:public NodeIterator {
             }
         }
     Node * avoid;
-    Node * curr;
     std::stack<Node *>ancStack;
 
 };
@@ -337,5 +341,13 @@ class PostorderForNodeIterator: public NodeIterator {
         PostorderNodeIterator post;
         bool belowNode;
 };
+
+inline NodeIterator * postorder(Node *c) {
+    if (c->parent) {
+        return new PostorderForNodeIterator(c);
+    }
+    return new PostorderNodeIterator(c, nullptr);
+}
+
 }
 #endif

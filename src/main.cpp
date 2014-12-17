@@ -51,15 +51,15 @@ void ncl2mt(unsigned numTaxa,
         }
     }
     vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
-    NxsCDiscreteStateSet m = 0;
+    NxsCDiscreteStateSet maxStateCode = 0;
     for (auto i = 0U; i < numTaxa; ++i) {
         rawMatrix[i].reserve(firstPartLength);
         for (auto j = 0U; j < numRealChars; ++j) {
             NxsCDiscreteStateSet r = compressedMatrix[i][j];
             if (r < 0) {
                 r = numStates;
-            } else if (r > m) {
-                m = r;
+            } else if (r > maxStateCode) {
+                maxStateCode = r;
             }
             rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
         }
@@ -71,10 +71,10 @@ void ncl2mt(unsigned numTaxa,
     for (auto i = 0U; i < numTaxa; ++i) {
         rowPtrs[i] = &(rawMatrix[i][0]);
     }
-    if (m < (NxsCDiscreteStateSet) numStates) {
-        m = numStates;
+    if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
+        maxStateCode = numStates;
     }
-    unsigned nsc = m;
+    unsigned nsc = maxStateCode;
     mt::CharStateToPrimitiveInd cs2pi(nsc);
     for (auto i = 0U; i < nsc; ++i) {
         vector<mt::char_state_t> v;
@@ -113,11 +113,19 @@ void ncl2mt(unsigned numTaxa,
         }
         ncl2nodeNumber[nd] = num;
     }
+    unsigned numRateCats = 1;
     for (auto li = 0U; li < numTaxa; ++li) {
         mt::Node * leaf = tree.GetLeaf(li);
         assert(leaf);
         for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
             leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
+            leaf->SetWork(j, (void *) new mt::LeafWork(maxStateCode + 1, numStates, numRateCats));
+        }
+    }
+    for (auto li = numTaxa; li < numNodes; ++ li) {
+        mt::Node * nd = tree.GetNode(li);
+        for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
+            nd->SetWork(j, (void *) new mt::InternalNodeWork(firstPartLength, numStates, numRateCats));
         }
     }
     mt::CharModel * cm;

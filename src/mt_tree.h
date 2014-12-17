@@ -137,6 +137,12 @@ class Node {
             }
             this->data[i] = d;
         }
+        void SetWork(unsigned i, void * d) {
+            while (this->work.size() <= i) {
+                this->work.push_back(nullptr);
+            }
+            this->work[i] = d;
+        }
     private:
     public:
         Node * parent;
@@ -145,6 +151,7 @@ class Node {
         unsigned number;
         double edgeLen;
         std::vector<void *> data;
+        std::vector<void *> work;
 };
 class Tree {
     public:
@@ -349,5 +356,20 @@ inline NodeIterator * postorder(Node *c) {
     return new PostorderNodeIterator(c, nullptr);
 }
 
+class LeafWork {
+    public:
+        LeafWork(unsigned numStateCodes, unsigned numStates, unsigned numRates) 
+            :x(numStateCodes*numStates*numRates) {
+        }
+    std::vector<double> x;
+};
+
+class InternalNodeWork {
+    public:
+        InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates) 
+            :x(numChars*numStates*numRates) {
+        }
+    std::vector<double> x;
+};
 }
 #endif

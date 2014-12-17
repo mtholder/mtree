@@ -113,6 +113,14 @@ void ncl2mt(unsigned numTaxa,
         }
         ncl2nodeNumber[nd] = num;
     }
+    for (auto li = 0U; li < numTaxa; ++li) {
+        mt::Node * leaf = tree.GetLeaf(li);
+        assert(leaf);
+        for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
+            leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
+        }
+
+    }
 }
 
 int processContent(PublicNexusReader & nexusReader,

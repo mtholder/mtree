@@ -48,6 +48,12 @@ class PartitionedMatrix {
                 i.resize(numTaxa);
              }
         }
+        unsigned GetNumPartitions() const {
+            return this->partitions.size();
+        }
+        const LeafCharacterVector * GetLeafCharacters(unsigned partIndex, unsigned leafIndex) const {
+            return &(this->partitions[partIndex][leafIndex]);
+        }
         void fillPartition(unsigned partIndex, const char_state_t ** mat, const CharStateToPrimitiveInd *cs2pi) {
             CharMatrix & part = partitions[partIndex];
             part.resize(nTaxa);
@@ -122,12 +128,19 @@ class Node {
         void SetEdgeLen(double e) {
             this->edgeLen = e;
         }
+        void SetData(unsigned i, void * d) {
+            while (this->data.size() <= i) {
+                this->data.push_back(nullptr);
+            }
+            this->data[i] = d;
+        }
     private:
         Node * parent;
         Node * leftChild;
         Node * rightSib;
         unsigned number;
         double edgeLen;
+        std::vector<void *> data;
 };
 class Tree {
     public:

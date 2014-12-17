@@ -89,6 +89,8 @@ class ModelDescription {
     private:
         AscBiasMode ascBiasMode;
 };
+class LeafWork;
+class InternalNodeWork;
 
 class Node {
     public:
@@ -131,6 +133,12 @@ class Node {
         void SetEdgeLen(double e) {
             this->edgeLen = e;
         }
+        double GetEdgeLen() {
+            return this->edgeLen;
+        }
+        bool IsLeaf() const {
+            return this->leftChild == nullptr;
+        }
         void SetData(unsigned i, void * d) {
             while (this->data.size() <= i) {
                 this->data.push_back(nullptr);
@@ -143,6 +151,14 @@ class Node {
             }
             this->work[i] = d;
         }
+        void * GetWork(unsigned i) {
+            return work[i];
+        }
+        void * GetData(unsigned i) {
+            return data[i];
+        }
+        double * GetCLA(unsigned i);
+
     private:
     public:
         Node * parent;
@@ -196,19 +212,23 @@ class Tree {
 
 class CharModel {
     public:
-        CharModel(unsigned numStates)
-            :nStates(numStates) {
+        CharModel(unsigned numStates, unsigned numRateCats)
+            :nStates(numStates),
+            nRateCats(numRateCats) {
         }
         virtual ~CharModel() {
         }
         virtual double sumLnL(const Node * virtualRoot) const = 0;
+        virtual void fillLeafWork(const LeafCharacterVector *, LeafWork *, double edgeLen);
+        virtual void fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen);
     protected:
         unsigned nStates;
+        unsigned nRateCats;
 };
 class MkVarNoMissingAscCharModel: public CharModel {
     public:
-        MkVarNoMissingAscCharModel(unsigned numStates)
-            :CharModel(numStates) {
+        MkVarNoMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+            :CharModel(numStates, numRateCats) {
         }
         virtual ~MkVarNoMissingAscCharModel() {
         }
@@ -218,8 +238,8 @@ class MkVarNoMissingAscCharModel: public CharModel {
 };
 class MkCharModel: public CharModel {
     public:
-        MkCharModel(unsigned numStates)
-            :CharModel(numStates) {
+        MkCharModel(unsigned numStates, unsigned numRateCats)
+            :CharModel(numStates, numRateCats) {
         }
         virtual ~MkCharModel() {
         }
@@ -362,14 +382,27 @@ class LeafWork {
             :x(numStateCodes*numStates*numRates) {
         }
     std::vector<double> x;
+    std::vector<double> cla;
 };
 
 class InternalNodeWork {
     public:
         InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates) 
-            :x(numChars*numStates*numRates) {
+            :cla(numChars*numStates*numRates),
+            nChars(numChars) {
         }
-    std::vector<double> x;
+    std::vector<double> cla;
+    unsigned nChars;
 };
+inline double * Node::GetCLA(unsigned i) {
+    void * w = this->GetWork(i);
+    if (this->IsLeaf()) {
+        LeafWork * lw = (LeafWork *)(w);
+        return &(lw->cla[0]);
+    } else {
+        InternalNodeWork * iw = (InternalNodeWork*)(w);
+        return &(iw->cla[0]);
+    }
+}
 }
 #endif

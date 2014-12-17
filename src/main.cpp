@@ -130,9 +130,9 @@ void ncl2mt(unsigned numTaxa,
     }
     mt::CharModel * cm;
     if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
-        cm = new mt::MkVarNoMissingAscCharModel(numStates);
+        cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
     } else {
-        cm = new mt::MkCharModel(numStates);
+        cm = new mt::MkCharModel(numStates, numRateCats);
     }
     try {
         doAnalysis(tree, *cm);

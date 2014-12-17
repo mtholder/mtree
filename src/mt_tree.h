@@ -24,8 +24,11 @@ class LeafCharacterVector {
             :cs2pi(nullptr) {
         }
         LeafCharacterVector(const char_state_t *inp, unsigned len, const CharStateToPrimitiveInd * stateToPrimStates)
-            :charVec(inp, inp + len),
+            :charVec(len),
             cs2pi(stateToPrimStates) {
+            for (auto i = 0U; i < len; ++i) {
+                charVec[i] = inp[i];
+            }
         }
         std::vector<char_state_t> charVec;
         const CharStateToPrimitiveInd * cs2pi;
@@ -45,6 +48,7 @@ class PartitionedMatrix {
         }
         void fillPartition(unsigned partIndex, const char_state_t ** mat, const CharStateToPrimitiveInd *cs2pi) {
             CharMatrix & part = partitions[partIndex];
+            part.resize(nTaxa);
             for (auto i = 0U; i < nTaxa; ++i) {
                 part[i] = LeafCharacterVector(mat[i], nCharsVec[partIndex], cs2pi);
             }

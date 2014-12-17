@@ -46,9 +46,18 @@ void ncl2mt(unsigned numTaxa,
         }
     }
     vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
+    bool hasNeg = false;
+    NxsCDiscreteStateSet m = 0;
     for (auto i = 0; i < numTaxa; ++i) {
         rawMatrix[i].reserve(firstPartLength);
         for (auto j = 0; j < numRealChars; ++j) {
+            NxsCDiscreteStateSet r = compressedMatrix[i][j];
+            if (r < 0) {
+                hasNeg = true;
+                r = numStates;
+            } else if (r > m) {
+                m = r;
+            }
             rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
         }
         for (auto k : bogusChar) {
@@ -59,7 +68,10 @@ void ncl2mt(unsigned numTaxa,
     for (auto i = 0U; i < numTaxa; ++i) {
         rowPtrs[i] = &(rawMatrix[i][0]);
     }
-    unsigned nsc = dataMapper->GetNumStateCodes();
+    if (m < numStates) {
+        m = numStates;
+    }
+    unsigned nsc = m;
     mt::CharStateToPrimitiveInd cs2pi(nsc);
     for (auto i = 0; i < nsc; ++i) {
         vector<mt::char_state_t> v;

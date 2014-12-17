@@ -221,6 +221,7 @@ class CharModel {
         virtual double sumLnL(const Node * virtualRoot) const = 0;
         virtual void fillLeafWork(const LeafCharacterVector *, LeafWork *, double edgeLen);
         virtual void fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen);
+        virtual double * calcTransitionProb(double edgeLen) = 0;
     protected:
         unsigned nStates;
         unsigned nRateCats;
@@ -378,7 +379,7 @@ inline NodeIterator * postorder(Node *c) {
 
 class LeafWork {
     public:
-        LeafWork(unsigned numStateCodes, unsigned numStates, unsigned numRates) 
+        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates) 
             :summed(numStateCodes*numStates*numRates),
              cla(numStates*numRates*numChars) {
         }

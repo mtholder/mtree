@@ -1,6 +1,7 @@
 #if !defined(__TREE_H__)
 #define __TREE_H__
 #include <cassert>
+#include <climits>
 #include <iostream>
 #include <vector>
 namespace mt {
@@ -217,9 +218,7 @@ class MkCharModel: public CharModel {
             return 3.4;
         }
 };
-void doAnalysis(Tree &tree, CharModel &cm) {
-    std::cout << cm.sumLnL(tree.GetRoot()) << "\n";
-}
+void doAnalysis(Tree &tree, CharModel &cm);
 
 }
 #endif

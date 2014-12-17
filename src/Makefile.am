@@ -7,6 +7,7 @@ noinst_HEADERS = \
 	mt_tree.h
 
 mtree_SOURCES = \
+	likelihood.cpp \
 	main.cpp
 
 mtree_LDADD =  $(LDADD) @MTREE_LIBS@

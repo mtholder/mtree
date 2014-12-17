@@ -1,5 +1,6 @@
 #if !defined(__TREE_H__)
 #define __TREE_H__
+#include <cassert>
 #include <vector>
 namespace mt {
 
@@ -76,6 +77,46 @@ class ModelDescription {
         }
     private:
         AscBiasMode ascBiasMode;
+};
+
+class Node {
+    public:
+        Node()
+            :number(UINT_MAX) {
+        }
+        void SetNumber(unsigned i) {
+            this->number = i;
+        }
+        unsigned GetNumber() const {
+            return this->number;
+        }
+    private:
+        unsigned number;
+};
+class Tree {
+    public:
+        unsigned GetNumLeaves() const {
+            return leaves.size();
+        }
+        Tree(unsigned numNodes, unsigned numLeaves)
+            :nodes(numNodes),
+             root(nullptr) {
+            assert(numLeaves < numNodes);
+            leaves.resize(numLeaves);
+            for (auto i = 0U; i < numNodes; ++i) {
+                Node & node = this->nodes[i];
+                node.SetNumber(i);
+                if (i < numLeaves) {
+                    leaves[i] = &node;
+                }
+            }
+        }
+    private:
+        std::vector<Node> nodes;
+        Node * root;
+        std::vector<Node *> leaves;
+
+
 };
 
 }

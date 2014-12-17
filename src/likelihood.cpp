@@ -1,4 +1,6 @@
 #include "mt_tree.h"
+#include <algorithm>
+using namespace std;
 namespace mt {
 
 void doAnalysis(Tree &tree, CharModel &cm)
@@ -34,9 +36,38 @@ void doAnalysis(Tree &tree, CharModel &cm)
 }
 
 
-void CharModel::fillLeafWork(const LeafCharacterVector *, LeafWork *, double edgeLen) {
+void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *work, double edgeLen) {
+    /* fill the summed probabilities for each state code */
+    const double * tiprob = this->calcTransitionProb(edgeLen);
+    const CharStateToPrimitiveInd * s2pi = data->cs2pi;
+    const unsigned numStateCodes = s2pi->GetNumStateCodes();
+    const unsigned lenCLAWord = nStates*nRateCats;
+    double * summedLoc = &(work->summed[0]);
+    const unsigned nssq = nStates * nStates;
+    for (auto sci = 0U; sci < numStateCodes; ++sci) {
+        assign(0.0, lenCLAWord, summedLoc);
+        for (auto toState : s2pi->GetStateCodes(sci)) {
+            for (auto ri = 0; ri < nRateCats; ++ri) {
+                for (auto fromState = 0U ; fromState < nStates; ++fromState) {
+                    summedLoc[ri*nStates + fromState] += tiprob[ri*nssq + fromState*nStates + toState];
+                }
+            }
+        }
+        summedLoc += lenCLAWord;
+    }
+    /* fill in the cla vector by copying sums */
+    const numChars = data->charVec.size();
+    double * cla = work->cla;
+    for (auto ci = 0U; ci < numChars; ++ci) {
+        const char_state_t sc = data->charVec[ci];
+        const double * s = &(work->summed[sc]);
+        copy(s, s + lenCLAWord, cla + ci*lenCLAWord);
+    }
+
+
 }
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {
+    const double * this->calcTransitionProb(edgeLen);
 }
 }
 

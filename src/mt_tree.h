@@ -379,9 +379,10 @@ inline NodeIterator * postorder(Node *c) {
 class LeafWork {
     public:
         LeafWork(unsigned numStateCodes, unsigned numStates, unsigned numRates) 
-            :x(numStateCodes*numStates*numRates) {
+            :summed(numStateCodes*numStates*numRates),
+             cla(numStates*numRates*numChars) {
         }
-    std::vector<double> x;
+    std::vector<double> summed;
     std::vector<double> cla;
 };
 

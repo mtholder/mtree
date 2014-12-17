@@ -82,7 +82,11 @@ class ModelDescription {
 class Node {
     public:
         Node()
-            :number(UINT_MAX) {
+            :parent(nullptr),
+             leftChild(nullptr),
+             rightSib(nullptr),
+             number(UINT_MAX),
+             edgeLen(-1.0) {
         }
         void SetNumber(unsigned i) {
             this->number = i;
@@ -90,13 +94,57 @@ class Node {
         unsigned GetNumber() const {
             return this->number;
         }
+        void AddChild(Node *c, double edgeLen) {
+            assert(c);
+            c->parent = this;
+            Node *r = this->GetLastChild();
+            if (r == nullptr) {
+                this->leftChild = c;
+            } else {
+                r->rightSib = c;
+            }
+            assert(c->rightSib == nullptr);
+            c->rightSib = nullptr;
+            c->SetEdgeLen(edgeLen);
+        }
+        Node * GetLastChild() {
+            if (this->leftChild == nullptr) {
+                return nullptr;
+            }
+            Node * c = this->leftChild;
+            while (c->rightSib) {
+                c = c->rightSib;
+            }
+            return c;
+        }
+        void SetEdgeLen(double e) {
+            this->edgeLen = e;
+        }
     private:
+        Node * parent;
+        Node * leftChild;
+        Node * rightSib;
         unsigned number;
+        double edgeLen;
 };
 class Tree {
     public:
         unsigned GetNumLeaves() const {
             return leaves.size();
+        }
+        void SetRoot(Node *r) {
+            assert(r);
+            assert(r->number >= this->GetNumLeaves());
+            this->root = r;
+        }
+        Node * GetNode(unsigned i) {
+            return &(this->nodes[i]);
+        }
+        Node * GetLeaf(unsigned i) {
+            return this->leaves[i];
+        }
+        const Node * GetLeaf(unsigned i) const {
+            return this->leaves[i];
         }
         Tree(unsigned numNodes, unsigned numLeaves)
             :nodes(numNodes),

@@ -1,4 +1,5 @@
 #include <cassert>
+#include <map>
 #include "ncl/ncl.h"
 #include "ncl/nxsblock.h"
 #include "ncl/nxspublicblocks.h"
@@ -32,7 +33,7 @@ void ncl2mt(unsigned numTaxa,
              const NxsCDiscreteStateSet ** compressedMatrix,
              const vector<double> & patternWeights,
              const vector<int> &origToCompressed,
-             const NxsSimpleTree & tree,
+             const NxsSimpleTree & nxsTree,
              const mt::ModelDescription & md) {
     assert(dataMapper != nullptr);
     const unsigned numRealChars = patternWeights.size();
@@ -41,16 +42,16 @@ void ncl2mt(unsigned numTaxa,
     vector<mt::char_state_t> bogusChar;
     if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
         firstPartLength += numStates;
-        for (auto i = 0; i < numStates; ++i) {
+        for (auto i = 0U; i < numStates; ++i) {
             bogusChar.push_back(i);
         }
     }
     vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
     bool hasNeg = false;
     NxsCDiscreteStateSet m = 0;
-    for (auto i = 0; i < numTaxa; ++i) {
+    for (auto i = 0U; i < numTaxa; ++i) {
         rawMatrix[i].reserve(firstPartLength);
-        for (auto j = 0; j < numRealChars; ++j) {
+        for (auto j = 0U; j < numRealChars; ++j) {
             NxsCDiscreteStateSet r = compressedMatrix[i][j];
             if (r < 0) {
                 hasNeg = true;
@@ -68,12 +69,12 @@ void ncl2mt(unsigned numTaxa,
     for (auto i = 0U; i < numTaxa; ++i) {
         rowPtrs[i] = &(rawMatrix[i][0]);
     }
-    if (m < numStates) {
+    if (m < (NxsCDiscreteStateSet) numStates) {
         m = numStates;
     }
     unsigned nsc = m;
     mt::CharStateToPrimitiveInd cs2pi(nsc);
-    for (auto i = 0; i < nsc; ++i) {
+    for (auto i = 0U; i < nsc; ++i) {
         vector<mt::char_state_t> v;
         for (auto xs : dataMapper->GetStateSetForCode(i)) {
             v.push_back(static_cast<mt::char_state_t>(xs));
@@ -84,12 +85,31 @@ void ncl2mt(unsigned numTaxa,
     std::vector<unsigned> partLengths(1, firstPartLength);
     mt::PartitionedMatrix partMat(numTaxa, partLengths);
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
-
-
-    std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
+    unsigned numNodes = 2 * numTaxa - 1;
+    mt::Tree tree(numNodes, numTaxa);
+    std::map<const NxsSimpleNode *, unsigned> ncl2nodeNumber;
+    std::vector<const NxsSimpleNode *> pre = nxsTree.GetPreorderTraversal();
+    unsigned internalIndex = numTaxa;
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;
         std::cout << "address = " << (long) nd << " is leaf = " << nd->IsTip() << " index = " << nd->GetTaxonIndex() << " parent address = " << (long) nd->GetEdgeToParent().GetParent() << std::endl;
+        unsigned num;
+        if (nd->IsTip()) {
+            num = nd->GetTaxonIndex();
+        } else {
+            num = internalIndex++;
+        }
+        mt::Node * treeNode = tree.GetNode(num);
+        const NxsSimpleNode * par = nd->GetEdgeToParent().GetParent();
+        if (par == nullptr) {
+            tree.SetRoot(treeNode);
+        } else {
+            assert (ncl2nodeNumber.find(par) ! = ncl2nodeNumber.end());
+            unsigned parNodeNumber = ncl2nodeNumber[par];
+            mt::Node * parNode = tree.GetNode(parNodeNumber);
+            parNode->AddChild(treeNode, nd->GetEdgeToParent().GetDblEdgeLen());
+        }
+        ncl2nodeNumber[nd] = num;
     }
 }
 

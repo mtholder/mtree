@@ -119,8 +119,20 @@ void ncl2mt(unsigned numTaxa,
         for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
             leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
         }
-
     }
+    mt::CharModel * cm;
+    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+        cm = new mt::MkVarNoMissingAscCharModel(numStates);
+    } else {
+        cm = new mt::MkCharModel(numStates);
+    }
+    try {
+        doAnalysis(tree, *cm);
+    } catch (...) {
+        delete cm;
+        throw;
+    }
+    delete cm;
 }
 
 int processContent(PublicNexusReader & nexusReader,
@@ -217,7 +229,8 @@ int processContent(PublicNexusReader & nexusReader,
     }
     *os << "END;\n";
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
-    mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
+    //mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
+    mt::ModelDescription md(mt::ModelDescription::NO_ASC_BIAS); //@TODO should be run-time setting
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
         ncl2mt(ntaxTotal, dm, (const NxsCDiscreteStateSet **) matrixAlias, patternWeights, originalIndexToCompressed, nst, md);

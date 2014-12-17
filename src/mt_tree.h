@@ -1,6 +1,7 @@
 #if !defined(__TREE_H__)
 #define __TREE_H__
 #include <cassert>
+#include <iostream>
 #include <vector>
 namespace mt {
 
@@ -144,13 +145,16 @@ class Node {
 };
 class Tree {
     public:
-        unsigned GetNumLeaves() const {
+        unsigned GetsNumLeaves() const {
             return leaves.size();
         }
         void SetRoot(Node *r) {
             assert(r);
             assert(r->number >= this->GetNumLeaves());
             this->root = r;
+        }
+        Node * GetRoot() {
+            return this->root;
         }
         Node * GetNode(unsigned i) {
             return &(this->nodes[i]);
@@ -178,9 +182,44 @@ class Tree {
         std::vector<Node> nodes;
         Node * root;
         std::vector<Node *> leaves;
-
-
 };
+
+class CharModel {
+    public:
+        CharModel(unsigned numStates)
+            :nStates(numStates) {
+        }
+        virtual ~CharModel() {
+        }
+        virtual double sumLnL(const Node * virtualRoot) const = 0;
+    protected:
+        unsigned nStates;
+};
+class MkVarNoMissingAscCharModel: public CharModel {
+    public:
+        MkVarNoMissingAscCharModel(unsigned numStates)
+            :CharModel(numStates) {
+        }
+        virtual ~MkVarNoMissingAscCharModel() {
+        }
+        virtual double sumLnL(const Node * virtualRoot) const {
+            return 3.2;
+        }
+};
+class MkCharModel: public CharModel {
+    public:
+        MkCharModel(unsigned numStates)
+            :CharModel(numStates) {
+        }
+        virtual ~MkCharModel() {
+        }
+        virtual double sumLnL(const Node * virtualRoot) const {
+            return 3.4;
+        }
+};
+void doAnalysis(Tree &tree, CharModel &cm) {
+    std::cout << cm.sumLnL(tree.GetRoot()) << "\n";
+}
 
 }
 #endif

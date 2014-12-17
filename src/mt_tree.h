@@ -1,7 +1,44 @@
 #if !defined(__TREE_H__)
 #define __TREE_H__
+#include <vector>
 namespace mt {
 
+typedef unsigned int char_state_t;
+class CharStateToPrimitiveInd {
+    public:
+
+};
+class LeafCharacterVector {
+    public:
+        LeafCharacterVector()
+            :cs2pi(nullptr) {
+        }
+        LeafCharacterVector(const char_state_t *inp, unsigned len, const CharStateToPrimitiveInd * stateToPrimStates)
+            :charVec(inp, inp + len),
+            cs2pi(stateToPrimStates) {
+        }
+        std::vector<char_state_t> charVec;
+        const CharStateToPrimitiveInd * cs2pi;
+};
+
+typedef std::vector<LeafCharacterVector> CharMatrix;
+
+class PartitionedMatrix {
+    public:
+        PartitionedMatrix(unsigned numTaxa, const std::vector<unsigned> &numCharsPerPartition)
+            :nTaxa(numTaxa),
+             nCharsVec(numCharsPerPartition),
+             partitions(numCharsPerPartition.size()) {
+             for (auto i : partitions) {
+                i.resize(numTaxa);
+             }
+        }
+    private:
+        unsigned nTaxa;
+        std::vector<unsigned> nCharsVec;
+        std::vector<CharMatrix> partitions;
+
+};
 class ModelDescription {
     public:
         enum AscBiasMode {

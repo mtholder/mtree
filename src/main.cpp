@@ -7,9 +7,11 @@
 #include "mt_tree.h"
 using namespace std;
 
-void ncl2mt(const NxsDiscreteDatatypeMapper * dataMapper,
+void ncl2mt(unsigned numTaxa,
+              const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
-             const double *patternWeights,
+             const vector<double> & patternWeights,
+             const vector<int> &origToCompressed,
              const NxsSimpleTree & tree,
              const mt::ModelDescription & md);
 
@@ -25,11 +27,38 @@ enum ProcessActionsEnum {
 int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, ProcessActionsEnum currentAction);
 MultiFormatReader * instantiateReader();
 
-void ncl2mt(const NxsDiscreteDatatypeMapper * dataMapper,
+void ncl2mt(unsigned numTaxa,
+            const NxsDiscreteDatatypeMapper * dataMapper,
              const NxsCDiscreteStateSet ** compressedMatrix,
-             const double *patternWeights,
+             const vector<double> & patternWeights,
+             const vector<int> &origToCompressed,
              const NxsSimpleTree & tree,
              const mt::ModelDescription & md) {
+    assert(dataMapper != nullptr);
+    const unsigned numRealChars = patternWeights.size();
+    unsigned firstPartLength = patternWeights.size();
+    const unsigned numStates = dataMapper->GetNumStates();
+    vector<mt::char_state_t> bogusChar;
+    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+        firstPartLength += numStates;
+        for (auto i = 0; i < numStates; ++i) {
+            bogusChar.push_back(i);
+        }
+    }
+    
+    vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
+    for (auto i = 0; i < numTaxa; ++i) {
+        rawMatrix[i].reserve(firstPartLength);
+        for (auto j = 0; j < numRealChars; ++j) {
+            rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
+        }
+        for (auto k : bogusChar) {
+            rawMatrix[i].push_back(k);
+        }
+    }
+
+    std::vector<unsigned> partLengths(1, firstPartLength);
+    mt::PartitionedMatrix partMat(numTaxa, partLengths);
     std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;
@@ -134,7 +163,7 @@ int processContent(PublicNexusReader & nexusReader,
     mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
-        ncl2mt(dm, (const NxsCDiscreteStateSet **) matrixAlias, &patternWeights[0], nst, md);
+        ncl2mt(ntaxTotal, dm, (const NxsCDiscreteStateSet **) matrixAlias, patternWeights, originalIndexToCompressed, nst, md);
     }
     return 0;
 }

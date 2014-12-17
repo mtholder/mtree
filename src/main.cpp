@@ -45,7 +45,6 @@ void ncl2mt(unsigned numTaxa,
             bogusChar.push_back(i);
         }
     }
-    
     vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
     for (auto i = 0; i < numTaxa; ++i) {
         rawMatrix[i].reserve(firstPartLength);
@@ -56,9 +55,25 @@ void ncl2mt(unsigned numTaxa,
             rawMatrix[i].push_back(k);
         }
     }
+    vector<mt::char_state_t *> rowPtrs(numTaxa);
+    for (auto i = 0U; i < numTaxa; ++i) {
+        rowPtrs[i] = &(rawMatrix[i][0]);
+    }
+    unsigned nsc = dataMapper->GetNumStateCodes();
+    mt::CharStateToPrimitiveInd cs2pi(nsc);
+    for (auto i = 0; i < nsc; ++i) {
+        vector<mt::char_state_t> v;
+        for (auto xs : dataMapper->GetStateSetForCode(i)) {
+            v.push_back(static_cast<mt::char_state_t>(xs));
+        }
+        cs2pi.SetStateCode(i, v);
+    }
 
     std::vector<unsigned> partLengths(1, firstPartLength);
     mt::PartitionedMatrix partMat(numTaxa, partLengths);
+    partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
+
+
     std::vector<const NxsSimpleNode *> pre = tree.GetPreorderTraversal();
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;

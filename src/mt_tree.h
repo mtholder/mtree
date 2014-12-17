@@ -6,7 +6,17 @@ namespace mt {
 typedef unsigned int char_state_t;
 class CharStateToPrimitiveInd {
     public:
-
+        CharStateToPrimitiveInd(unsigned numStateCodes)
+            :stateCodeToStateCodeVec(numStateCodes) {
+        }
+        const std::vector<char_state_t> & GetStateCodes(unsigned i) const {
+            return stateCodeToStateCodeVec[i];
+        }
+        void SetStateCode(unsigned i, const std::vector<char_state_t> & v) {
+            this->stateCodeToStateCodeVec[i] = v;
+        }
+    private:
+        std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;
 };
 class LeafCharacterVector {
     public:
@@ -32,6 +42,12 @@ class PartitionedMatrix {
              for (auto i : partitions) {
                 i.resize(numTaxa);
              }
+        }
+        void fillPartition(unsigned partIndex, const char_state_t ** mat, const CharStateToPrimitiveInd *cs2pi) {
+            CharMatrix & part = partitions[partIndex];
+            for (auto i = 0U; i < nTaxa; ++i) {
+                part[i] = LeafCharacterVector(mat[i], nCharsVec[partIndex], cs2pi);
+            }
         }
     private:
         unsigned nTaxa;

@@ -39,6 +39,10 @@ void ncl2mt(unsigned numTaxa,
     const unsigned numRealChars = patternWeights.size();
     unsigned firstPartLength = patternWeights.size();
     const unsigned numStates = dataMapper->GetNumStates();
+    vector<unsigned> origToComp;
+    for (auto otc : origToCompressed) {
+        origToComp.push_back((unsigned) otc);
+    }
     vector<mt::char_state_t> bogusChar;
     if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
         firstPartLength += numStates;
@@ -47,14 +51,12 @@ void ncl2mt(unsigned numTaxa,
         }
     }
     vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
-    bool hasNeg = false;
     NxsCDiscreteStateSet m = 0;
     for (auto i = 0U; i < numTaxa; ++i) {
         rawMatrix[i].reserve(firstPartLength);
         for (auto j = 0U; j < numRealChars; ++j) {
             NxsCDiscreteStateSet r = compressedMatrix[i][j];
             if (r < 0) {
-                hasNeg = true;
                 r = numStates;
             } else if (r > m) {
                 m = r;
@@ -83,7 +85,7 @@ void ncl2mt(unsigned numTaxa,
     }
 
     std::vector<unsigned> partLengths(1, firstPartLength);
-    mt::PartitionedMatrix partMat(numTaxa, partLengths);
+    mt::PartitionedMatrix partMat(numTaxa, partLengths, origToComp);
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
     unsigned numNodes = 2 * numTaxa - 1;
     mt::Tree tree(numNodes, numTaxa);

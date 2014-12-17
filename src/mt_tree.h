@@ -39,10 +39,11 @@ typedef std::vector<LeafCharacterVector> CharMatrix;
 
 class PartitionedMatrix {
     public:
-        PartitionedMatrix(unsigned numTaxa, const std::vector<unsigned> &numCharsPerPartition)
+        PartitionedMatrix(unsigned numTaxa, const std::vector<unsigned> &numCharsPerPartition, const std::vector<unsigned> &orig2compressed)
             :nTaxa(numTaxa),
              nCharsVec(numCharsPerPartition),
-             partitions(numCharsPerPartition.size()) {
+             partitions(numCharsPerPartition.size()),
+             origInd2CompressedInd(orig2compressed) {
              for (auto i : partitions) {
                 i.resize(numTaxa);
              }
@@ -58,6 +59,7 @@ class PartitionedMatrix {
         unsigned nTaxa;
         std::vector<unsigned> nCharsVec;
         std::vector<CharMatrix> partitions;
+        std::vector<unsigned> origInd2CompressedInd;
 
 };
 class ModelDescription {

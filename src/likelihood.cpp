@@ -2,6 +2,7 @@
 #include "mt_tree_traversal.h"
 #include "mt_char_model.h"
 #include "mt_log.h"
+#include "mt_data.h"
 #include <algorithm>
 using namespace std;
 namespace mt {

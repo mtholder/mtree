@@ -5,6 +5,7 @@ bin_PROGRAMS = mtree
 
 noinst_HEADERS = \
 	mt_char_model.h \
+	mt_data.h \
 	mt_log.h \
 	mt_tree.h \
 	mt_tree_traversal.h

@@ -19,6 +19,9 @@ class CharStateToPrimitiveInd {
         void SetStateCode(unsigned i, const std::vector<char_state_t> & v) {
             this->stateCodeToStateCodeVec[i] = v;
         }
+        unsigned GetNumStateCodes() const {
+            return stateCodeToStateCodeVec.size();
+        }
     private:
         std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;
 };
@@ -243,6 +246,9 @@ class LeafWork: public InternalNodeWork {
         LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates) 
             :InternalNodeWork(numChars, numStates, numRates),
             summed(numStateCodes*numStates*numRates){}
+        double * GetCLAElements() {
+            return &(summed[0]);
+        }
     std::vector<double> summed;
 };
 

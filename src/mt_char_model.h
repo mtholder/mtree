@@ -13,7 +13,7 @@ class CharModel {
         virtual ~CharModel() {
         }
         virtual double sumLnL(const double * cla, unsigned numChars) const = 0;
-        virtual void fillLeafWork(const LeafCharacterVector *, double * cla, double edgeLen, unsigned numChars);
+        virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
     protected:

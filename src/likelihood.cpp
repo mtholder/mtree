@@ -1,6 +1,7 @@
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
 #include "mt_char_model.h"
+#include "mt_log.h"
 #include <algorithm>
 using namespace std;
 namespace mt {
@@ -61,7 +62,7 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
     pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
     _debug_cla(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
     
-    _debug_vecl("partMat.patternWeights", partMat.patternWeights);
+    _DEBUG_VEC(partMat.patternWeights);
     const double lnL = cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
     cout << "lnL = " << lnL << "\n";
 }

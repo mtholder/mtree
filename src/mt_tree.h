@@ -5,29 +5,8 @@
 #include <climits>
 #include <iostream>
 #include <vector>
+#include "mt_log.h"
 namespace mt {
-
-template<typename T>
-void _debug_vec(const T &v) {
-    std::cerr << "_debug_vec len = " << v.size() << " vect = ";
-    for (auto i : v) {
-        std::cerr << i << ' ';
-    }
-    std::cerr << std::endl;
-}
-template<typename T>
-void _debug_vecl(const char * l, const T &v) {
-    std::cerr << "_debug_vecl " << l << " len = " << v.size() << " vect = ";
-    for (auto i : v) {
-        std::cerr << i << ' ';
-    }
-    std::cerr << std::endl;
-}
-template<typename T>
-void _debug_val(const char * l, const T &v) {
-    std::cerr << "_debug_val " << l << " = " << v << std::endl;
-}
-
 
 typedef unsigned int char_state_t;
 class CharStateToPrimitiveInd {
@@ -58,7 +37,7 @@ class LeafCharacterVector {
             for (auto i = 0U; i < len; ++i) {
                 charVec[i] = inp[i];
             }
-            _debug_vecl("LeafCharacterVector::ctor charVec", charVec);
+            _DEBUG_VEC(charVec);
         }
         std::vector<char_state_t> charVec;
         const CharStateToPrimitiveInd * cs2pi;
@@ -263,10 +242,10 @@ class InternalNodeWork {
             _debug_val("numChars", numChars);
             _debug_val("numStates", numStates);
             _debug_val("numRates", numRates);
-            _debug_vecl("claAtNdFromNd", claAtNdFromNd);
-            _debug_vecl("claAtNdFromPar", claAtNdFromPar);
-            _debug_vecl("claAtParFromNd", claAtParFromNd);
-            _debug_vecl("claAtParFromPar", claAtParFromPar);
+            _DEBUG_VEC(claAtNdFromNd);
+            _DEBUG_VEC(claAtNdFromPar);
+            _DEBUG_VEC(claAtParFromNd);
+            _DEBUG_VEC(claAtParFromPar);
         }
         unsigned GetLenCLA() const {
             return claAtNdFromNd.size();
@@ -284,7 +263,7 @@ class LeafWork: public InternalNodeWork {
             :InternalNodeWork(numChars, numStates, numRates),
             summed(numStateCodes*numStates*numRates){
                 _debug_val("numStateCodes", numStateCodes);
-                _debug_vecl("summed", summed);
+                _DEBUG_VEC(summed);
             }
         double * GetCLAElements() {
             return &(summed[0]);

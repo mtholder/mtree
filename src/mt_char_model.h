@@ -81,7 +81,7 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         }
         virtual ~MkVarNoMissingAscCharModel() {
         }
-        //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
 

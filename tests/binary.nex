@@ -3,10 +3,10 @@ begin data;
 dimensions ntax=4 nchar=13;
 format datatype = dna ; 
 matrix
-Taxon1 AAAAAAAAAAAAA
-Taxon2 AAAAAACCCCCCA
-Taxon3 CCCCCCCCCCAAA
-Taxon4 NCCCCCAAAACCA
+Taxon1 AAAAAAAATAAAA
+Taxon2 AAAAAACCGCCCA
+Taxon3 CCCCCCCCGCAAA
+Taxon4 NCCCCCAATACCA
 ;
 end;
 
@@ -27,5 +27,5 @@ begin trees;
  [   ]
 end;
 
-lset userbr basefreq = eq rates = gamma shape = 1;
+lset userbr basefreq = eq rates = equal  nst=1;
 lscore /sitelike scorefile=paupLike.txt;

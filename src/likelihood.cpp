@@ -50,12 +50,17 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
             pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
             double * afterArc = c.GetFromNdCLA(partIndex, true);
             cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
+            _debug_cla(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+            _debug_cla(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
         }
         c = pnit.next();
     }
     vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
     double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
     pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
+    _debug_cla(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+    
+    _debug_vecl("partMat.patternWeights", partMat.patternWeights);
     const double lnL = cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
     cout << "lnL = " << lnL << "\n";
 }
@@ -127,7 +132,9 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
     }
 }
 
-double CharModel::sumLnL(const double *cla, const double * patternWeight, unsigned numChars) const {
+double CharModel::sumLnL(const double *cla,
+                         const double * patternWeight,
+                         unsigned numChars) const {
     const unsigned lenCLAWord = nStates*nRateCats;
     const double * rateCatProb = GetRateCatProb();
     const double * stateFreq = GetRootStateFreq();
@@ -140,13 +147,34 @@ double CharModel::sumLnL(const double *cla, const double * patternWeight, unsign
                 rateL += cla[ri*nStates + fromState]*stateFreq[fromState];
             }
             charL += rateL*rateCatProb[ri];
+            _debug_val("charL", charL);
+            _debug_val("log(charL)", log(charL));
         }
         lnL += patternWeight[i]*log(charL);
+        _debug_val("lnL", lnL);
         cla += lenCLAWord;
     }
     return lnL;
 }
 
+double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
+                         const double * patternWeight,
+                         unsigned numChars) const {
+    unsigned numRealPatterns =  numChars - nStates;
+    double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
+    const double fake = 1.0;
+    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
+    double oneStateCorrectionL = exp(oneStateCorrectionLnL);
+    double correctionL = 1 - (nStates * oneStateCorrectionL);
+    double corrLnL = log(correctionL);
+    double sw = 0.0;
+    for (auto i = 0U; i < numRealPatterns; ++i) {
+        sw = patternWeight[i];
+    }
+    double totalCorrection = corrLnL*sw;
+    return uncorrLnL - totalCorrection;
+
+}
 
 /*
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {

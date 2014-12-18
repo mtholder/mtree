@@ -107,7 +107,7 @@ void ncl2mt(unsigned numTaxa,
         if (par == nullptr) {
             tree.SetRoot(treeNode);
         } else {
-            assert (ncl2nodeNumber.find(par) ! = ncl2nodeNumber.end());
+            assert (ncl2nodeNumber.find(par) != ncl2nodeNumber.end());
             unsigned parNodeNumber = ncl2nodeNumber[par];
             mt::Node * parNode = tree.GetNode(parNodeNumber);
             parNode->AddChild(treeNode, nd->GetEdgeToParent().GetDblEdgeLen());

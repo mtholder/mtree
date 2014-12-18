@@ -187,7 +187,7 @@ class Node {
 };
 class Tree {
     public:
-        unsigned GetsNumLeaves() const {
+        unsigned GetNumLeaves() const {
             return leaves.size();
         }
         void SetRoot(Node *r) {
@@ -235,7 +235,8 @@ class InternalNodeWork {
             :claAtNdFromNd(numStates*numRates*numChars),
              claAtNdFromPar(numStates*numRates*numChars),
              claAtParFromNd(numStates*numRates*numChars),
-             claAtParFromPar(numStates*numRates*numChars) {
+             claAtParFromPar(numStates*numRates*numChars),
+             nChars(numChars) {
         }
         unsigned GetLenCLA() const {
             return claAtNdFromNd.size();
@@ -244,7 +245,7 @@ class InternalNodeWork {
     std::vector<double> claAtNdFromPar;
     std::vector<double> claAtParFromNd;
     std::vector<double> claAtParFromPar;
-    unsigned nChars;
+    const unsigned nChars;
 };
 
 class LeafWork: public InternalNodeWork {

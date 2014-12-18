@@ -19,6 +19,13 @@ class CharModel {
         virtual const double * GetRateCatProb() const {
             return &(rateProb[0]);
         }
+        virtual unsigned GetNumRates() const {
+            return nRateCats;
+        }
+        virtual unsigned GetNumStates() const {
+            return nStates;
+        }
+        
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);

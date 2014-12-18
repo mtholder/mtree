@@ -1,13 +1,13 @@
 #if !defined(__LOG_H__)
 #define __LOG_H__
-#include <cassert>
-#include <stack>
-#include <climits>
+#include <cstdlib>
 #include <iostream>
-#include <vector>
 
 template<typename T>
 inline void _debug_vecl(const char * file, const char * func, int lineno, const char * l, const T &v) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
     std::cerr << file << " line " << lineno << " func " << func << " " << l << " len = " << v.size() << " vect = ";
     for (auto i : v) {
         std::cerr << i << ' ';
@@ -16,6 +16,9 @@ inline void _debug_vecl(const char * file, const char * func, int lineno, const 
 }
 template<typename T>
 inline void _debug_val(const char * file, const char * func, int lineno, const char * l, const T &v) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
     std::cerr << file << " line " << lineno << " func " << func << " " << l << " = " << v << std::endl;
 }
 
@@ -27,6 +30,9 @@ inline void _debug_cla(const char * file,
                 unsigned nRateCats,
                 unsigned nStates,
                 unsigned numChars) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
     std::cerr << file << " line " << lineno << " func " << func << " " << v;
     std::cerr << " cla nr=" << nRateCats << " ns=" << nStates << " nc=" << numChars <<"\n";
     for (auto i = 0U; i < numChars; ++i) {

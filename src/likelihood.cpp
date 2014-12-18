@@ -26,9 +26,10 @@ void doAnalysis(Tree &tree, CharModel &cm)
             cm.fillLeafWork(data, work, edgeLen);
         } else {
             vector<const double *> p = c.GetPrevCLAs(partIndex);
-            double * dest = c.GetFromNdCLA(partIndex, false);
-            pruneProductStep(p, dest, c.GetLenCLA(partIndex));
-            //cm.fillInternalWork
+            double * beforeArc = c.GetFromNdCLA(partIndex, false);
+            pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
+            double * afterArc = c.GetFromNdCLA(partIndex, true);
+            cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, c.GetNumChars(partIndex));
         }
         c = pnit.next();
     }
@@ -67,8 +68,15 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *work, do
 #endif
 
 }
+
+void CharModel::conditionOnSingleEdge(const double * cla1, double * afterEdge, double edgeLen, unsigned numChars) {
+    //const double * tiprob = this->calcTransitionProb(edgeLen);
+    
+}
+/*
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {
 //    const double * this->calcTransitionProb(edgeLen);
 }
+*/
 }
 

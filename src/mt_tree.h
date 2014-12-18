@@ -227,8 +227,9 @@ class CharModel {
         }
         virtual double sumLnL(const Node * virtualRoot) const = 0;
         virtual void fillLeafWork(const LeafCharacterVector *, LeafWork *, double edgeLen);
-        virtual void fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen);
+        //virtual void fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen);
         virtual double * calcTransitionProb(double edgeLen) = 0;
+        virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
     protected:
         unsigned nStates;
         unsigned nRateCats;
@@ -339,6 +340,9 @@ class Arc {
         std::vector<const double *> GetPrevCLAs(unsigned partIndex);
         unsigned GetLenCLA(unsigned partIndex) {
             return GetToNdIntWork(partIndex)->GetLenCLA();
+        }
+        unsigned GetNumChars(unsigned partIndex) {
+            return GetToNdIntWork(partIndex)->nChars;
         }
         Node * fromNode;
         Node * toNode;

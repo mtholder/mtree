@@ -29,6 +29,7 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
 {
 
     Node * virtRoot = tree.GetRoot();
+    virtRoot = virtRoot->leftChild->rightSib;
     PostorderForNodeIterator pnit = postorder(virtRoot);
     Arc c = pnit.get();
     assert(c.toNode);

@@ -4,6 +4,7 @@ AM_LDFLAGS  = @LDFLAGS@
 bin_PROGRAMS = mtree
 
 noinst_HEADERS = \
+	mt_char_model.h \
 	mt_tree.h \
 	mt_tree_traversal.h
 

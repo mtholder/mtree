@@ -14,18 +14,6 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
     }
 }
 
-void _debug_cla(const double *cla, unsigned nRateCats, unsigned nStates, unsigned numChars) {
-    cerr << "cla nr=" << nRateCats << " ns=" << nStates << " nc=" << numChars <<"\n";
-    for (auto i = 0U; i < numChars; ++i) {
-        for (auto ri = 0U; ri < nRateCats; ++ri) {
-            for (auto fromState = 0U ; fromState < nStates; ++fromState) {
-                cerr << cla[i*nRateCats*nStates + ri*nStates + fromState] << " ";
-            }
-        }
-        cerr << "\n  ";
-    }
-    cerr << "done\n";
-}
 void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
 {
 
@@ -45,22 +33,22 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
             double * claElements = lw->GetCLAElements();
             double * cla = c.GetFromNdCLA(partIndex, true);
             cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
-            _debug_cla(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
+            _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
         } else {
             vector<const double *> p = c.GetPrevCLAs(partIndex);
             double * beforeArc = c.GetFromNdCLA(partIndex, false);
             pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
             double * afterArc = c.GetFromNdCLA(partIndex, true);
             cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
-            _debug_cla(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-            _debug_cla(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+            _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+            _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
         }
         c = pnit.next();
     }
     vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
     double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
     pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
-    _debug_cla(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+    _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
     
     _DEBUG_VEC(partMat.patternWeights);
     const double lnL = cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
@@ -106,7 +94,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
         }
         summedLoc += lenCLAWord;
     }
-    cerr << "claElements "; _debug_cla(claElements, nRateCats, nStates, numStateCodes);
+    _DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
     /* fill in the cla vector by copying sums */
     for (auto ci = 0U; ci < numChars; ++ci) {
         const char_state_t sc = data->charVec[ci];
@@ -149,11 +137,11 @@ double CharModel::sumLnL(const double *cla,
                 rateL += cla[ri*nStates + fromState]*stateFreq[fromState];
             }
             charL += rateL*rateCatProb[ri];
-            _debug_val("charL", charL);
-            _debug_val("log(charL)", log(charL));
+            _DEBUG_VAL(charL);
+            _DEBUG_VAL(log(charL));
         }
         lnL += patternWeight[i]*log(charL);
-        _debug_val("lnL", lnL);
+        _DEBUG_VAL(lnL);
         cla += lenCLAWord;
     }
     return lnL;

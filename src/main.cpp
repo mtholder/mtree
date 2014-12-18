@@ -199,7 +199,7 @@ int processContent(PublicNexusReader & nexusReader,
             patternWeights.push_back(double(i));
         }
     }
-    mt::_debug_vec(patternWeights);
+    _DEBUG_VEC(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
     const unsigned numPatterns = patternCounts.size();

@@ -86,7 +86,7 @@ void ncl2mt(unsigned numTaxa,
     }
 
     std::vector<unsigned> partLengths(1, firstPartLength);
-    mt::PartitionedMatrix partMat(numTaxa, partLengths, origToComp);
+    mt::PartitionedMatrix partMat(numTaxa, partLengths, origToComp, patternWeights);
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
     unsigned numNodes = 2 * numTaxa - 1;
     mt::Tree tree(numNodes, numTaxa);
@@ -136,7 +136,7 @@ void ncl2mt(unsigned numTaxa,
         cm = new mt::MkCharModel(numStates, numRateCats);
     }
     try {
-        doAnalysis(tree, *cm);
+        doAnalysis(partMat, tree, *cm);
     } catch (...) {
         delete cm;
         throw;

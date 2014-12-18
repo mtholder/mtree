@@ -11,11 +11,16 @@ class CharModel {
         CharModel(unsigned numStates, unsigned numRateCats)
             :nStates(numStates),
             nRateCats(numRateCats),
-            rates(1, 1.0) {
+            rates(1, 1.0), 
+            rateProb(1, 1.0) {
         }
         virtual ~CharModel() {
         }
-        virtual double sumLnL(const double * cla, unsigned numChars) const = 0;
+        virtual const double * GetRateCatProb() const {
+            return &(rateProb[0]);
+        }
+        virtual const double * GetRootStateFreq() const = 0;
+        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
@@ -23,19 +28,22 @@ class CharModel {
         unsigned nStates;
         unsigned nRateCats;
         std::vector<double> rates;
+        std::vector<double> rateProb;
 };
 
 class MkCharModel: public CharModel {
     public:
         MkCharModel(unsigned numStates, unsigned numRateCats)
             :CharModel(numStates, numRateCats),
-            probMat(numStates*numStates*numRateCats, 0.0) {
+            probMat(numStates*numStates*numRateCats, 0.0),
+            rootStateFreq(numStates, 1.0/float(numStates)) {
         }
         virtual ~MkCharModel() {
         }
-        virtual double sumLnL(const double * cla, unsigned numChars ) const {
-            return 3.4;
+        virtual const double * GetRootStateFreq() const {
+            return &(rootStateFreq[0]);
         }
+        //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
             const double fns = float(nStates);
             const double fnsmo = fns - 1.0;
@@ -56,6 +64,7 @@ class MkCharModel: public CharModel {
         }
     private:
         std::vector<double> probMat;
+        std::vector<double> rootStateFreq;
 };
 
 class MkVarNoMissingAscCharModel: public MkCharModel {
@@ -65,9 +74,7 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         }
         virtual ~MkVarNoMissingAscCharModel() {
         }
-        virtual double sumLnL(const double * cla, unsigned numChars ) const {
-            return 3.2;
-        }
+        //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
 

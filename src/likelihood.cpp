@@ -12,7 +12,7 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
         }
     }
 }
-void doAnalysis(Tree &tree, CharModel &cm)
+void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
 {
     Node * virtRoot = tree.GetRoot();
     PostorderForNodeIterator pnit = postorder(virtRoot);
@@ -41,6 +41,8 @@ void doAnalysis(Tree &tree, CharModel &cm)
     vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
     double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
     pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
+    const double lnL = cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
+    cout << "lnL = " << lnL << "\n";
 }
 /*
 inline void assign(double value, double * dest, unsigned n) {
@@ -88,7 +90,6 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
         const double * s = claElements + sc * lenCLAWord ;
         copy(s, s + lenCLAWord, cla + ci*lenCLAWord);
     }
-
 }
 
 void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) {
@@ -109,10 +110,33 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
         beforeEdge += lenCLAWord;
     }
 }
+
+double CharModel::sumLnL(const double *cla, const double * patternWeight, unsigned numChars) const {
+    const unsigned lenCLAWord = nStates*nRateCats;
+    const double * rateCatProb = GetRateCatProb();
+    const double * stateFreq = GetRootStateFreq();
+    double lnL = 0.0;
+    for (auto i = 0U; i < numChars; ++i) {
+        double charL = 0.0;
+        for (auto ri = 0U; ri < nRateCats; ++ri) {
+            double rateL = 0.0;
+            for (auto fromState = 0U ; fromState < nStates; ++fromState) {
+                rateL += cla[ri*nStates + fromState]*stateFreq[fromState];
+            }
+            charL += rateL*rateCatProb[ri];
+        }
+        lnL += patternWeight[i]*log(charL);
+        cla += lenCLAWord;
+    }
+    return lnL;
+}
+
+
 /*
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {
 //    const double * this->calcTransitionProb(edgeLen);
 }
 */
-}
 
+
+} //namespace

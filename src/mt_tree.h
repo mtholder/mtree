@@ -45,11 +45,15 @@ typedef std::vector<LeafCharacterVector> CharMatrix;
 
 class PartitionedMatrix {
     public:
-        PartitionedMatrix(unsigned numTaxa, const std::vector<unsigned> &numCharsPerPartition, const std::vector<unsigned> &orig2compressed)
+        PartitionedMatrix(unsigned numTaxa,
+                          const std::vector<unsigned> &numCharsPerPartition,
+                          const std::vector<unsigned> &orig2compressed,
+                          const std::vector<double> &patternWts)
             :nTaxa(numTaxa),
              nCharsVec(numCharsPerPartition),
              partitions(numCharsPerPartition.size()),
-             origInd2CompressedInd(orig2compressed) {
+             origInd2CompressedInd(orig2compressed),
+             patternWeights(patternWts) {
              for (auto i : partitions) {
                 i.resize(numTaxa);
              }
@@ -72,6 +76,8 @@ class PartitionedMatrix {
         std::vector<unsigned> nCharsVec;
         std::vector<CharMatrix> partitions;
         std::vector<unsigned> origInd2CompressedInd;
+    public:
+        const std::vector<double> patternWeights;
 
 };
 class ModelDescription {
@@ -221,7 +227,7 @@ class Tree {
 };
 
 class CharModel;
-void doAnalysis(Tree &tree, CharModel &cm);
+void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm);
 
 class InternalNodeWork {
     public:

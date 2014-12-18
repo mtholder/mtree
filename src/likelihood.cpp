@@ -71,7 +71,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     assign(0.0, summedLoc, lenCLAWord*numStateCodes);
     for (auto sci = 0U; sci < numStateCodes; ++sci) {
         for (auto toState : s2pi->GetStateCodes(sci)) {
-            for (auto ri = 0; ri < nRateCats; ++ri) {
+            for (auto ri = 0U; ri < nRateCats; ++ri) {
                 for (auto fromState = 0U ; fromState < nStates; ++fromState) {
                     summedLoc[ri*nStates + fromState] += tiprob[ri*nssq + fromState*nStates + toState];
                 }
@@ -93,7 +93,7 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
     const unsigned lenCLAWord = nStates*nRateCats;
     const unsigned nssq = nStates * nStates;
     for (auto c = 0U ; c < numChars; ++c) {
-        for (auto ri = 0; ri < nRateCats; ++ri) {
+        for (auto ri = 0U; ri < nRateCats; ++ri) {
             for (auto fromState = 0U ; fromState < nStates; ++fromState) {
                 double prob = 0.0;
                 for (auto toState = 0U ; toState < nStates; ++toState) {

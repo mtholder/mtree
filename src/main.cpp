@@ -9,33 +9,34 @@
 #include "mt_char_model.h"
 using namespace std;
 
-void ncl2mt(unsigned numTaxa,
-              const NxsDiscreteDatatypeMapper * dataMapper,
-             const NxsCDiscreteStateSet ** compressedMatrix,
-             const vector<double> & patternWeights,
-             const vector<int> &origToCompressed,
-             const NxsSimpleTree & tree,
-             const mt::ModelDescription & md);
+void ncl2mt(std::ostream * os, 
+            unsigned numTaxa,
+            const NxsDiscreteDatatypeMapper * dataMapper,
+            const NxsCDiscreteStateSet ** compressedMatrix,
+            const vector<double> & patternWeights,
+            const vector<int> &origToCompressed,
+            const NxsSimpleTree & tree,
+            const mt::ModelDescription & md,
+            mt::ProcessActionsEnum action);
 
 
 bool gQuietMode = false;
 long gStrictLevel = 2;
 bool gValidateInternals = true;
-enum ProcessActionsEnum {
-    SCORE_ACTION=0
-};
 
 
-int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, ProcessActionsEnum currentAction);
+int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, mt::ProcessActionsEnum currentAction);
 MultiFormatReader * instantiateReader();
 
-void ncl2mt(unsigned numTaxa,
+void ncl2mt(std::ostream *os,
+            unsigned numTaxa,
             const NxsDiscreteDatatypeMapper * dataMapper,
-             const NxsCDiscreteStateSet ** compressedMatrix,
-             const vector<double> & patternWeights,
-             const vector<int> &origToCompressed,
-             const NxsSimpleTree & nxsTree,
-             const mt::ModelDescription & md) {
+            const NxsCDiscreteStateSet ** compressedMatrix,
+            const vector<double> & patternWeights,
+            const vector<int> &origToCompressed,
+            const NxsSimpleTree & nxsTree,
+            const mt::ModelDescription & md,
+            mt::ProcessActionsEnum action) {
     assert(dataMapper != nullptr);
     const unsigned numRealChars = patternWeights.size();
     unsigned firstPartLength = patternWeights.size();
@@ -96,7 +97,7 @@ void ncl2mt(unsigned numTaxa,
     unsigned internalIndex = numTaxa;
     for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
         const NxsSimpleNode *nd = *ndIt;
-        std::cout << "address = " << (long) nd << " is leaf = " << nd->IsTip() << " index = " << nd->GetTaxonIndex() << " parent address = " << (long) nd->GetEdgeToParent().GetParent() << std::endl;
+        //std::cout << "address = " << (long) nd << " is leaf = " << nd->IsTip() << " index = " << nd->GetTaxonIndex() << " parent address = " << (long) nd->GetEdgeToParent().GetParent() << std::endl;
         unsigned num;
         if (nd->IsTip()) {
             num = nd->GetTaxonIndex();
@@ -137,7 +138,7 @@ void ncl2mt(unsigned numTaxa,
         cm = new mt::MkCharModel(numStates, numRateCats);
     }
     try {
-        doAnalysis(partMat, tree, *cm);
+        doAnalysis(os, partMat, tree, *cm, action);
     } catch (...) {
         delete cm;
         throw;
@@ -148,7 +149,7 @@ void ncl2mt(unsigned numTaxa,
 int processContent(PublicNexusReader & nexusReader,
                    const char *gFilename,
                    std::ostream *os,
-                   ProcessActionsEnum ) {
+                   mt::ProcessActionsEnum action) {
     BlockReaderList blocks = nexusReader.GetUsedBlocksInOrder();
     if (blocks.size() == 0) {
         cerr << "Error:\n No understandable content was found.\n";
@@ -181,7 +182,6 @@ int processContent(PublicNexusReader & nexusReader,
     std::vector<unsigned> patternCounts;
     std::vector<double> patternWeights;
     bool hasWeights = true;
-    bool hasIntWeights = true;
     std::vector<NxsCharacterPattern> compressedTransposedMatrix;
     std::vector<std::set<unsigned> > compressedIndexToOriginal;
     std::vector<int> originalIndexToCompressed;
@@ -189,7 +189,6 @@ int processContent(PublicNexusReader & nexusReader,
         if (true) {
             NxsCXXDiscreteMatrix cxxMat(*charBlock, false, 0L, false);
             hasWeights = cxxMat.hasWeights();
-            hasIntWeights = cxxMat.hasIntWeights();
             NxsCompressDiscreteMatrix(cxxMat, compressedTransposedMatrix, &originalIndexToCompressed, &compressedIndexToOriginal);
         }
         std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);
@@ -202,53 +201,20 @@ int processContent(PublicNexusReader & nexusReader,
     _DEBUG_VEC(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
-    const unsigned numPatterns = patternCounts.size();
-    *os << "#NEXUS\nBEGIN DATA;\n\tDimensions ntax = " << ntaxTotal << " nchar = " << numPatterns << ";\n\t";
-    charBlock->WriteFormatCommand(*os);
-    *os << "Matrix\n";
-    const unsigned width = taxaBlock->GetMaxTaxonLabelLength();
-    for (unsigned i = 0; i < ntaxTotal; i++) {
-        const std::string currTaxonLabel = NxsString::GetEscaped(taxaBlock->GetTaxonLabel(i));
-        *os << currTaxonLabel;
-        unsigned currTaxonLabelLen = (unsigned)currTaxonLabel.size();
-        unsigned diff = width - currTaxonLabelLen;
-        for (unsigned k = 0; k < diff+5; k++) {
-            *os << ' ';
-        }
-        NxsCDiscreteStateSet * matrixRow = matrixAlias[i];
-        for (unsigned j = 0; j < numPatterns; ++j) {
-            *os << (int) matrixRow[j] << ' ';
-        }
-        *os << '\n';
-    }
-    const char * sp = (hasWeights ? " " : " * ");
-    unsigned ind = 0;
-    *os << ";\nEND;\nBEGIN ASSUMPTIONS;\n\tWTSET" << sp << " counts ( vector ) =";
-    for (std::vector<unsigned>::const_iterator cIt = patternCounts.begin(); cIt != patternCounts.end(); ++cIt, ++ind) {
-        *os << ' ' << *cIt;
-    }
-    *os << ";\n";
-    if (hasWeights) {
-        *os << "\tWTSET * sum_of_weights ( vector ) =";
-        if (hasIntWeights) {
-            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind) {
-                int w = int(0.01 + *cIt);
-                *os << ' ' << w;
-            }
-        } else {
-            for (std::vector<double>::const_iterator cIt = patternWeights.begin(); cIt != patternWeights.end(); ++cIt, ++ind) {
-                *os << ' ' << *cIt;
-            }
-        }
-        *os << ";\n";
-    }
-    *os << "END;\n";
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
     //mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
     mt::ModelDescription md(mt::ModelDescription::NO_ASC_BIAS); //@TODO should be run-time setting
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
-        ncl2mt(ntaxTotal, dm, (const NxsCDiscreteStateSet **) matrixAlias, patternWeights, originalIndexToCompressed, nst, md);
+        ncl2mt(os, 
+               ntaxTotal,
+               dm,
+               (const NxsCDiscreteStateSet **) matrixAlias,
+               patternWeights,
+               originalIndexToCompressed,
+               nst,
+               md,
+               action);
     }
     return 0;
 }
@@ -286,7 +252,7 @@ int processFilepath(
     const char * filename, // name of the file to be read
     std::ostream * os, // output stream to use (NULL for no output). Not that cerr is used to report errors.
     MultiFormatReader::DataFormatType fmt, // enum indicating the file format to expect.
-    ProcessActionsEnum currentAction) {
+    mt::ProcessActionsEnum currentAction) {
     assert(filename);
     int rc;
     try {
@@ -316,7 +282,7 @@ int processFilepath(
     }
 }
 
-int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction) {
+int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, mt::ProcessActionsEnum currentAction) {
     if (!gQuietMode) {
         cerr << "[Reading " << filename << "     ]" << endl;
     }
@@ -330,7 +296,7 @@ int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType 
     }
 }
 
-int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, ProcessActionsEnum currentAction) {
+int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, mt::ProcessActionsEnum currentAction) {
     ifstream masterStream(masterFilepath, ios::binary);
     if (masterStream.bad()) {
         cerr << "Could not open " << masterFilepath << "." << endl;
@@ -371,7 +337,7 @@ void printHelp(std::ostream & out) {
 }
 
 int do_main(int argc, char *argv[]) {
-    ProcessActionsEnum currentAction= SCORE_ACTION;
+    mt::ProcessActionsEnum currentAction= mt::SCORE_ACTION;
     NxsReader::setNCLCatchesSignals(true);
     MultiFormatReader::DataFormatType f(MultiFormatReader::NEXUS_FORMAT);
     for (int i = 1; i < argc; ++i) {

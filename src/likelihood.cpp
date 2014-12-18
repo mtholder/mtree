@@ -14,18 +14,17 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
     }
 }
 
-void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
-{
-
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
     Node * virtRoot = tree.GetRoot();
     virtRoot = virtRoot->leftChild->rightSib;
+    //Set up a traversal
     PostorderForNodeIterator pnit = postorder(virtRoot);
     Arc c = pnit.get();
     assert(c.toNode);
     unsigned partIndex = 0;
     unsigned numChars =  c.GetNumChars(partIndex);
     while (c.toNode) {
-        std::cout << c.fromNode->number<< "\n";
+        _DEBUG_VAL(c.fromNode->number);
         const double edgeLen = c.GetEdgeLen();
         if (c.IsFromLeaf()) {
             const LeafCharacterVector * data = c.GetFromNdData(partIndex);
@@ -33,6 +32,7 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
             double * claElements = lw->GetCLAElements();
             double * cla = c.GetFromNdCLA(partIndex, true);
             cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
+
             _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
         } else {
             vector<const double *> p = c.GetPrevCLAs(partIndex);
@@ -40,19 +40,31 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
             pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
             double * afterArc = c.GetFromNdCLA(partIndex, true);
             cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
+
             _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
             _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
         }
         c = pnit.next();
     }
+    // create the cla for the virtual root
     vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
     double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
     pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
+
     _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-    
     _DEBUG_VEC(partMat.patternWeights);
-    const double lnL = cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
-    cout << "lnL = " << lnL << "\n";
+
+    // accumulate the cla into a lnL
+    return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
+}
+
+void doAnalysis(ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, enum ProcessActionsEnum action) {
+    if (action == SCORE_ACTION) {
+        const double lnL = ScoreTree(partMat, tree, cm);
+        if (os) {
+            *os << "lnL = " << lnL << "\n";
+        }
+    }
 }
 /*
 inline void assign(double value, double * dest, unsigned n) {

@@ -229,7 +229,11 @@ class Tree {
 };
 
 class CharModel;
-void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm);
+enum ProcessActionsEnum {
+    SCORE_ACTION=0
+};
+
+void doAnalysis(std::ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, ProcessActionsEnum action);
 
 class InternalNodeWork {
     public:
@@ -242,10 +246,10 @@ class InternalNodeWork {
             _DEBUG_VAL(numChars);
             _DEBUG_VAL(numStates);
             _DEBUG_VAL(numRates);
-            _DEBUG_VEC(claAtNdFromNd);
-            _DEBUG_VEC(claAtNdFromPar);
-            _DEBUG_VEC(claAtParFromNd);
-            _DEBUG_VEC(claAtParFromPar);
+            //_DEBUG_VEC(claAtNdFromNd);
+            //_DEBUG_VEC(claAtNdFromPar);
+            //_DEBUG_VEC(claAtParFromNd);
+            //_DEBUG_VEC(claAtParFromPar);
         }
         unsigned GetLenCLA() const {
             return claAtNdFromNd.size();

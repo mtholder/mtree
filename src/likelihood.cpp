@@ -14,9 +14,8 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
 }
 
 void _debug_cla(const double *cla, unsigned nRateCats, unsigned nStates, unsigned numChars) {
-    assert(numChars == 5);  
     cerr << "cla nr=" << nRateCats << " ns=" << nStates << " nc=" << numChars <<"\n";
-   for (auto i = 0U; i < numChars; ++i) {
+    for (auto i = 0U; i < numChars; ++i) {
         for (auto ri = 0U; ri < nRateCats; ++ri) {
             for (auto fromState = 0U ; fromState < nStates; ++fromState) {
                 cerr << cla[i*nRateCats*nStates + ri*nStates + fromState] << " ";
@@ -35,7 +34,6 @@ void doAnalysis(PartitionedMatrix &partMat, Tree &tree, CharModel &cm)
     assert(c.toNode);
     unsigned partIndex = 0;
     unsigned numChars =  c.GetNumChars(partIndex);
-    assert(numChars == 5);
     while (c.toNode) {
         std::cout << c.fromNode->number<< "\n";
         const double edgeLen = c.GetEdgeLen();

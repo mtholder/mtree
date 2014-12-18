@@ -60,7 +60,8 @@ void ncl2mt(unsigned numTaxa,
             NxsCDiscreteStateSet r = compressedMatrix[i][j];
             if (r < 0) {
                 r = numStates;
-            } else if (r > maxStateCode) {
+            }
+            if (r > maxStateCode) {
                 maxStateCode = r;
             }
             rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
@@ -76,9 +77,9 @@ void ncl2mt(unsigned numTaxa,
     if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
         maxStateCode = numStates;
     }
-    unsigned nsc = maxStateCode;
-    mt::CharStateToPrimitiveInd cs2pi(nsc);
-    for (auto i = 0U; i < nsc; ++i) {
+    unsigned numStateCodes = maxStateCode + 1;
+    mt::CharStateToPrimitiveInd cs2pi(numStateCodes);
+    for (auto i = 0U; i < numStateCodes; ++i) {
         vector<mt::char_state_t> v;
         for (auto xs : dataMapper->GetStateSetForCode(i)) {
             v.push_back(static_cast<mt::char_state_t>(xs));
@@ -121,7 +122,7 @@ void ncl2mt(unsigned numTaxa,
         assert(leaf);
         for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
             leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
-            leaf->SetWork(j, (void *) new mt::LeafWork(firstPartLength, maxStateCode + 1, numStates, numRateCats));
+            leaf->SetWork(j, (void *) new mt::LeafWork(firstPartLength, numStateCodes, numStates, numRateCats));
         }
     }
     for (auto li = numTaxa; li < numNodes; ++ li) {
@@ -192,9 +193,14 @@ int processContent(PublicNexusReader & nexusReader,
             hasIntWeights = cxxMat.hasIntWeights();
             NxsCompressDiscreteMatrix(cxxMat, compressedTransposedMatrix, &originalIndexToCompressed, &compressedIndexToOriginal);
         }
-       std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);
-       NxsTransposeCompressedMatrix(compressedTransposedMatrix, compressedMatrix, &patternCounts, wtsPtr);
+        std::vector<double> * wtsPtr = (hasWeights ? &patternWeights : 0L);
+        NxsTransposeCompressedMatrix(compressedTransposedMatrix, compressedMatrix, &patternCounts, wtsPtr);
+        patternWeights.clear();
+        for (auto i : patternCounts) {
+            patternWeights.push_back(double(i));
+        }
     }
+    mt::_debug_vec(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
     const unsigned numPatterns = patternCounts.size();

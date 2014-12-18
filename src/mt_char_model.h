@@ -43,7 +43,7 @@ class MkCharModel: public CharModel {
         MkCharModel(unsigned numStates, unsigned numRateCats)
             :CharModel(numStates, numRateCats),
             probMat(numStates*numStates*numRateCats, 0.0),
-            rootStateFreq(numStates, 1.0/float(numStates)) {
+            rootStateFreq(numStates, 1.0/double(numStates)) {
         }
         virtual ~MkCharModel() {
         }
@@ -52,7 +52,7 @@ class MkCharModel: public CharModel {
         }
         //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
-            const double fns = float(nStates);
+            const double fns = double(nStates);
             const double fnsmo = fns - 1.0;
             const unsigned nsSq = nStates*nStates;
             for (auto ri = 0U; ri < nRateCats; ++ri) {

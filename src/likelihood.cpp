@@ -18,19 +18,20 @@ void doAnalysis(Tree &tree, CharModel &cm)
     Arc c = pnit.get();
     assert(c.toNode);
     unsigned partIndex = 0;
+    unsigned numChars =  c.GetNumChars(partIndex);
     while (c.toNode) {
         std::cout << c.fromNode->number<< "\n";
         const double edgeLen = c.GetEdgeLen();
         if (c.IsFromLeaf()) {
             const LeafCharacterVector * data = c.GetFromNdData(partIndex);
-            LeafWork * work = c.GetFromNdLeafWork(partIndex);
-            cm.fillLeafWork(data, work, edgeLen);
+            double * work = c.GetFromNdCLA(partIndex, true);
+            cm.fillLeafWork(data, work, edgeLen, numChars);
         } else {
             vector<const double *> p = c.GetPrevCLAs(partIndex);
             double * beforeArc = c.GetFromNdCLA(partIndex, false);
             pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
             double * afterArc = c.GetFromNdCLA(partIndex, true);
-            cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, c.GetNumChars(partIndex));
+            cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
         }
         c = pnit.next();
     }
@@ -38,7 +39,10 @@ void doAnalysis(Tree &tree, CharModel &cm)
 }
 
 
-void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *LeafWork, double edgeLen) {
+void CharModel::fillLeafWork(const LeafCharacterVector *data,
+                             double *cla,
+                             double edgeLen,
+                             unsigned numChars) {
     /* fill the summed probabilities for each state code */
 #if 0
     const double * tiprob = this->calcTransitionProb(edgeLen);

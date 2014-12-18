@@ -39,6 +39,7 @@ void ncl2mt(unsigned numTaxa,
     assert(dataMapper != nullptr);
     const unsigned numRealChars = patternWeights.size();
     unsigned firstPartLength = patternWeights.size();
+    assert(firstPartLength == 5);
     const unsigned numStates = dataMapper->GetNumStates();
     vector<unsigned> origToComp;
     for (auto otc : origToCompressed) {

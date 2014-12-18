@@ -93,7 +93,6 @@ class PostorderForNodeIterator: public ArcIterator {
             rootOfCurrPost(nullptr),
             post(nullptr, nullptr) {
             assert(vr);
-            assert(vr->parent);
             currNd = vr;
             if (currNd->parent) {
                 while (currNd->parent) {

@@ -269,6 +269,8 @@ class Arc {
                         fromIsChild = true;
                         edgeLenPtr = &(fromNode->edgeLen);
                     }
+                } else { /* not reall a "child" */
+                    fromIsChild = true;
                 }
             }
         double GetEdgeLen() const {
@@ -292,7 +294,7 @@ class Arc {
             return (LeafWork *)fromNode->GetWork(partIndex);
         }
         InternalNodeWork * GetFromNdIntWork(unsigned partIndex) {
-            return (InternalNodeWork *)toNode->GetWork(partIndex);
+            return (InternalNodeWork *)fromNode->GetWork(partIndex);
         }
         InternalNodeWork * GetToNdIntWork(unsigned partIndex) {
             return (InternalNodeWork *)toNode->GetWork(partIndex);
@@ -301,10 +303,10 @@ class Arc {
         double * GetToNdCLA(unsigned partIndex, bool crossedEdge);
         std::vector<const double *> GetPrevCLAs(unsigned partIndex);
         unsigned GetLenCLA(unsigned partIndex) {
-            return GetToNdIntWork(partIndex)->GetLenCLA();
+            return GetFromNdIntWork(partIndex)->GetLenCLA();
         }
         unsigned GetNumChars(unsigned partIndex) {
-            return GetToNdIntWork(partIndex)->nChars;
+            return GetFromNdIntWork(partIndex)->nChars;
         }
         Node * fromNode;
         Node * toNode;
@@ -349,6 +351,23 @@ inline double * Arc::GetToNdCLA(unsigned partIndex, bool crossedEdge) {
     }
 }
 
+inline std::vector<const double *> GetSurroundingCLA(Node * fromNode, Node * avoid, unsigned partIndex) {
+    std::vector<const double *> pcla;
+    std::vector<Node *> c = fromNode->GetChildren();
+    for (auto i : c) {
+        if (i != avoid) {
+            InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
+            double * ic = &(iw->claAtParFromNd[0]);
+            pcla.push_back(const_cast<const double *>(ic));
+        }
+    }
+    if (fromNode->parent && fromNode->parent != avoid) {
+        InternalNodeWork * iw = (InternalNodeWork *)fromNode->GetWork(partIndex);
+        double * ic = &(iw->claAtNdFromPar[0]);
+        pcla.push_back(const_cast<const double *>(ic));
+    }
+    return pcla;
+}
 inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
     std::vector<const double *> pcla;
     if (fromIsChild) {
@@ -360,19 +379,7 @@ inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
             pcla.push_back(const_cast<const double *>(ic));
         }
     } else {
-        std::vector<Node *> c = fromNode->GetChildren();
-        for (auto i : c) {
-            if (i != toNode) {
-                InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
-                double * ic = &(iw->claAtParFromNd[0]);
-                pcla.push_back(const_cast<const double *>(ic));
-            }
-        }
-        if (fromNode->parent) {
-            InternalNodeWork * iw = (InternalNodeWork *)fromNode->GetWork(partIndex);
-            double * ic = &(iw->claAtNdFromPar[0]);
-            pcla.push_back(const_cast<const double *>(ic));
-        }
+        return GetSurroundingCLA(fromNode, toNode, partIndex);
     }
     return pcla;
 }

@@ -14,7 +14,8 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
 }
 void doAnalysis(Tree &tree, CharModel &cm)
 {
-    PostorderForNodeIterator pnit = postorder(tree.GetRoot());
+    Node * virtRoot = tree.GetRoot();
+    PostorderForNodeIterator pnit = postorder(virtRoot);
     Arc c = pnit.get();
     assert(c.toNode);
     unsigned partIndex = 0;
@@ -37,7 +38,9 @@ void doAnalysis(Tree &tree, CharModel &cm)
         }
         c = pnit.next();
     }
-
+    vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
+    double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
+    pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
 }
 /*
 inline void assign(double value, double * dest, unsigned n) {

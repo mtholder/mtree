@@ -39,8 +39,16 @@ void doAnalysis(Tree &tree, CharModel &cm)
     }
 
 }
-
+/*
 inline void assign(double value, double * dest, unsigned n) {
+    for (auto i = 0U; i < n; ++i) {
+        dest[i] = value;
+    }
+}
+*/
+
+template<typename T>
+inline void assign(T value, T * dest, unsigned n) {
     for (auto i = 0U; i < n; ++i) {
         dest[i] = value;
     }
@@ -80,9 +88,23 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
 
 }
 
-void CharModel::conditionOnSingleEdge(const double * cla1, double * afterEdge, double edgeLen, unsigned numChars) {
-    //const double * tiprob = this->calcTransitionProb(edgeLen);
-    
+void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) {
+    const double * tiprob = this->calcTransitionProb(edgeLen);
+    const unsigned lenCLAWord = nStates*nRateCats;
+    const unsigned nssq = nStates * nStates;
+    for (auto c = 0U ; c < numChars; ++c) {
+        for (auto ri = 0; ri < nRateCats; ++ri) {
+            for (auto fromState = 0U ; fromState < nStates; ++fromState) {
+                double prob = 0.0;
+                for (auto toState = 0U ; toState < nStates; ++toState) {
+                    prob += tiprob[ri*nssq + fromState*nStates + toState]*beforeEdge[ri*nStates + toState];
+                }
+                afterEdge[ri*nStates + fromState] = prob;
+            }
+        }
+        afterEdge += lenCLAWord;
+        beforeEdge += lenCLAWord;
+    }
 }
 /*
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {

@@ -1,5 +1,6 @@
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
+#include "mt_char_model.h"
 #include <algorithm>
 using namespace std;
 namespace mt {
@@ -37,7 +38,7 @@ void doAnalysis(Tree &tree, CharModel &cm)
 }
 
 
-void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *work, double edgeLen) {
+void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *LeafWork, double edgeLen) {
     /* fill the summed probabilities for each state code */
 #if 0
     const double * tiprob = this->calcTransitionProb(edgeLen);

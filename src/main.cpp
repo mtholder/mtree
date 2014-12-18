@@ -6,6 +6,7 @@
 #include "ncl/nxscxxdiscretematrix.h"
 #include "ncl/nxsmultiformat.h"
 #include "mt_tree.h"
+#include "mt_char_model.h"
 using namespace std;
 
 void ncl2mt(unsigned numTaxa,

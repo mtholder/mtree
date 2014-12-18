@@ -1,37 +1,37 @@
 #include "mt_tree.h"
+#include "mt_tree_traversal.h"
 #include <algorithm>
 using namespace std;
 namespace mt {
-
+void pruneProductStep(const vector<const double *> & v, double * dest, unsigned n) {
+    for (auto i = 0U; i < n; ++i) {
+        dest[i] = 1.0;
+        for (auto c : v) {
+            dest[i] *= c[i];
+        }
+    }
+}
 void doAnalysis(Tree &tree, CharModel &cm)
 {
-    NodeIterator *pnit = postorder(tree.GetRoot());
-    try {
-        Node * c = pnit->get();
-        assert(c);
-        unsigned partIndex = 0;
-        while (c) {
-            std::cout << c->number<< "\n";
-            const double edgeLen = c->GetEdgeLen();
-            if (c->IsLeaf()) {
-                const LeafCharacterVector * data = (const LeafCharacterVector *) c->GetData(partIndex);
-                LeafWork * work = (LeafWork *) c->GetWork(partIndex);
-                cm.fillLeafWork(data, work, edgeLen);
-            } else {
-                Node * left = c->leftChild;
-                Node * n = left->rightSib;
-                const double * c1 = left->GetCLA(partIndex);
-                const double * c2 = n->GetCLA(partIndex);
-                InternalNodeWork * work = (InternalNodeWork *) c->GetWork(partIndex);
-                cm.fillInternalWork(c1, c2, work, edgeLen);
-            }
-            c = pnit->next();
+    PostorderForNodeIterator pnit = postorder(tree.GetRoot());
+    Arc c = pnit.get();
+    assert(c.toNode);
+    unsigned partIndex = 0;
+    while (c.toNode) {
+        std::cout << c.fromNode->number<< "\n";
+        const double edgeLen = c.GetEdgeLen();
+        if (c.IsFromLeaf()) {
+            const LeafCharacterVector * data = c.GetFromNdData(partIndex);
+            LeafWork * work = c.GetFromNdLeafWork(partIndex);
+            cm.fillLeafWork(data, work, edgeLen);
+        } else {
+            vector<const double *> p = c.GetPrevCLAs(partIndex);
+            double * dest = c.GetFromNdCLA(partIndex, false);
+            pruneProductStep(p, dest, c.GetLenCLA(partIndex));
+            //cm.fillInternalWork
         }
-    } catch(...) {
-        delete pnit;
-        throw;
+        c = pnit.next();
     }
-    delete pnit;
 
 }
 

@@ -4,7 +4,8 @@ AM_LDFLAGS  = @LDFLAGS@
 bin_PROGRAMS = mtree
 
 noinst_HEADERS = \
-	mt_tree.h
+	mt_tree.h \
+	mt_tree_traversal.h
 
 mtree_SOURCES = \
 	likelihood.cpp \

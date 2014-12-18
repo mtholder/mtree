@@ -101,6 +101,15 @@ class Node {
              number(UINT_MAX),
              edgeLen(-1.0) {
         }
+        std::vector<Node *> GetChildren() {
+            std::vector<Node *> c;
+            Node * curr = leftChild;
+            while (curr) {
+                c.push_back(curr);
+                curr = curr->rightSib;
+            }
+            return c;
+        }
         void SetNumber(unsigned i) {
             this->number = i;
         }
@@ -157,8 +166,6 @@ class Node {
         void * GetData(unsigned i) {
             return data[i];
         }
-        double * GetCLA(unsigned i);
-
     private:
     public:
         Node * parent;
@@ -255,162 +262,155 @@ class MkCharModel: public CharModel {
         }
 };
 void doAnalysis(Tree &tree, CharModel &cm);
-class NodeIterator {
-    public:
-        NodeIterator(Node *c) 
-            : curr(c) {
-        }
-        virtual ~NodeIterator(){}
-        Node * get() {
-            return this->curr;
-        }
-        Node * next() {
-            this->advance();
-            return this->get();
-        }
-        virtual void advance() = 0;
-    protected:
-        Node * curr;
-};
-class PostorderNodeIterator:public NodeIterator {
-    public:
-        PostorderNodeIterator(Node * r, Node * avoidNode)
-            :NodeIterator(r),
-             avoid(avoidNode) {
-            this->reset(r, avoidNode);
-        }
-        void reset(Node *r, Node *avoidNode) {
-            while (!ancStack.empty()) {
-                ancStack.pop();
-            }
-            avoid = avoidNode;
-            curr = r;
-            if (curr && curr->leftChild != nullptr) {
-                if (curr->leftChild == avoid) {
-                    ancStack.push(curr);
-                    curr = curr->leftChild->rightSib;
-                    if (curr == nullptr) {
-                        curr = r;
-                    } else {
-                        this->addAncs(curr);
-                    }
-                } else {
-                    this->addAncs(curr);
-                }
-            }
-        }
-        void advance() {
-            if (curr->rightSib) {
-                if (curr->rightSib == avoid) {
-                    if (avoid->rightSib) {
-                        curr = avoid->rightSib;
-                        this->addAncs(curr);
-                        return;
-                    }
-                } else {
-                    curr = curr->rightSib;
-                    this->addAncs(curr);
-                    return;
-                }
-            }
-            if (ancStack.empty()) {
-                curr = nullptr;
-            } else {
-                curr = ancStack.top();
-                ancStack.pop();
-            }
-        }
-    private:
-        void addAncs(Node *c) {
-            curr = c;
-            while (curr->leftChild) {
-                ancStack.push(curr);
-                curr = curr->leftChild;
-            }
-        }
-    Node * avoid;
-    std::stack<Node *>ancStack;
-
-};
-class PostorderForNodeIterator: public NodeIterator {
-    public:
-        PostorderForNodeIterator(Node * vr)
-            :NodeIterator(vr),
-            refNode(vr),
-            post(nullptr, nullptr) {
-            assert(vr);
-            assert(vr->parent);
-            curr = vr;
-            while (curr->parent) {
-                toRoot.push(curr);
-                curr = curr->parent;
-            }
-            avoid = toRoot.top();
-            toRoot.pop();
-            post.reset(curr, avoid);
-            curr = post.get();
-            belowNode = true;
-        }
-        void advance() {
-            curr = post.get();
-            if (curr == nullptr && belowNode) {
-                if (avoid == refNode) {
-                    belowNode = false;
-                    post.reset(refNode, nullptr);
-                    curr = post.get();
-                } else {
-                    curr = avoid;
-                    avoid = toRoot.top();
-                    toRoot.pop();
-                    post.reset(curr, avoid);
-                    curr = post.get();
-                }
-                assert(curr != nullptr);
-            }
-        }
-    private:
-        Node * refNode;
-        Node * avoid;
-        std::stack<Node *> toRoot;
-        PostorderNodeIterator post;
-        bool belowNode;
-};
-
-inline NodeIterator * postorder(Node *c) {
-    if (c->parent) {
-        return new PostorderForNodeIterator(c);
-    }
-    return new PostorderNodeIterator(c, nullptr);
-}
-
-class LeafWork {
-    public:
-        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates) 
-            :summed(numStateCodes*numStates*numRates),
-             cla(numStates*numRates*numChars) {
-        }
-    std::vector<double> summed;
-    std::vector<double> cla;
-};
 
 class InternalNodeWork {
     public:
         InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates) 
-            :cla(numChars*numStates*numRates),
-            nChars(numChars) {
+            :claAtNdFromNd(numStates*numRates*numChars),
+             claAtNdFromPar(numStates*numRates*numChars),
+             claAtParFromNd(numStates*numRates*numChars),
+             claAtParFromPar(numStates*numRates*numChars) {
         }
-    std::vector<double> cla;
+        unsigned GetLenCLA() const {
+            return claAtNdFromNd.size();
+        }
+    std::vector<double> claAtNdFromNd;
+    std::vector<double> claAtNdFromPar;
+    std::vector<double> claAtParFromNd;
+    std::vector<double> claAtParFromPar;
     unsigned nChars;
 };
-inline double * Node::GetCLA(unsigned i) {
-    void * w = this->GetWork(i);
-    if (this->IsLeaf()) {
-        LeafWork * lw = (LeafWork *)(w);
-        return &(lw->cla[0]);
+
+class LeafWork: public InternalNodeWork {
+    public:
+        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates) 
+            :InternalNodeWork(numChars, numStates, numRates),
+            summed(numStateCodes*numStates*numRates){}
+    std::vector<double> summed;
+};
+
+
+class Arc {
+    public:
+        Arc(Node * fromNd, Node * toNd)
+            :fromNode(fromNd),
+            toNode(toNd),
+            edgeLenPtr(nullptr),
+            fromIsChild(false) {
+                if (toNd) {
+                    if (toNode->parent == fromNode) {
+                        fromIsChild = false;
+                        edgeLenPtr = &(toNode->edgeLen);
+                    } else {
+                        assert(fromNode->parent == toNode);
+                        fromIsChild = true;
+                        edgeLenPtr = &(fromNode->edgeLen);
+                    }
+                }
+            }
+        double GetEdgeLen() const {
+            return *edgeLenPtr;
+        }
+        void SetEdgeLen(double x) {
+            *edgeLenPtr = x;
+        }
+        bool IsFromLeaf() const {
+            return fromNode->IsLeaf();
+        }
+        bool IsToLeaf() const {
+            return toNode->IsLeaf();
+        }
+        const LeafCharacterVector * GetFromNdData(unsigned partIndex) {
+            assert(IsFromLeaf());
+            return (const LeafCharacterVector *)fromNode->GetData(partIndex);
+        }
+        LeafWork * GetFromNdLeafWork(unsigned partIndex) {
+            assert(IsFromLeaf());
+            return (LeafWork *)fromNode->GetWork(partIndex);
+        }
+        InternalNodeWork * GetFromNdIntWork(unsigned partIndex) {
+            return (InternalNodeWork *)toNode->GetWork(partIndex);
+        }
+        InternalNodeWork * GetToNdIntWork(unsigned partIndex) {
+            return (InternalNodeWork *)toNode->GetWork(partIndex);
+        }
+        double * GetFromNdCLA(unsigned partIndex, bool crossedEdge);
+        double * GetToNdCLA(unsigned partIndex, bool crossedEdge);
+        std::vector<const double *> GetPrevCLAs(unsigned partIndex);
+        unsigned GetLenCLA(unsigned partIndex) {
+            return GetToNdIntWork(partIndex)->GetLenCLA();
+        }
+        Node * fromNode;
+        Node * toNode;
+    private:
+        double * edgeLenPtr;
+        bool fromIsChild;
+};
+
+inline double * Arc::GetFromNdCLA(unsigned partIndex, bool crossedEdge) {
+    if (fromIsChild) {
+        InternalNodeWork * work = GetFromNdIntWork(partIndex);
+        if (crossedEdge) {
+            return &(work->claAtParFromNd[0]);
+        } else {
+            return &(work->claAtNdFromNd[0]);
+        }
     } else {
-        InternalNodeWork * iw = (InternalNodeWork*)(w);
-        return &(iw->cla[0]);
+        InternalNodeWork * work = GetToNdIntWork(partIndex);
+        if (crossedEdge) {
+            return &(work->claAtNdFromPar[0]);
+        } else {
+            return &(work->claAtParFromPar[0]);
+        }
     }
 }
+
+inline double * Arc::GetToNdCLA(unsigned partIndex, bool crossedEdge) {
+    if (fromIsChild) {
+        InternalNodeWork * work = GetFromNdIntWork(partIndex);
+        if (crossedEdge) {
+            return &(work->claAtNdFromPar[0]);
+        } else {
+            return &(work->claAtParFromPar[0]);
+        }
+    } else {
+        InternalNodeWork * work = GetToNdIntWork(partIndex);
+        if (crossedEdge) {
+            return &(work->claAtParFromNd[0]);
+        } else {
+            return &(work->claAtNdFromNd[0]);
+        }
+    }
 }
+
+inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
+    std::vector<const double *> pcla;
+    if (fromIsChild) {
+        assert(fromNode->leftChild);
+        std::vector<Node *> c = fromNode->GetChildren();
+        for (auto i : c) {
+            InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
+            double * ic = &(iw->claAtParFromNd[0]);
+            pcla.push_back(const_cast<const double *>(ic));
+        }
+    } else {
+        std::vector<Node *> c = fromNode->GetChildren();
+        for (auto i : c) {
+            if (i != toNode) {
+                InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
+                double * ic = &(iw->claAtParFromNd[0]);
+                pcla.push_back(const_cast<const double *>(ic));
+            }
+        }
+        if (fromNode->parent) {
+            InternalNodeWork * iw = (InternalNodeWork *)fromNode->GetWork(partIndex);
+            double * ic = &(iw->claAtNdFromPar[0]);
+            pcla.push_back(const_cast<const double *>(ic));
+        }
+    }
+    return pcla;
+}
+
+
+} //namespace
 #endif

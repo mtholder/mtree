@@ -233,8 +233,11 @@ class MkVarNoMissingAscCharModel: public CharModel {
         }
         virtual ~MkVarNoMissingAscCharModel() {
         }
-        virtual double sumLnL(const Node * virtualRoot) const {
+        virtual double sumLnL(const Node * ) const {
             return 3.2;
+        }
+        virtual double * calcTransitionProb(double edgeLen) {
+            return nullptr;
         }
 };
 class MkCharModel: public CharModel {
@@ -244,8 +247,11 @@ class MkCharModel: public CharModel {
         }
         virtual ~MkCharModel() {
         }
-        virtual double sumLnL(const Node * virtualRoot) const {
+        virtual double sumLnL(const Node * ) const {
             return 3.4;
+        }
+        virtual double * calcTransitionProb(double edgeLen) {
+            return nullptr;
         }
 };
 void doAnalysis(Tree &tree, CharModel &cm);

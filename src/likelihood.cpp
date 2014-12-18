@@ -38,6 +38,7 @@ void doAnalysis(Tree &tree, CharModel &cm)
 
 void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *work, double edgeLen) {
     /* fill the summed probabilities for each state code */
+#if 0
     const double * tiprob = this->calcTransitionProb(edgeLen);
     const CharStateToPrimitiveInd * s2pi = data->cs2pi;
     const unsigned numStateCodes = s2pi->GetNumStateCodes();
@@ -63,11 +64,11 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data, LeafWork *work, do
         const double * s = &(work->summed[sc]);
         copy(s, s + lenCLAWord, cla + ci*lenCLAWord);
     }
-
+#endif
 
 }
 void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {
-    const double * this->calcTransitionProb(edgeLen);
+//    const double * this->calcTransitionProb(edgeLen);
 }
 }
 

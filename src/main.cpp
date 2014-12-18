@@ -119,7 +119,7 @@ void ncl2mt(unsigned numTaxa,
         assert(leaf);
         for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
             leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
-            leaf->SetWork(j, (void *) new mt::LeafWork(maxStateCode + 1, numStates, numRateCats));
+            leaf->SetWork(j, (void *) new mt::LeafWork(firstPartLength, maxStateCode + 1, numStates, numRateCats));
         }
     }
     for (auto li = numTaxa; li < numNodes; ++ li) {

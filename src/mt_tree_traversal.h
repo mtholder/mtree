@@ -121,6 +121,7 @@ class PostorderForNodeIterator: public ArcIterator {
             }
         }
         void advance() {
+            post.advance();
             currNd = post.GetCurrNode();
             if (currNd == nullptr && belowNode) {
                 if (avoid == refNode) {

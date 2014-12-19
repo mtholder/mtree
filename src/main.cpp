@@ -141,7 +141,7 @@ void ncl2mt(std::ostream *os,
         }
     }
     try {
-        doAnalysis(os, partMat, tree, *cm, action);
+        doAnalysis(os, mtInstance, action);
     } catch (...) {
         delete cm;
         throw;

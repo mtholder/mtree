@@ -175,9 +175,9 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 #include "mt_instance.h"
 
 namespace mt {
-void doAnalysis(ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, enum ProcessActionsEnum action) {
+void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(partMat, tree, cm);
+        const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }

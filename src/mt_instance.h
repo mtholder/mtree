@@ -39,9 +39,7 @@ class MTInstance {
         
 };
 void doAnalysis(std::ostream * os,
-                PartitionedMatrix &partMat,
-                Tree &tree,
-                CharModel &cm,
+                MTInstance & mtInstance,
                 ProcessActionsEnum action);
 
 } // namespace

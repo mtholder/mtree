@@ -156,11 +156,6 @@ class Tree {
 };
 
 class CharModel;
-enum ProcessActionsEnum {
-    SCORE_ACTION=0
-};
-
-void doAnalysis(std::ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, ProcessActionsEnum action);
 
 class InternalNodeWork {
     public:

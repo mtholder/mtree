@@ -59,14 +59,7 @@ double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
     return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
 }
 
-void doAnalysis(ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, enum ProcessActionsEnum action) {
-    if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(partMat, tree, cm);
-        if (os) {
-            *os << "lnL = " << lnL << "\n";
-        }
-    }
-}
+
 /*
 inline void assign(double value, double * dest, unsigned n) {
     for (auto i = 0U; i < n; ++i) {
@@ -176,14 +169,20 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
     }
     double totalCorrection = corrLnL*sw;
     return uncorrLnL - totalCorrection;
-
 }
+} // namespace
 
-/*
-void CharModel::fillInternalWork(const double * cla1, const double *cla2, InternalNodeWork *, double edgeLen) {
-//    const double * this->calcTransitionProb(edgeLen);
+#include "mt_instance.h"
+
+namespace mt {
+void doAnalysis(ostream * os, PartitionedMatrix &partMat, Tree &tree, CharModel &cm, enum ProcessActionsEnum action) {
+    if (action == SCORE_ACTION) {
+        const double lnL = ScoreTree(partMat, tree, cm);
+        if (os) {
+            *os << "lnL = " << lnL << "\n";
+        }
+    }
 }
-*/
 
 
 } //namespace

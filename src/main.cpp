@@ -6,7 +6,7 @@
 #include "ncl/nxspublicblocks.h"
 #include "ncl/nxscxxdiscretematrix.h"
 #include "ncl/nxsmultiformat.h"
-#include "mt_tree.h"
+#include "mt_instance.h"
 #include "mt_char_model.h"
 using namespace std;
 
@@ -89,9 +89,18 @@ void ncl2mt(std::ostream *os,
     }
 
     std::vector<unsigned> partLengths(1, firstPartLength);
-    mt::PartitionedMatrix partMat(numTaxa, partLengths, origToComp, patternWeights);
-    partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
+    mt::CharModel * cm;
+    unsigned numRateCats = 1;
+    
+    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+        cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
+    } else {
+        cm = new mt::MkCharModel(numStates, numRateCats);
+    }
     unsigned numNodes = 2 * numTaxa - 1;
+    mt::MTInstance mtInstance(numTaxa, partLengths, origToComp, patternWeights, cm);
+    mt::PartitionedMatrix & partMat = mtInstance.partMat;
+    partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
     mt::Tree tree(numNodes, numTaxa);
     std::map<const NxsSimpleNode *, unsigned> ncl2nodeNumber;
     std::vector<const NxsSimpleNode *> pre = nxsTree.GetPreorderTraversal();
@@ -117,7 +126,6 @@ void ncl2mt(std::ostream *os,
         }
         ncl2nodeNumber[nd] = num;
     }
-    unsigned numRateCats = 1;
     for (auto li = 0U; li < numTaxa; ++li) {
         mt::Node * leaf = tree.GetLeaf(li);
         assert(leaf);
@@ -131,12 +139,6 @@ void ncl2mt(std::ostream *os,
         for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
             nd->SetWork(j, (void *) new mt::InternalNodeWork(firstPartLength, numStates, numRateCats));
         }
-    }
-    mt::CharModel * cm;
-    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
-        cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
-    } else {
-        cm = new mt::MkCharModel(numStates, numRateCats);
     }
     try {
         doAnalysis(os, partMat, tree, *cm, action);

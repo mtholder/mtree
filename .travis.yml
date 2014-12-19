@@ -1,3 +1,5 @@
 language: C++
+gcc:
+    - "4.9"
 install:
     - sh get-dependencies-and-build.sh

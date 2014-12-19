@@ -1,0 +1,7 @@
+language: C++
+install:
+    - git clone https://github.com/mtholder/ncl.git
+    - cd ncl ; autoreconf ; ./configure --prefix=$PWD/../installed --with-constfuncs ; make ; make install
+    - autoreconf ; ./configure --prefix=$PWD/installed --with-ncl=$PWD/installed --enable-debugging=yes --enable-asserts
+script:
+    - ./src/mtree ./tests/binary.nex

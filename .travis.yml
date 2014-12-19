@@ -2,6 +2,6 @@ language: C++
 install:
     - git clone https://github.com/mtholder/ncl.git
     - cd ncl ; autoreconf ; ./configure --prefix=$PWD/../installed --with-constfuncs ; make -j2 ; make install
-    - export LD_LIBRARY_PATH="$PWD/installed/lib/ncl:$LD_LIBRARY_PATH"; autoreconf ; ./configure --prefix=$PWD/installed --with-ncl=$PWD/installed --enable-debugging=yes --enable-asserts ; make -j2
+    - cd .. ; export LD_LIBRARY_PATH="$PWD/installed/lib/ncl:$LD_LIBRARY_PATH"; autoreconf ; ./configure --prefix=$PWD/installed --with-ncl=$PWD/installed --enable-debugging=yes --enable-asserts ; make -j2
 script:
     - export LD_LIBRARY_PATH="$PWD/installed/lib/ncl:$LD_LIBRARY_PATH"; ./src/mtree ./tests/binary.nex

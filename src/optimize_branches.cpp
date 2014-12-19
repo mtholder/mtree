@@ -1,10 +1,11 @@
-#include "mt_optimize_branches"
+#include "mt_optimize_branches.h"
 // optimize branch lengths - this is a port of PLL code.
 namespace mt {
 
 /// smoothTree in PLL
 
 void optimizeAllBranchLengthsForAllPartitions(MTInstance &instance) {
+#if 0
     const unsigned numPartBranchLengths = instance.GetNumPartitions();
     instance.settings.partitionConverged.assign(numPartBranchLengths, 0);
     unsigned maxLoops = instance.settings.maxIterBrLenSmoothing;
@@ -15,8 +16,9 @@ void optimizeAllBranchLengthsForAllPartitions(MTInstance &instance) {
             break;
     }
     instance.settings.partitionConverged.assign(numPartBranchLengths, 0);
+#endif
 }
-
+#if 0
 template<typename T>
 class BeforeAfterIter {
     BeforeAfterIter(Node *, (*before)(Node *, T), (*after)(Node *, T), T blob);
@@ -434,5 +436,6 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
     result[i] = z[i];
 }
 
+#endif
 
 }// namespace

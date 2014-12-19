@@ -1,3 +1,3 @@
 
 check-local:
-	$(srcdir)/runtests.sh $(srcdir) $(top_builddir)/src/mtree
+	$(srcdir)/run-tests.sh $(top_builddir)/src/mtree

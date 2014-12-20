@@ -4,3 +4,5 @@ compiler:
     - clang++
 install:
     - sh get-dependencies-and-build.sh
+script:
+    - echo 'Success. The tests are in the get-dependencies-and-build.sh script'

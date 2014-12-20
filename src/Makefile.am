@@ -9,11 +9,14 @@ noinst_HEADERS = \
 	mt_log.h \
 	mt_optimize_branches.h \
 	mt_tree.h \
-	mt_tree_traversal.h
+	mt_tree_traversal.h \
+	INIReader.h \
+	ini.h
 
 mtree_SOURCES = \
 	likelihood.cpp \
 	optimize_branches.cpp \
-	main.cpp
-
+	main.cpp \
+	ini.c \
+	INIReader.cpp
 mtree_LDADD =  $(LDADD) @MTREE_LIBS@

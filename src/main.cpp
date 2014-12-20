@@ -6,6 +6,7 @@
 #include "ncl/nxspublicblocks.h"
 #include "ncl/nxscxxdiscretematrix.h"
 #include "ncl/nxsmultiformat.h"
+#include "INIReader.h"
 #include "mt_instance.h"
 #include "mt_char_model.h"
 using namespace std;
@@ -343,6 +344,8 @@ int do_main(int argc, char *argv[]) {
     mt::ProcessActionsEnum currentAction= mt::SCORE_ACTION;
     NxsReader::setNCLCatchesSignals(true);
     MultiFormatReader::DataFormatType f(MultiFormatReader::NEXUS_FORMAT);
+    std::string iniFilename;
+    INIReader * iniReader = nullptr;
     for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];
         const unsigned slen = strlen(filepath);
@@ -372,7 +375,33 @@ int do_main(int argc, char *argv[]) {
                 printHelp(cerr);
                 return 2;
             }
+        } else if (filepath[1] == 'm') {
+            f = MultiFormatReader::UNSUPPORTED_FORMAT;
+            if (slen > 2) {
+                if (!iniFilename.empty()) {
+                    cerr << "Expecting one INI file with a -m flag.\n";
+                    return 5;
+                }
+                iniFilename.assign(filepath + 2, slen - 2);
+                iniReader = new INIReader(iniFilename.c_str());
+                if (iniReader->ParseError() < 0) {
+                    std::cerr << "Can't load \"" << iniFilename << "\"\n";
+                    return 6;
+                }
+            } else {
+                cerr << "Expecting an INI filepath after the -m flag\n";
+                return 4;
+            }
+            if (f == MultiFormatReader::UNSUPPORTED_FORMAT) {
+                cerr << "Expecting a format after -f\n" << endl;
+                printHelp(cerr);
+                return 2;
+            }
         }
+    }
+    if (iniReader == nullptr) {
+        cerr << "Expecting an INI file specified with a -m flag\n";
+        return 8;
     }
     bool readfile = false;
     for (int i = 1; i < argc; ++i) {

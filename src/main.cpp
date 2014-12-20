@@ -101,7 +101,7 @@ void ncl2mt(std::ostream *os,
     mt::MTInstance mtInstance(numTaxa, partLengths, origToComp, patternWeights, cm);
     mt::PartitionedMatrix & partMat = mtInstance.partMat;
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
-    mt::Tree tree(numNodes, numTaxa);
+    mt::Tree &tree = mtInstance.tree;
     std::map<const NxsSimpleNode *, unsigned> ncl2nodeNumber;
     std::vector<const NxsSimpleNode *> pre = nxsTree.GetPreorderTraversal();
     unsigned internalIndex = numTaxa;

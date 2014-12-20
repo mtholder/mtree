@@ -1,5 +1,5 @@
 language: C++
-gcc:
-    - "4.9"
+compiler:
+    - clang++
 install:
     - sh get-dependencies-and-build.sh

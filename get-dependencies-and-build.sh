@@ -10,7 +10,7 @@ cd ncl || exit
 autoreconf
 automake --add-missing
 autoreconf || exit
-./configure --prefix=$MTREE_ROOT/installed --with-constfuncs || exit
+CC=clang CXX=clang++ ./configure --prefix=$MTREE_ROOT/installed --with-constfuncs || exit
 make -j4 || exit 
 make install || exit
 cd ..
@@ -27,7 +27,7 @@ then
     mkdir build || exit
 fi
 cd build || exit
-../configure --prefix=$MTREE_ROOT/installed --with-ncl=$MTREE_ROOT/installed --enable-debugging=yes --enable-asserts || exit
+CC=clang CXX=clang++ ../configure --prefix=$MTREE_ROOT/installed --with-ncl=$MTREE_ROOT/installed --enable-debugging=yes --enable-asserts || exit
 make -j4 || exit
 
 

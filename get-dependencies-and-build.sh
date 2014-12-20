@@ -7,8 +7,6 @@ then
     git clone https://github.com/mtholder/ncl.git || exit 1
 fi
 cd ncl || exit
-autoreconf
-automake --add-missing
 autoreconf || exit
 CPPLAGS="-D__extern_always_inline=inline" CC=clang CXX=clang++ ./configure --prefix=$MTREE_ROOT/installed --with-constfuncs || exit
 make -j4 || exit 

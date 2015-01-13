@@ -5,7 +5,7 @@ passed=0
 failed=0
 function runcheck
 {
-    if python "${t}/check-lnL.py" "${exe}" "$1" "$2"
+    if python "${t}/check-lnL.py" "${exe}" "$1" "$2" "$3"
     then
         passed=$(expr $passed + 1)
     else
@@ -13,7 +13,7 @@ function runcheck
     fi
 }
 
-runcheck "${t}/jc.nex" "-76.66761"
+runcheck "${t}/jc.nex" "${t}/jc.ini" "-76.66761"
 if test $failed -gt 0
 then
     echo "Failed ${failed} / " $(expr $passed + $failed) " tests."

@@ -376,7 +376,6 @@ int do_main(int argc, char *argv[]) {
                 return 2;
             }
         } else if (filepath[1] == 'm') {
-            f = MultiFormatReader::UNSUPPORTED_FORMAT;
             if (slen > 2) {
                 if (!iniFilename.empty()) {
                     cerr << "Expecting one INI file with a -m flag.\n";
@@ -391,11 +390,6 @@ int do_main(int argc, char *argv[]) {
             } else {
                 cerr << "Expecting an INI filepath after the -m flag\n";
                 return 4;
-            }
-            if (f == MultiFormatReader::UNSUPPORTED_FORMAT) {
-                cerr << "Expecting a format after -f\n" << endl;
-                printHelp(cerr);
-                return 2;
             }
         }
     }

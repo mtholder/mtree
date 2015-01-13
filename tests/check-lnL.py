@@ -5,12 +5,13 @@ import sys
 import os
 import re
 TOL = 0.0001
-exe, arg = sys.argv[1:3]
-inp_fn = os.path.split(arg)[-1]
-expected = [float(i) for i in sys.argv[3:]]
+exe, inp_fn, inifile = sys.argv[1:4]
+expected = [float(i) for i in sys.argv[4:]]
 fn = '.test_output'
+invoc = [exe, inp_fn, '-m{}'.format(inifile)]
+print invoc
 with open(fn, 'w') as tout:
-    p = subprocess.Popen([exe, arg],
+    p = subprocess.Popen(invoc,
                          stdout=tout,
                          stderr=None)
     rc = p.wait()

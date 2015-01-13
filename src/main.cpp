@@ -8,37 +8,76 @@
 #include "ncl/nxsmultiformat.h"
 #include "INIReader.h"
 #include "mt_instance.h"
+#include "mt_ini_options.h"
 #include "mt_char_model.h"
 using namespace std;
-
-void ncl2mt(std::ostream * os, 
-            unsigned numTaxa,
-            const NxsDiscreteDatatypeMapper * dataMapper,
-            const NxsCDiscreteStateSet ** compressedMatrix,
-            const vector<double> & patternWeights,
-            const vector<int> &origToCompressed,
-            const NxsSimpleTree & tree,
-            const mt::ModelDescription & md,
-            mt::ProcessActionsEnum action);
-
+namespace mt {
+    class NCL2MT {
+        public:
+            void processTree(std::ostream * os,
+                unsigned numTaxa,
+                const NxsDiscreteDatatypeMapper * dataMapper,
+                const NxsCDiscreteStateSet ** compressedMatrix,
+                const vector<double> & patternWeights,
+                const vector<int> &origToCompressed,
+                const NxsSimpleTree & tree,
+                const ModelDescription & md,
+                ::INIReader & iniReader);
+            ProcessActionsEnum configureBasedOnINI(MTInstance &,
+                                                   ::INIReader & iniReader,
+                                                   std::ostream & err);
+    };
+}
+bool preDataINICheck(INIReader & iniReader, std::ostream & err);
 
 bool gQuietMode = false;
 long gStrictLevel = 2;
 bool gValidateInternals = true;
 
 
-int processContent(PublicNexusReader & nexusReader, const char *, std::ostream *os, mt::ProcessActionsEnum currentAction);
+int processContent(PublicNexusReader & nexusReader,
+                   const char *,
+                   std::ostream *os,
+                   INIReader & currentAction);
 MultiFormatReader * instantiateReader();
 
-void ncl2mt(std::ostream *os,
+/* mtree INI checking */
+bool iniSettingsAreLegal(INIReader & iniReader, const mt::INIValueChecker & ivc, std::ostream &err) {
+    try{
+        std::string value = iniReader.Get("action", "action", "LScore");
+        ivc.parseActionAction(value); // triggers exception
+        return true;
+     } catch (mt::IllegalINIValueError & e) {
+         err << "INI value error: " << e.what() << "\n";
+         err.flush();
+         return false;
+     }
+}
+bool preDataINICheck(INIReader & iniReader, std::ostream & err) {
+    mt::INIValueChecker ivc;
+    return iniSettingsAreLegal(iniReader, ivc, err);
+}
+/* end mtree INI checking */
+namespace mt {
+ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & mInstance,
+                                               ::INIReader & iniReader,
+                                               std::ostream & err) {
+    INIValueChecker ivc;
+    std::string value = iniReader.Get("action", "action", "LScore");
+    ProcessActionsEnum action = ivc.parseActionAction(value);
+
+    err.flush();
+    return action;
+}
+void NCL2MT::processTree(std::ostream *os,
             unsigned numTaxa,
             const NxsDiscreteDatatypeMapper * dataMapper,
             const NxsCDiscreteStateSet ** compressedMatrix,
             const vector<double> & patternWeights,
             const vector<int> &origToCompressed,
             const NxsSimpleTree & nxsTree,
-            const mt::ModelDescription & md,
-            mt::ProcessActionsEnum action) {
+            const ModelDescription & md,
+            ::INIReader & iniReader) {
     assert(dataMapper != nullptr);
     const unsigned numRealChars = patternWeights.size();
     unsigned firstPartLength = patternWeights.size();
@@ -92,7 +131,6 @@ void ncl2mt(std::ostream *os,
     std::vector<unsigned> partLengths(1, firstPartLength);
     mt::CharModel * cm;
     unsigned numRateCats = 1;
-    
     if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
         cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
     } else {
@@ -141,6 +179,7 @@ void ncl2mt(std::ostream *os,
             nd->SetWork(j, (void *) new mt::InternalNodeWork(firstPartLength, numStates, numRateCats));
         }
     }
+    mt::ProcessActionsEnum action = configureBasedOnINI(mtInstance, iniReader, std::cerr);
     try {
         doAnalysis(os, mtInstance, action);
     } catch (...) {
@@ -150,10 +189,12 @@ void ncl2mt(std::ostream *os,
     delete cm;
 }
 
+} // namespace mt
+
 int processContent(PublicNexusReader & nexusReader,
                    const char *gFilename,
                    std::ostream *os,
-                   mt::ProcessActionsEnum action) {
+                   INIReader & iniReader) {
     BlockReaderList blocks = nexusReader.GetUsedBlocksInOrder();
     if (blocks.size() == 0) {
         cerr << "Error:\n No understandable content was found.\n";
@@ -208,17 +249,18 @@ int processContent(PublicNexusReader & nexusReader,
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
     //mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
     mt::ModelDescription md(mt::ModelDescription::NO_ASC_BIAS); //@TODO should be run-time setting
+    mt::NCL2MT ncl2mt;
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
-        ncl2mt(os, 
-               ntaxTotal,
-               dm,
-               (const NxsCDiscreteStateSet **) matrixAlias,
-               patternWeights,
-               originalIndexToCompressed,
-               nst,
-               md,
-               action);
+        ncl2mt.processTree(os,
+                           ntaxTotal,
+                           dm,
+                           (const NxsCDiscreteStateSet **) matrixAlias,
+                           patternWeights,
+                           originalIndexToCompressed,
+                           nst,
+                           md,
+                           iniReader);
     }
     return 0;
 }
@@ -256,7 +298,7 @@ int processFilepath(
     const char * filename, // name of the file to be read
     std::ostream * os, // output stream to use (NULL for no output). Not that cerr is used to report errors.
     MultiFormatReader::DataFormatType fmt, // enum indicating the file format to expect.
-    mt::ProcessActionsEnum currentAction) {
+    INIReader & iniReader) {
     assert(filename);
     int rc;
     try {
@@ -268,7 +310,7 @@ int processFilepath(
         try {
             nexusReader->DemoteBlocks();
             nexusReader->ReadFilepath(filename, fmt);
-            rc = processContent(*nexusReader, filename, os, currentAction);
+            rc = processContent(*nexusReader, filename, os, iniReader);
         } catch(...) {
             nexusReader->DeleteBlocksFromFactories();
             delete nexusReader;
@@ -286,21 +328,21 @@ int processFilepath(
     }
 }
 
-int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, mt::ProcessActionsEnum currentAction) {
+int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, INIReader & iniReader) {
     if (!gQuietMode) {
         cerr << "[Reading " << filename << "     ]" << endl;
     }
     try {
         std::ostream * outStream = 0L;
         outStream = &cout;
-        return processFilepath(filename, outStream, fmt, currentAction);
+        return processFilepath(filename, outStream, fmt, iniReader);
     } catch (...) {
-        cerr << "Normalizing of " << filename << " failed (with an exception)" << endl;
+        cerr << "Computing on " << filename << " failed (with an exception)" << endl;
         return 1;
     }
 }
 
-int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, mt::ProcessActionsEnum currentAction) {
+int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, INIReader & iniReader) {
     ifstream masterStream(masterFilepath, ios::binary);
     if (masterStream.bad()) {
         cerr << "Could not open " << masterFilepath << "." << endl;
@@ -310,7 +352,7 @@ int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFor
     while ((!masterStream.eof())  && masterStream.good()) {
         masterStream.getline(filename, 1024);
         if (strlen(filename) > 0 && filename[0] != '#') {
-            int rc = readFilepathAsNEXUS(filename, fmt, currentAction);
+            int rc = readFilepathAsNEXUS(filename, fmt, iniReader);
             if (rc != 0) {
                 return rc;
             }
@@ -341,7 +383,6 @@ void printHelp(std::ostream & out) {
 }
 
 int do_main(int argc, char *argv[]) {
-    mt::ProcessActionsEnum currentAction= mt::SCORE_ACTION;
     NxsReader::setNCLCatchesSignals(true);
     MultiFormatReader::DataFormatType f(MultiFormatReader::NEXUS_FORMAT);
     std::string iniFilename;
@@ -387,6 +428,10 @@ int do_main(int argc, char *argv[]) {
                     std::cerr << "Can't load \"" << iniFilename << "\"\n";
                     return 6;
                 }
+                if (!preDataINICheck(*iniReader, std::cerr)) {
+                    std::cerr << "Exiting do to errors in \"" << iniFilename << "\"\n";
+                    return 7;
+                }
             } else {
                 cerr << "Expecting an INI filepath after the -m flag\n";
                 return 4;
@@ -405,13 +450,13 @@ int do_main(int argc, char *argv[]) {
             continue;
         if (strlen(filepath) > 2 && filepath[0] == '-' && filepath[1] == 'l') {
             readfile = true;
-            int rc = readFilesListedIsFile(filepath+2, f, currentAction);
+            int rc = readFilesListedIsFile(filepath+2, f, *iniReader);
             if (rc != 0) {
                 return rc;
             }
         } else if (filepath[0] != '-') {
             readfile = true;
-            int rc = readFilepathAsNEXUS(filepath, f, currentAction);
+            int rc = readFilepathAsNEXUS(filepath, f, *iniReader);
             if (rc != 0) {
                 return rc;
             }

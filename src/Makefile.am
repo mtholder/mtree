@@ -7,6 +7,7 @@ noinst_HEADERS = \
 	mt_char_model.h \
 	mt_data.h \
 	mt_log.h \
+	mt_ini_options.h \
 	mt_optimize_branches.h \
 	mt_tree.h \
 	mt_tree_traversal.h \

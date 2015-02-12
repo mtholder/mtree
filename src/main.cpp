@@ -429,7 +429,7 @@ int do_main(int argc, char *argv[]) {
                     return 6;
                 }
                 if (!preDataINICheck(*iniReader, std::cerr)) {
-                    std::cerr << "Exiting do to errors in \"" << iniFilename << "\"\n";
+                    std::cerr << "Exiting due to errors in \"" << iniFilename << "\"\n";
                     return 7;
                 }
             } else {

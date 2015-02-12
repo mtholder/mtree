@@ -7,7 +7,8 @@ namespace mt {
 class NCL2MT;
 
 enum ProcessActionsEnum {
-    SCORE_ACTION=0
+    SCORE_ACTION=0,
+    TREE_SEARCH=1
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;
@@ -22,6 +23,7 @@ class MTInstance {
         PartitionedMatrix partMat;
         Tree tree;
         OptimizationSettings optSettings;
+        bool HasSearchConverged;
         CharModel & GetCharModel() {
             return *charModelPtr;
         }

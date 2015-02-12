@@ -159,7 +159,7 @@ class CharModel;
 
 class InternalNodeWork {
     public:
-        InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates) 
+        InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates)
             :claAtNdFromNd(numStates*numRates*numChars),
              claAtNdFromPar(numStates*numRates*numChars),
              claAtParFromNd(numStates*numRates*numChars),
@@ -185,7 +185,7 @@ class InternalNodeWork {
 
 class LeafWork: public InternalNodeWork {
     public:
-        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates) 
+        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates)
             :InternalNodeWork(numChars, numStates, numRates),
             summed(numStateCodes*numStates*numRates){
                 _DEBUG_VAL(numStateCodes);
@@ -214,7 +214,7 @@ class Arc {
                         fromIsChild = true;
                         edgeLenPtr = &(fromNode->edgeLen);
                     }
-                } else { /* not reall a "child" */
+                } else { /* not really a "child" */
                     fromIsChild = true;
                 }
             }

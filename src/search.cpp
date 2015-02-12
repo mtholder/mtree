@@ -3,63 +3,19 @@
 
 #include <assert.h>
 
-// Implementation of Tree Topology Search Algorithm ported from PLL
+// Implementation of Tree Topology Search Algorithm ported from PLL (searchAlgo.c and topologies.c)
 
-void performSearch (MTInstance &instance, int steps, Node *p);
-
-
-
-static void saveTopolRELLRec(MTInstance *tr, Node *p, topolRELL *tpl, int *i, int numsp)
-{
-  int k;
-  if(isTip(p->number, numsp))
-    return;
-  else
-    {
-      nodeptr q = p->next;
-      while(q != p)
-    {
-      tpl->connect[*i].p = q;
-      tpl->connect[*i].q = q->back;
-
-      if(tr->grouped ||  tr->constrained)
-        {
-          tpl->connect[*i].cp = tr->constraintVector[q->number];
-          tpl->connect[*i].cq = tr->constraintVector[q->back->number];
-        }
-
-      for(k = 0; k < PLL_NUM_BRANCHES; k++)
-        tpl->connect[*i].z[k] = q->z[k];
-      *i = *i + 1;
-
-      saveTopolRELLRec(tr, q->back, tpl, i, numsp);
-      q = q->next;
-    }
-    }
+void performSearch (MTInstance &instance, int steps, Node *p) {
+  BestTree *treeList; // Need to allocate space?
+  for (int i = 0; (!instance.HasSearchConverged); i++) {
+    //Optimize branch lengths of tree here
+    treeList[i] = BestTree::BestTree(double ScoreTree(instance.partmat, instance.tree, instance.GetCharModel()),
+                               Tree instance.tree);
+    searchStep(instance);
+  }
+  return;
 }
 
-static void saveTopolRELL(pllInstance *tr, topolRELL *tpl)
-{
-  nodeptr p = tr->start;
-  int k, i = 0;
+void searchStep (MTInstance &instance) {
 
-  tpl->likelihood = tr->likelihood;
-  tpl->start      = 1;
-
-  tpl->connect[i].p = p;
-  tpl->connect[i].q = p->back;
-
-  if(tr->grouped ||  tr->constrained)
-    {
-      tpl->connect[i].cp = tr->constraintVector[p->number];
-      tpl->connect[i].cq = tr->constraintVector[p->back->number];
-    }
-
-  for(k = 0; k < PLL_NUM_BRANCHES; k++)
-    tpl->connect[i].z[k] = p->z[k];
-  i++;
-
-  saveTopolRELLRec(tr, p->back, tpl, &i, tr->mxtips);
-
-  assert(i == 2 * tr->mxtips - 3);
 }

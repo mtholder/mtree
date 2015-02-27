@@ -3,7 +3,7 @@
 #include "mt_char_model.h"
 #include "mt_log.h"
 #include "mt_data.h"
-//#include "search.h"
+#include "search.h"
 #include <algorithm>
 using namespace std;
 namespace mt {
@@ -176,14 +176,23 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 #include "mt_instance.h"
 
 namespace mt {
+
+
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
+    //action = TREE_SEARCH;
     if (action == SCORE_ACTION) {
         const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
     } else if (action == TREE_SEARCH) {
-      int steps = 10;
+      //int steps = 10;
+      double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+      *os << "Starting likelihood = " << startL << "\n";
+      Node * p = instance.tree.GetRoot()->leftChild->rightSib->rightSib;
+      mtreeTestSPR (instance, p, 2, startL);
+      double endL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+      *os << "Likelihood after subtree removed = " << endL << "\n";
     //  performSearch(instance, steps, instance.tree);
     }
 }

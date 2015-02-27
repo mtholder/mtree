@@ -10,6 +10,7 @@
 #include "mt_instance.h"
 #include "mt_ini_options.h"
 #include "mt_char_model.h"
+#include "search.h"
 using namespace std;
 namespace mt {
     class NCL2MT {

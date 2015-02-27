@@ -60,14 +60,14 @@ boolean optimizeAllLengthsForOneEdgeHook(Arc edge, MTInstance & mtInstance) {
     const double brLenDiffThreshold = mtInstance.settings.brLenDiffThreshold;
     vector<double> origEdgeLen(edge.GetEdgeLengthValue());
     vector<double> edgeLenCopy(origEdgeLen);
-    makenewzGeneric(tr, p, q, z0, newzpercycle, &edgeLenCopy[0]);  
+    makenewzGeneric(tr, p, q, z0, newzpercycle, &edgeLenCopy[0]);
     vector<char> smoothed = instance.settings.partitionSmoothed;
     for(auto i = 0U; i < numPartBranchLengths; i++) {
         if (instance.settings.partitionConverged[i]) {
-            if(abs(edgeLenCopy[i] - origEdgeLen[i]) > brLenDiffThreshold) {         
+            if(abs(edgeLenCopy[i] - origEdgeLen[i]) > brLenDiffThreshold) {
                 smoothed[i] = 0;
             }
-            edgeLengthPtr[i] = edgeLenCopy[i];  
+            edgeLengthPtr[i] = edgeLenCopy[i];
         }
     }
     instance.settings.partitionSmoothed = smoothed;
@@ -76,17 +76,17 @@ boolean optimizeAllLengthsForOneEdgeHook(Arc edge, MTInstance & mtInstance) {
 
 
 void update(pllInstance *tr, partitionList *pr, nodeptr p)
-{       
-  nodeptr  q; 
+{
+  nodeptr  q;
   int i;
   double   z[PLL_NUM_BRANCHES], z0[PLL_NUM_BRANCHES];
   int numBranches = pr->perGeneBranchLengths ? pr->numberOfPartitions : 1;
 
 
-  q = p->back;   
+  q = p->back;
 
   for(i = 0; i < numBranches; i++)
-    z0[i] = q->z[i];    
+    z0[i] = q->z[i];
 
   if(numBranches > 1)
     makenewzGeneric(tr, pr, p, q, z0, PLL_NEWZPERCYCLE, z, PLL_TRUE);
@@ -94,25 +94,25 @@ void update(pllInstance *tr, partitionList *pr, nodeptr p)
     makenewzGeneric(tr, pr, p, q, z0, PLL_NEWZPERCYCLE, z, PLL_FALSE);
 
   for(i = 0; i < numBranches; i++)
-  {         
+  {
     if(!tr->partitionConverged[i])
-    {     
-      if(PLL_ABS(z[i] - z0[i]) > PLL_DELTAZ)  
-      {       
+    {
+      if(PLL_ABS(z[i] - z0[i]) > PLL_DELTAZ)
+      {
         tr->partitionSmoothed[i] = PLL_FALSE;
-      }  
+      }
 
-      p->z[i] = q->z[i] = z[i];  
+      p->z[i] = q->z[i] = z[i];
     }
   }
- 
+
 }
 
 
 // makenewzGeneric in PLL (makenewzgenericspecial.c)
-/** @brief Optimize branch length value(s) of a given branch with the Newton-Raphtson procedure 
+/** @brief Optimize branch length value(s) of a given branch with the Newton-Raphtson procedure
  *
- * @warning A given branch may have one or several branch length values (up to PLL_NUM_BRANCHES), usually the later refers to partition-specific branch length values. Thus z0 and result represent collections rather than double values. The number of branch length values is given by \a tr->numBranches 
+ * @warning A given branch may have one or several branch length values (up to PLL_NUM_BRANCHES), usually the later refers to partition-specific branch length values. Thus z0 and result represent collections rather than double values. The number of branch length values is given by \a tr->numBranches
  *
  * @param tr
  *   Library instance
@@ -124,16 +124,16 @@ void update(pllInstance *tr, partitionList *pr, nodeptr p)
  *   The other node side of the branch (usually p->back), but the branch length can be estimated even if p and q are
  *   not connected, e.g. before the insertion of a subtree.
  *
- * @param z0 
- *   Initial branch length value(s) for the given branch \a p->z 
+ * @param z0
+ *   Initial branch length value(s) for the given branch \a p->z
  *
- * @param maxiter 
- *   Maximum number of iterations in the Newton-Raphson procedure 
+ * @param maxiter
+ *   Maximum number of iterations in the Newton-Raphson procedure
  *
- * @param result 
- *   Resulting branch length value(s) for the given branch \a p->z 
+ * @param result
+ *   Resulting branch length value(s) for the given branch \a p->z
  *
- * @param mask 
+ * @param mask
  *   Specifies if a mask to track partition convergence (\a tr->partitionConverged) is being used.
  *
  * @sa typical values for \a maxiter are constants \a iterations and \a PLL_NEWZPERCYCLE
@@ -145,11 +145,11 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
   //boolean originalExecute[PLL_NUM_BRANCHES];
   int numBranches = pr->perGeneBranchLengths?pr->numberOfPartitions:1;
 
-  boolean 
+  boolean
     p_recom = PLL_FALSE, /* if one of was missing, we will need to force recomputation */
     q_recom = PLL_FALSE;
 
-  /* the first entry of the traversal descriptor stores the node pair that defines 
+  /* the first entry of the traversal descriptor stores the node pair that defines
      the branch */
 
   tr->td[0].ti[0].pNumber = p->number;
@@ -187,7 +187,7 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
   }
 
 
-  /* compute the traversal descriptor of the likelihood vectors  that need to be re-computed 
+  /* compute the traversal descriptor of the likelihood vectors  that need to be re-computed
      first in makenewzIterative */
 
   tr->td[0].count = 1;
@@ -209,16 +209,16 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
     unpinNode(tr->rvec, q->number, tr->mxtips);
   }
 
-  /* fix eceuteModel this seems to be a bit redundant with topLevelMakenewz */ 
+  /* fix eceuteModel this seems to be a bit redundant with topLevelMakenewz */
 
   for(i = 0; i < numBranches; i++)
     pr->partitionData[i]->executeModel = PLL_TRUE;
 }
 
 /* the function below actually implements the iterative Newton-Raphson procedure.
-   It is particularly messy and hard to read because for the case of per-partition branch length 
-   estimates it needs to keep track of whether the Newton Raphson procedure has 
-   converged for each partition individually. 
+   It is particularly messy and hard to read because for the case of per-partition branch length
+   estimates it needs to keep track of whether the Newton Raphson procedure has
+   converged for each partition individually.
 
    The rational efor doing it like this is also provided in:
 
@@ -238,7 +238,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
   boolean loopConverged;
 
   /* figure out if this is on a per partition basis or jointly across all partitions */
-  /* initialize loop convergence variables etc. 
+  /* initialize loop convergence variables etc.
      maxiter is the maximum number of NR iterations we are going to do before giving up */
 
   for(i = 0; i < numBranches; i++)
@@ -268,7 +268,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
 
     for(i = 0; i < numBranches; i++)
     {
-      /* other case, the outer loop hasn't converged but we are trying to approach 
+      /* other case, the outer loop hasn't converged but we are trying to approach
          the maximum from the wrong side */
 
       if(outerConverged[i] == PLL_FALSE && tr->curvatOK[i] == PLL_FALSE)
@@ -312,23 +312,23 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
 
 #if (defined(_FINE_GRAIN_MPI) || defined(_USE_PTHREADS))
 
-    /* if this is the first iteration of NR we will need to first do this one-time call 
+    /* if this is the first iteration of NR we will need to first do this one-time call
        of maknewzIterative() Note that, only this call requires broadcasting the traversal descriptor,
        subsequent calls to pllMasterBarrier(PLL_THREAD_MAKENEWZ, tr); will not require this
        */
 
     if(firstIteration)
       {
-        tr->td[0].traversalHasChanged = PLL_TRUE; 
+        tr->td[0].traversalHasChanged = PLL_TRUE;
         pllMasterBarrier (tr, pr, PLL_THREAD_MAKENEWZ_FIRST);
-        firstIteration = PLL_FALSE; 
-        tr->td[0].traversalHasChanged = PLL_FALSE; 
+        firstIteration = PLL_FALSE;
+        tr->td[0].traversalHasChanged = PLL_FALSE;
       }
-    else 
+    else
       pllMasterBarrier(tr, pr, PLL_THREAD_MAKENEWZ);
     branchLength_parallelReduce(tr, (double*)dlnLdlz, (double*)d2lnLdlz2, numBranches);
     printf(" makenewz after branchLength_parallelReduce dlnLdlz = %lf d2lnLdlz2 = %lf\n", dlnLdlz, d2lnLdlz2);
-#else 
+#else
     /* sequential part, if this is the first newton-raphson implementation,
        do the precomputations as well, otherwise just execute the computation
        of the derivatives */
@@ -341,7 +341,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
     printf(" makenewz after execCore dlnLdlz = %lf d2lnLdlz2 = %lf\n", dlnLdlz, d2lnLdlz2);
 #endif
 
-    /* do a NR step, if we are on the correct side of the maximum that's okay, otherwise 
+    /* do a NR step, if we are on the correct side of the maximum that's okay, otherwise
        shorten branch */
 
     for(i = 0; i < numBranches; i++)
@@ -428,7 +428,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
     pr->partitionData[model]->executeModel = PLL_TRUE;
 
   /* copy the new branches in the result array of branches.
-     if we don't do a per partition estimate of 
+     if we don't do a per partition estimate of
      branches this will only set result[0]
      */
 

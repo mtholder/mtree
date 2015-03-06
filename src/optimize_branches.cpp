@@ -1,24 +1,46 @@
+#include <vector>
+
+#include "mt_tree.h"
 #include "mt_optimize_branches.h"
+#include "mt_tree.h"
+#include "mt_data.h"
+
+#if 0
 // optimize branch lengths - this is a port of PLL code.
 namespace mt {
 
 /// smoothTree in PLL
 
+static bool allSmoothed (MTInstance &instance, int numBranches) {
+  bool result = true;
+
+  for(int i = 0; i < numBranches; i++)
+  {
+    if(instance.optSettings.partitionSmoothed[i] == false)
+      result = false;
+    else
+      instance.optSettings.partitionConverged[i] = true;
+  }
+
+  return result;
+}
+}
+
 void optimizeAllBranchLengthsForAllPartitions(MTInstance &instance) {
-#if 0
-    const unsigned numPartBranchLengths = instance.GetNumPartitions();
-    instance.settings.partitionConverged.assign(numPartBranchLengths, 0);
-    unsigned maxLoops = instance.settings.maxIterBrLenSmoothing;
+
+    const unsigned numPartBranchLengths = instance.partMat.GetNumPartitions();
+    instance.optSettings.partitionConverged.assign(numPartBranchLengths, 0);
+    unsigned maxLoops = instance.optSettings.maxIterBrLenSmoothing;
     while (--maxLoops >= 0) {
-        instance.settings.partitionSmoothed.assign(numPartBranchLengths, 1);
+        instance.optSettings.partitionSmoothed.assign(numPartBranchLengths, 1);
         sweepOverTreeOptimizeAllBranchLengthsForAllPartitions(instance);
-        if (allSmoothed(tr, numPartBranchLengths))
+        if (allSmoothed(instance, numPartBranchLengths))
             break;
     }
     instance.settings.partitionConverged.assign(numPartBranchLengths, 0);
-#endif
 }
-#if 0
+
+
 template<typename T>
 class BeforeAfterIter {
     BeforeAfterIter(Node *, (*before)(Node *, T), (*after)(Node *, T), T blob);
@@ -32,7 +54,7 @@ class BeforeAfterIter {
 */
 void sweepOverTreeOptimizeAllBranchLengthsForAllPartitions (MTInstance &instance)
 {
-    const unsigned numPartBranchLengths = instance.GetNumPartitions();
+    const unsigned numPartBranchLengths = instance.partMat.GetNumPartitions();
     Tree & tree = instance.tree;
     Node * root = tree.GetRoot();
     void * blob = &(instance);
@@ -42,45 +64,49 @@ void sweepOverTreeOptimizeAllBranchLengthsForAllPartitions (MTInstance &instance
     }
 }
 
-boolean updatCLAForExit(Node * node, void * mtInstance) {
+void updatePartials(MTInstance &instance, Node * node) {
+
+}
+
+bool updatCLAForExit(Node * node, void * mtInstance) {
     if(numBranches > 1 && !tr->useRecom)
-      pllUpdatePartials(tr, pr,p, PLL_TRUE);
+      updatePartials(mtInstance, node);
     else
-      pllUpdatePartials(tr, pr,p, PLL_FALSE);
+      updatePartials(mtInstance, node);
 }
 
 //pll optimizeAllLengthsForOneEdge update
-boolean optimizeAllLengthsForOneEdgeHook(Node * node, void * mtInstance) {
+bool optimizeAllLengthsForOneEdgeHook(Node * node, void * mtInstance) {
     MTInstance * instance = (MTInstance *)mtInstance;
-    return optimizeAllLengthsForOneEdge(node, *instance);
+    Arc arc = (node, node->parent);
+    return optimizeAllLengthsForOneEdge(arc, *instance);
 }
 
-boolean optimizeAllLengthsForOneEdgeHook(Arc edge, MTInstance & mtInstance) {
+bool optimizeAllLengthsForOneEdge(Arc edge, MTInstance & mtInstance) {
     const unsigned numPartBranchLengths = instance.GetNumPartitions();
-    const double brLenDiffThreshold = mtInstance.settings.brLenDiffThreshold;
+    const double brLenDiffThreshold = mtInstance.optSettings.brLenDiffThresh;
     vector<double> origEdgeLen(edge.GetEdgeLengthValue());
     vector<double> edgeLenCopy(origEdgeLen);
-    makenewzGeneric(tr, p, q, z0, newzpercycle, &edgeLenCopy[0]);
-    vector<char> smoothed = instance.settings.partitionSmoothed;
+    int newzpercycle = 1;
+    makenewzGeneric(mtInstance, edge, newzpercycle, &edgeLenCopy[0]);
+    vector<char> smoothed = instance.optSettings.partitionSmoothed;
     for(auto i = 0U; i < numPartBranchLengths; i++) {
         if (instance.settings.partitionConverged[i]) {
-            if(abs(edgeLenCopy[i] - origEdgeLen[i]) > brLenDiffThreshold) {
+            if(abs(edgeLenCopy[i] - origEdgeLen[i]) > brLenDiffThresh) {
                 smoothed[i] = 0;
             }
             edgeLengthPtr[i] = edgeLenCopy[i];
         }
     }
-    instance.settings.partitionSmoothed = smoothed;
+    instance.optSettings.partitionSmoothed = smoothed;
   return TRUE;
 }
 
-
-void update(pllInstance *tr, partitionList *pr, nodeptr p)
+/*
+void update(MTInstance &instance, Arc edge)
 {
-  nodeptr  q;
-  int i;
   double   z[PLL_NUM_BRANCHES], z0[PLL_NUM_BRANCHES];
-  int numBranches = pr->perGeneBranchLengths ? pr->numberOfPartitions : 1;
+  const unsigned numBranches = instance.partMat.GetNumPartitions();
 
 
   q = p->back;
@@ -107,8 +133,87 @@ void update(pllInstance *tr, partitionList *pr, nodeptr p)
   }
 
 }
+*/
+
+void makenewzGeneric(MTInstance &instance, Arc edge, int maxiter, double *result)
+{
+  int i;
+  //boolean originalExecute[PLL_NUM_BRANCHES];
+  const unsigned numPartBranchLengths = instance.GetNumPartitions();
+
+  bool
+    p_recom = false, /* if one of was missing, we will need to force recomputation */
+    q_recom = false;
+
+  /* the first entry of the traversal descriptor stores the node pair that defines
+     the branch */
 
 
+  tr->td[0].ti[0].pNumber = p->number;
+  tr->td[0].ti[0].qNumber = q->number;
+
+  for(i = 0; i < numBranches; i++)
+  {
+    //originalExecute[i] =  pr->partitionData[i]->executeModel;
+    tr->td[0].ti[0].qz[i] =  z0[i];
+    if(mask)
+    {
+      if (tr->partitionConverged[i])
+        pr->partitionData[i]->executeModel = PLL_FALSE;
+      else
+        pr->partitionData[i]->executeModel = PLL_TRUE;
+    }
+  }
+  if (tr->useRecom)
+  {
+    int
+      slot = -1;
+      //count = 0;
+
+    /* Ensure p and q get a unpinnable slot in physical memory */
+    if(!isTip(q->number, tr->mxtips))
+    {
+      q_recom = getxVector(tr->rvec, q->number, &slot, tr->mxtips);
+      tr->td[0].ti[0].slot_q = slot;
+    }
+    if(!isTip(p->number, tr->mxtips))
+    {
+      p_recom = getxVector(tr->rvec, p->number, &slot, tr->mxtips);
+      tr->td[0].ti[0].slot_p = slot;
+    }
+  }
+
+
+  /* compute the traversal descriptor of the likelihood vectors  that need to be re-computed
+     first in makenewzIterative */
+
+  tr->td[0].count = 1;
+
+  if(p_recom || needsRecomp(tr->useRecom, tr->rvec, p, tr->mxtips))
+    computeTraversal(tr, p, PLL_TRUE, numBranches);
+
+  if(q_recom || needsRecomp(tr->useRecom, tr->rvec, q, tr->mxtips))
+    computeTraversal(tr, q, PLL_TRUE, numBranches);
+
+  /* call the Newton-Raphson procedure */
+
+  topLevelMakenewz(tr, pr, z0, maxiter, result);
+
+  /* Mark node as unpinnable */
+  if(tr->useRecom)
+  {
+    unpinNode(tr->rvec, p->number, tr->mxtips);
+    unpinNode(tr->rvec, q->number, tr->mxtips);
+  }
+
+  /* fix eceuteModel this seems to be a bit redundant with topLevelMakenewz */
+
+  for(i = 0; i < numBranches; i++)
+    pr->partitionData[i]->executeModel = PLL_TRUE;
+}
+#endif
+
+#if 0
 // makenewzGeneric in PLL (makenewzgenericspecial.c)
 /** @brief Optimize branch length value(s) of a given branch with the Newton-Raphtson procedure
  *
@@ -227,7 +332,8 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
 
 */
 
-static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, int _maxiter, double *result)
+
+void topLevelMakenewz(MTInstance *tr, partitionList * pr, double *z0, int _maxiter, double *result)
 {
   double   z[PLL_NUM_BRANCHES], zprev[PLL_NUM_BRANCHES], zstep[PLL_NUM_BRANCHES];
   volatile double  dlnLdlz[PLL_NUM_BRANCHES], d2lnLdlz2[PLL_NUM_BRANCHES];
@@ -258,7 +364,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
     {
       if(outerConverged[i] == PLL_FALSE && tr->curvatOK[i] == PLL_TRUE)
       {
-        tr->curvatOK[i] = PLL_FALSE;
+        tr->curvatOK[i] = FALSE;
 
         zprev[i] = z[i];
 
@@ -310,7 +416,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
 
     storeValuesInTraversalDescriptor(tr, pr, &(tr->coreLZ[0]));
 
-#if (defined(_FINE_GRAIN_MPI) || defined(_USE_PTHREADS))
+//#if (defined(_FINE_GRAIN_MPI) || defined(_USE_PTHREADS))
 
     /* if this is the first iteration of NR we will need to first do this one-time call
        of maknewzIterative() Note that, only this call requires broadcasting the traversal descriptor,
@@ -328,19 +434,20 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
       pllMasterBarrier(tr, pr, PLL_THREAD_MAKENEWZ);
     branchLength_parallelReduce(tr, (double*)dlnLdlz, (double*)d2lnLdlz2, numBranches);
     printf(" makenewz after branchLength_parallelReduce dlnLdlz = %lf d2lnLdlz2 = %lf\n", dlnLdlz, d2lnLdlz2);
-#else
+//#else
     /* sequential part, if this is the first newton-raphson implementation,
        do the precomputations as well, otherwise just execute the computation
        of the derivatives */
     if(firstIteration)
       {
         makenewzIterative(tr, pr);
-        firstIteration = PLL_FALSE;
+        firstIteration = FALSE;
       }
     execCore(tr, pr, dlnLdlz, d2lnLdlz2);
     printf(" makenewz after execCore dlnLdlz = %lf d2lnLdlz2 = %lf\n", dlnLdlz, d2lnLdlz2);
 #endif
 
+#if 0
     /* do a NR step, if we are on the correct side of the maximum that's okay, otherwise
        shorten branch */
 
@@ -436,6 +543,7 @@ static void topLevelMakenewz(pllInstance *tr, partitionList * pr, double *z0, in
     result[i] = z[i];
 }
 
-#endif
+
 
 }// namespace
+#endif

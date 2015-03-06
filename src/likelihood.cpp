@@ -179,7 +179,7 @@ namespace mt {
 
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
-    //action = TREE_SEARCH;
+    action = TREE_SEARCH;
     if (action == SCORE_ACTION) {
         const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
         if (os) {
@@ -189,7 +189,7 @@ void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum act
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
       *os << "Starting likelihood = " << startL << "\n";
-      Node * p = instance.tree.GetRoot()->leftChild->rightSib->rightSib;
+      Node * p = instance.tree.GetLeaf(4)->parent->parent;
       mtreeTestSPR (instance, p, 2, startL);
       double endL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
       *os << "Likelihood after subtree removed = " << endL << "\n";

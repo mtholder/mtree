@@ -12,7 +12,9 @@ enum ProcessActionsEnum {
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;
-
+    double brLenDiffThreshold;
+    bool partitionConverged[50];
+    bool partitionSmoothed[50];
     OptimizationSettings()
         :maxIterBrLenSmoothing(20) {
     }

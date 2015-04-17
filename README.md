@@ -49,6 +49,6 @@ INI file parsing code (ini.c, ini.h, INIReader.cpp, INIReader.cpp)
     is from the inih project https://code.google.com/p/inih/ which
     is released under the BSD License.
 
-Thanks the US National Science Foundation and the
+Thanks to the US National Science Foundation and the
     Heidelberg Institute for Theoretical Studies.
 

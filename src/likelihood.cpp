@@ -7,6 +7,7 @@
 #include <algorithm>
 using namespace std;
 namespace mt {
+
 void pruneProductStep(const vector<const double *> & v, double * dest, unsigned n) {
     for (auto i = 0U; i < n; ++i) {
         dest[i] = 1.0;
@@ -27,7 +28,7 @@ double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
     unsigned numChars =  c.GetNumChars(partIndex);
     while (c.toNode) {
         _DEBUG_VAL(c.fromNode->number);
-        const double edgeLen = c.GetEdgeLen();
+        const double edgeLen = c.GetEdgeLen(partIndex);
         if (c.IsFromLeaf()) {
             const LeafCharacterVector * data = c.GetFromNdData(partIndex);
             LeafWork * lw = c.GetFromNdLeafWork(partIndex);
@@ -42,7 +43,6 @@ double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
             pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
             double * afterArc = c.GetFromNdCLA(partIndex, true);
             cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
-
             _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
             _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
         }
@@ -174,9 +174,22 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 } // namespace
 
 #include "mt_instance.h"
+#include "mt_optimize_branches.h"
 
 namespace mt {
 
+void doEdgeLengthOptimization(ostream * os, MTInstance & instance) {
+    //int steps = 10;
+    double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+    Node * p = instance.tree.GetLeaf(4)->parent;
+    Arc edge{p->parent, p};
+    const std::size_t partIndex = 0; //@TMP
+    const double origLen = edge.GetEdgeLen(partIndex);
+    *os << "Starting likelihood = " << startL << " for branch length = " << origLen << "\n";
+    double endL = optimizeAllLengthsForOneEdge(edge, instance);
+    const double endLen = edge.GetEdgeLen(partIndex);
+    *os << "Likelihood after optimizing one branch = " << endL << " for branch length = " << endLen << "\n";
+}
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     action = SCORE_ACTION;
@@ -185,6 +198,8 @@ void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum act
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
+    } else if (action == OPTIMIZE_EDGE_LENGTH) {
+        doEdgeLengthOptimization(os, instance);
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());

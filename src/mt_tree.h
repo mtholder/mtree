@@ -37,7 +37,7 @@ class Node {
              leftChild(nullptr),
              rightSib(nullptr),
              number(UINT_MAX),
-             edgeLen(-1.0) {
+             edgeLenVec(1U, -1.0) {
         }
         std::vector<Node *> GetChildren() {
             std::vector<Node *> c;
@@ -65,7 +65,7 @@ class Node {
             }
             assert(c->rightSib == nullptr);
             c->rightSib = nullptr;
-            c->SetEdgeLen(edgeLen);
+            c->SetEdgeLen(0, edgeLen);
         }
         Node * GetLastChild() {
             if (this->leftChild == nullptr) {
@@ -77,11 +77,17 @@ class Node {
             }
             return c;
         }
-        void SetEdgeLen(double e) {
-            this->edgeLen = e;
+        void SetEdgeLen(std::size_t index, double e) {
+            this->edgeLenVec.at(index) = e;
         }
-        double GetEdgeLen() {
-            return this->edgeLen;
+        double GetEdgeLen(std::size_t index) const {
+            return this->edgeLenVec.at(index);
+        }
+        const std::vector<double> & GetEdgeLenVec() const {
+            return this->edgeLenVec;
+        }
+        std::vector<double> & GetEdgeLenVec() {
+            return this->edgeLenVec;
         }
         bool IsLeaf() const {
             return this->leftChild == nullptr;
@@ -110,7 +116,7 @@ class Node {
         Node * leftChild;
         Node * rightSib;
         unsigned number;
-        double edgeLen;
+        std::vector<double> edgeLenVec;
         std::vector<void *> data;
         std::vector<void *> work;
 };
@@ -203,26 +209,32 @@ class Arc {
         Arc(Node * fromNd, Node * toNd)
             :fromNode(fromNd),
             toNode(toNd),
-            edgeLenPtr(nullptr),
+            edgeLenVecPtr(nullptr),
             fromIsChild(false) {
                 if (toNd) {
                     if (toNode->parent == fromNode) {
                         fromIsChild = false;
-                        edgeLenPtr = &(toNode->edgeLen);
+                        edgeLenVecPtr = &(toNode->GetEdgeLenVec());
                     } else {
                         assert(fromNode->parent == toNode);
                         fromIsChild = true;
-                        edgeLenPtr = &(fromNode->edgeLen);
+                        edgeLenVecPtr = &(toNode->GetEdgeLenVec());
                     }
                 } else { /* not really a "child" */
                     fromIsChild = true;
                 }
             }
-        double GetEdgeLen() const {
-            return *edgeLenPtr;
+        double GetEdgeLen(std::size_t partIndex) const {
+            assert(edgeLenVecPtr != nullptr);
+            return edgeLenVecPtr->at(partIndex);
         }
-        void SetEdgeLen(double x) {
-            *edgeLenPtr = x;
+        std::vector<double> *GetEdgeLenVec() const {
+            return edgeLenVecPtr;
+        }
+
+        void SetEdgeLen(std::size_t partIndex, double x) {
+            assert(edgeLenVecPtr != nullptr);
+            edgeLenVecPtr->at(partIndex) = x;
         }
         bool IsFromLeaf() const {
             return fromNode->IsLeaf();
@@ -256,7 +268,7 @@ class Arc {
         Node * fromNode;
         Node * toNode;
     private:
-        double * edgeLenPtr;
+        std::vector<double> * edgeLenVecPtr;
         bool fromIsChild;
 };
 

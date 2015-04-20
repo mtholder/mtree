@@ -10,10 +10,10 @@
 using namespace std;
 namespace mt {
 
-
-Node * removeSubTree(MTInstance &instance, Node * p) {
+Node * removeSubTree(MTInstance & ,//instance,
+                     Node * p) {
   cout << "removeSubTree called\n";
-  cout << p->parent->parent, "\n";
+  cout << p->parent->parent << "\n";
     if (1) /*(!p.IsLeaf())*/ {
       // assert(IsInTree(instance, p));
       if (p->parent == p->parent->parent->leftChild) {
@@ -46,7 +46,7 @@ Node * removeSubTree(MTInstance &instance, Node * p) {
     // Derived from pllTestSPR.
 void mtreeTestSPR (MTInstance &instance, Node * p, int maxtrav, double bestLnL) {
   if (1)/*(!IsLeaf(p))*/ {
-    double bl = p->edgeLen;
+    //double bl = p->edgeLen;
     Node * n = p->parent;
     Node * fromnode = p->parent->parent;
     Node * subtree = removeSubTree(instance, p);

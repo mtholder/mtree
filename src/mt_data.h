@@ -56,7 +56,7 @@ class PartitionedMatrix {
                 i.resize(numTaxa);
              }
         }
-        unsigned GetNumPartitions() const {
+        std::size_t GetNumPartitions() const {
             return this->partitions.size();
         }
         const LeafCharacterVector * GetLeafCharacters(unsigned partIndex, unsigned leafIndex) const {

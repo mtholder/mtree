@@ -99,18 +99,19 @@ class MkCovarCharModel: public MkCharModel {
             for (auto ri = 0U; ri < nRateCats; ++ri) {
               for (auto rj = 0U; rj < nRateCats; ++rj) {
                 const double eb = rates[ri]*edgeLen;
+                const double eb1 = switchRate*edgeLen;
 
                 if (ri == rj) {
                   const double var1 = 2.0*(1.0 - rates[ri]);
                   const double var2 = 1.0 + (double(numRateCats) - 2.0) - rates[ri];
                   const double var3 = double(numRateCats);
-                  const double probRateChange = std::exp(-eb) + (1.0 - std::exp(-eb))/double(numRateCats);
+                  const double probRateChange = std::exp(-eb1) + (1.0 - std::exp(-eb1))/double(numRateCats);
 
                 } else {
                   const double var1 = 2.0 - rates[ri] - rates[rj];
                   const double var2 = 1.0 - rates[ri] - rates[rj];
                   const double var3 = 0;
-                  const double probRateChange = (1.0 - std::exp(-eb))/double(numRateCats);
+                  const double probRateChange = (1.0 - std::exp(-eb1))/double(numRateCats);
                 }
 
                   const double numerator = (var1 + var2*eb)*std::exp(-eb) + eb - var1;
@@ -136,6 +137,7 @@ class MkCovarCharModel: public MkCharModel {
   private:
       std::vector<double> probMat;
       std::vector<double> rootStateFreq;
+      const double switchRate;
 };
 
 class MkVarNoMissingAscCharModel: public MkCharModel {

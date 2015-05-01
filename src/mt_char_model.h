@@ -11,7 +11,7 @@ class CharModel {
         CharModel(unsigned numStates, unsigned numRateCats)
             :nStates(numStates),
             nRateCats(numRateCats),
-            rates(1, 1.0), 
+            rates(1, 1.0),
             rateProb(1, 1.0) {
         }
         virtual ~CharModel() {
@@ -25,7 +25,7 @@ class CharModel {
         virtual unsigned GetNumStates() const {
             return nStates;
         }
-        
+
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
@@ -72,6 +72,70 @@ class MkCharModel: public CharModel {
     private:
         std::vector<double> probMat;
         std::vector<double> rootStateFreq;
+};
+
+
+//Implementation of the general covarion model is taken from Galtier (2001)
+//using the approximation for transition probabilities in equations 8,9,and 10
+class MkCovarCharModel: public MkCharModel {
+  public:
+      MkCovarCharModel(unsigned numStates, unsigned numRateCats)
+          :MkCharModel(numStates, numRateCats),
+          probMate(numStates*numStates*numRateCats*numRateCats, 0.0),
+          rootStateFreq(numStates, 1.0/double(numStates)) {
+          }
+          virtual ~MkCovarCharModel() {
+          }
+          virtual const double * GetRootStateFreq() const {
+            return &(rootStateFreq[0]);
+          }
+
+          virtual double * calcTransitionProb(double edgeLen) {
+
+            const double fns = double(nStates);
+            const double fnsmo = fns - 1.0;
+            const unsigned nsSq = nStates*nStates;
+
+            for (auto ri = 0U; ri < nRateCats; ++ri) {
+              for (auto rj = 0U; rj < nRateCats; ++rj) {
+                const double eb = rates[ri]*edgeLen;
+
+                if (ri == rj) {
+                  const double var1 = 2.0*(1.0 - rates[ri]);
+                  const double var2 = 1.0 + (double(numRateCats) - 2.0) - rates[ri];
+                  const double var3 = double(numRateCats);
+                  const double probRateChange = std::exp(-eb) + (1.0 - std::exp(-eb))/double(numRateCats);
+
+                } else {
+                  const double var1 = 2.0 - rates[ri] - rates[rj];
+                  const double var2 = 1.0 - rates[ri] - rates[rj];
+                  const double var3 = 0;
+                  const double probRateChange = (1.0 - std::exp(-eb))/double(numRateCats);
+                }
+
+                  const double numerator = (var1 + var2*eb)*std::exp(-eb) + eb - var1;
+                  const double denominator = eb*(1.0 + (var3 - 1.0)*std::exp(-eb));
+                  const double avgRate = numerator/denominator;
+
+                  const double ebavg = avgRate*edgeLen;
+                  const double e = std::exp(-fns*ebavg/fnsmo);
+                  const double diffP = 1.0/fns - e/fns;
+                  const double noDiffP = 1.0/fns +  fnsmo * e/fns;
+
+                for (auto fi = 0U; fi < nStates; ++fi) {
+                    for (auto ti = 0U; ti < nStates; ++ti) {
+                        const double p = (fi == ti ? noDiffP : diffP);
+                        probMat[ri*nRateCats*nsSq + rj*nsSq+ nStates*fi + ti] = p*probRateChange;
+                      }
+                    }
+                }
+              }
+              return &(probMat[0]);
+            }
+
+  private:
+      std::vector<double> probMat;
+      std::vector<double> rootStateFreq;
 };
 
 class MkVarNoMissingAscCharModel: public MkCharModel {

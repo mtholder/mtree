@@ -42,57 +42,22 @@ class TraversalInfo {
     int slot_r;                   /**< In recomputation mode, the RAM slot index for likelihood vector of node r, otherwise unused */
 };
 
-// roughly pInfo in PLL
-class PartitionScoringInfo {
+class ConcatModelInfo {
     public:
-    std::size_t GetNumRateCategories() const {
-        return numRateCategories;
-    }
-    std::size_t GetNumStates() const {
-        return numStates;
-    }
-    void SetExecuteMask(bool v) {
-        executeMask = v;
-    }
-    bool GetExecuteMask() const {
-        return executeMask;
-    }
-    bool CorrectForAscBias() const {
-        return correctForAscBias;
-    }
-    bool GetUseRecom() const {
-        return useRecom;
-    }
-    double * GetXArrayPtr(std::size_t slotNumber) const;
-    unsigned char * GetYArrayPtr(std::size_t yNumber) const;
-    double * GetAscArrayPtr(std::size_t n) const; // pointer math... * pr->partitionData[model]->ascOffset
-    unsigned int * GetGapArrayPtr(std::size_t n) const; // pointer math... * pr->partitionData[model]->gapVectorLength
-    double * GetGapColumn(std::size_t n) const; // * states * rateHet];
-    private:
-    bool executeMask;
-    std::size_t numRateCategories;
-    std::size_t numStates;
-    bool correctForAscBias;
-    bool useRecom;
-};
-
-using PartitionScoringInfoVec = std::vector<PartitionScoringInfo>;
-class ScoringInfo {
-    public:
-        PartitionScoringInfo & GetPartitionScoreInfo(std::size_t i) {
+        PartModelInfo & GetPartitionScoreInfo(std::size_t i) {
             return psiVec.at(i);
         }
-        std::vector<PartitionScoringInfo> & GetPartitionScoreInfoVec() {
+        std::vector<PartModelInfo> & GetPartitionScoreInfoVec() {
             return psiVec;
         }
-        const PartitionScoringInfo & GetPartitionScoreInfo(std::size_t i) const {
+        const PartModelInfo & GetPartitionScoreInfo(std::size_t i) const {
             return psiVec.at(i);
         }
-        const std::vector<PartitionScoringInfo> & GetPartitionScoreInfoVec() const {
+        const std::vector<PartModelInfo> & GetPartitionScoreInfoVec() const {
             return psiVec;
         }
     private:
-        std::vector<PartitionScoringInfo > psiVec;
+        std::vector<PartModelInfo > psiVec;
 };
 
 class TraversalDescriptor {
@@ -128,18 +93,19 @@ class TraversalDescriptor {
     std::size_t pNumber;
     std::size_t qNumber;
 };
+
 class MTInstance {
     friend class NCL2MT;
-    ScoringInfo si;
+    ConcatModelInfo si;
     TraversalDescriptor td;
     public:
         PartitionedMatrix partMat;
         Tree tree;
         OptimizationSettings optSettings;
-        PartitionScoringInfo & GetPartitionScoreInfo(std::size_t i) {
+        PartModelInfo & GetPartitionScoreInfo(std::size_t i) {
             return si.GetPartitionScoreInfo(i);
         }
-        ScoringInfo & GetScoringInfo() {
+        ConcatModelInfo & GetConcatModelInfo() {
             return si;
         }
         TraversalDescriptor & GetTraversalDescriptor() {
@@ -155,10 +121,10 @@ class MTInstance {
         std::size_t GetNumBranchLenPartitions() const {
             return partScoreInfoByBrLenPart.size();
         }
-        std::vector<PartitionScoringInfo *> & GetPartitionScoreInfoForBranchLenPart(std::size_t brLenPartIndex) {
+        std::vector<PartModelInfo *> & GetPartitionScoreInfoForBranchLenPart(std::size_t brLenPartIndex) {
             return partScoreInfoByBrLenPart.at(brLenPartIndex);
         }
-        std::vector<PartitionScoringInfo> & GetPartitionScoreInfoVec() {
+        std::vector<PartModelInfo> & GetPartitionScoreInfoVec() {
             return si.GetPartitionScoreInfoVec();
         }
         bool DoAscBiasCorr(std::size_t modelIndex) const;
@@ -172,7 +138,7 @@ class MTInstance {
         MTInstance(const MTInstance &) = delete;
         MTInstance & operator=(const MTInstance &) = delete;
         CharModel * charModelPtr;
-        std::vector<std::vector<PartitionScoringInfo*> > partScoreInfoByBrLenPart;
+        std::vector<std::vector<PartModelInfo*> > partScoreInfoByBrLenPart;
         MTInstance(unsigned numTaxa,
                    const std::vector<unsigned> &numCharsPerPartition,
                    const std::vector<unsigned> &orig2compressed,
@@ -195,7 +161,7 @@ void SetExecuteMaskForBranchLengthPart(MTInstance & instance, std::size_t brLenP
 
 
 inline bool MTInstance::DoAscBiasCorr(std::size_t modelIndex) const {
-    const PartitionScoringInfo & psi{si.GetPartitionScoreInfo(modelIndex)};
+    const PartModelInfo & psi{si.GetPartitionScoreInfo(modelIndex)};
 #   if (defined(_FINE_GRAIN_MPI) || defined(_USE_PTHREADS))
         return psi.CorrectForAscBias() && threadID == 0;
 #   else
@@ -227,7 +193,7 @@ inline void SetExecuteMaskForAllPart(MTInstance & instance, const bool val) {
 }
 
 inline void storeExecuteMaskInTraversalDescriptor(TraversalDescriptor & td,
-                                                  const PartitionScoringInfoVec & psi) {
+                                                  const PartModelInfoVec & psi) {
     for (auto model = 0U; model < psi.size(); model++) {
         td.SetExecuteMask(model, psi[model].GetExecuteMask());
     }

@@ -41,7 +41,7 @@ struct NRSumTable {
 // generic function to get the required pointers to the data associated with the left and right node that define a branch
 static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
     NRSumTable r;
-    const PartitionScoringInfo & psi = instance.GetPartitionScoreInfo(modelIndex);
+    const PartModelInfo & psi = instance.GetPartitionScoreInfo(modelIndex);
     const TraversalDescriptor & td = instance.GetTraversalDescriptor();
     const TraversalInfo & ti = td.Top();
         // get the left and right node number of the nodes defining the branch we want to optimize 
@@ -69,7 +69,7 @@ static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
             const auto x2Number = (qIsTip ? pNumber : qNumber);
             const auto slotNumber = (qIsTip ? p_slot : q_slot);
             r.tipX1 = psi.GetYArrayPtr(yNumber);
-            r.x2_start = psi.GetXArrayPtr(slotNumber);
+            r.x2_start = psi.GetCLArray(slotNumber);
             if (doAscBiasCorr) {
                 r.x2_start_asc = psi.GetAscArrayPtr(x2Number - mxtips - 1); // pointer math... * pr->partitionData[model]->ascOffset
             }
@@ -87,8 +87,8 @@ static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
         }
     } else {
         r.tipCase = PLL_INNER_INNER;
-        r.x1_start = psi.GetXArrayPtr(p_slot);
-        r.x2_start = psi.GetXArrayPtr(q_slot);
+        r.x1_start = psi.GetCLArray(p_slot);
+        r.x2_start = psi.GetCLArray(q_slot);
         if (doAscBiasCorr) {
             r.x1_start_asc = psi.GetAscArrayPtr(pNumber - mxtips - 1);
             r.x2_start_asc = psi.GetAscArrayPtr(qNumber - mxtips - 1);
@@ -101,6 +101,219 @@ static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
         }
     }
     return r;
+}
+
+/** @brief Compute the conditional likelihood for each entry (node) of the traversal descriptor
+    Computes the conditional likelihood vectors for each entry (node) in the already computed
+    traversal descriptor, starting from the \a startIndex entry.
+
+    @param startIndex
+      From which node to start computing the conditional likelihood vectors in the traversal
+      descriptor
+     
+    @note This function just iterates over the length of the traversal descriptor and 
+      computes the conditional likelihhod arrays in the order given by the descriptor.
+      So in a sense, this function has no clue that there is any tree-like structure 
+      in the traversal descriptor, it just operates on an array of structs of given length.
+ */
+void pllNewviewIterative (MTInstance & instance, int startIndex) {
+    const auto & td{instance.GetTraversalDescriptor()};
+    const auto & partDataVec{instance.GetParitionDataVec()};
+    auto tiIt = instance.GetTraversalInfoIt();
+    const auto mxtips = instance.GetMxTips();
+    // select fastScaling or per-site scaling of conidtional likelihood entries
+    const bool = instance.GetFastScaling();
+
+        // loop over traversal descriptor length. Note that on average we only re-compute the conditionals on 3 -4      nodes in RAxML
+    for(auto i = startIndex; i < td.size(); i++) {
+        const auto & tInfo = *tiIt;
+            // Note that the slots refer to different things if recomputation is applied
+        SlotIndices slots(instance);
+        // now loop over all partitions for nodes p, q, and r of the current traversal vector entry 
+        for (auto partIndex = 0; partIndex < instance.GetNumPartitions(); partIndex++) {
+            const auto pd & = partDataVec.at(partIndex);
+            // number of sites in this partition 
+            const auto width  = pd.GetNumCharacters();
+                // this conditional statement is exactly identical to what we do in pllEvaluateIterative
+            if (td.GetExecuteModel(partIndex) && width > 0) {
+                PruneStruct ps{pd, tInfo, slots};
+                /* pointers for per-site scaling array at node p */
+                int * ex3 = nullptr;
+                int * ex3_asc = nullptr;
+                    /* 
+                    if we are not using fast scaling, we need to assign memory for storing 
+                    integer vectors at each inner node that are as long as the sites of the 
+                    partition. IMPORTANT: while this looks as if this might be a memory saving trick 
+                    it is not. The ex3 vectors will be allocated once during the very first tree 
+                    traversal and then never again because they will always have the required length!
+                    */
+                if (!fastScaling) {
+                    auto availableExpLength = pd.expSpaceVector[p_slot];
+                    auto requiredExpLength  = width * sizeof(int);
+                    ex3 = pd.expVector[p_slot];
+                    if(ps.requiredExpLength != availableExpLength) {
+                        allocExpVector();
+                    }
+                }
+
+                    // now just set the pointers for data accesses in the newview() implementations above to the corresponding values 
+                    // according to the tip case 
+                if (tInfo->tipCase == PLL_TIP_TIP) {
+                    ps.tipX1 = pd.GetYVector(tInfo.qNumber);
+                    ps.tipX2 = pd.GetYVector(tInfo.rNumber);
+#   if (defined(__SSE3) || defined(__AVX))
+    if(tr->saveMemory) {
+        x1_gapColumn   = &(pd.tipVector[gapOffset]);
+        x2_gapColumn   = &(pd.tipVector[gapOffset]);
+        x3_gapColumn   = &(pd.gapColumn[(tInfo->pNumber - mxtips - 1) * states * rateHet]);
+    }
+#   endif            
+    if (instance.DoAscBiasCorr()) {
+        size_t k;
+        x3_ascColumn = &pd.ascVector[(tInfo->pNumber - mxtips - 1) * pd.ascOffset];
+        ex3_asc      = &pd.ascExpVector[(tInfo->pNumber - mxtips - 1) * ascWidth];
+        for(k = 0; k < ascWidth; k++)
+            ex3_asc[k] = 0;
+    }
+        /* if we do per-site log likelihood scaling, and both child nodes are tips,
+        just initialize the vector with zeros, i.e., no scaling events */
+    if(!fastScaling) {
+        for(auto k = 0; k < width; k++)
+            ex3[k] = 0;
+    }
+} else if (tInfo->tipCase == PLL_TIP_INNER) {
+tipX1 = pd.yVector[tInfo->qNumber];
+x2_start = pd.xVector[r_slot];
+assert(r_slot != p_slot);
+#if (defined(__SSE3) || defined(__AVX))
+if(tr->saveMemory) { 
+    x1_gapColumn   = &(pd.tipVector[gapOffset]);
+    x2_gapColumn   = &pd.gapColumn[(tInfo->rNumber - mxtips - 1) * states * rateHet];
+    x3_gapColumn   = &pd.gapColumn[(tInfo->pNumber - mxtips - 1) * states * rateHet];
+}
+#endif
+
+if (instance.DoAscBiasCorr()) {
+int 
+*ex2_asc;
+x2_ascColumn = &pd.ascVector[(tInfo->rNumber - mxtips - 1) * pd.ascOffset];
+x3_ascColumn = &pd.ascVector[(tInfo->pNumber - mxtips - 1) * pd.ascOffset];
+ex2_asc = &pd.ascExpVector[(tInfo->rNumber - mxtips - 1) * ascWidth];
+ex3_asc = &pd.ascExpVector[(tInfo->pNumber - mxtips - 1) * ascWidth];
+
+for(auto k = 0; k < ascWidth; k++)
+    ex3_asc[k] = ex2_asc[k];
+}
+
+/* if one child node is not a tip, just copy the values from there, coudl also be done with memcpy of course 
+the elements of ex3[] will then potentially be further incremented in the actual newview() if scaling events 
+take place */
+
+if(!fastScaling)
+{
+size_t 
+k;
+int
+*ex2 = pd.expVector[r_slot];                
+
+for(k = 0; k < width; k++)
+ex3[k] = ex2[k];
+}
+} else {
+assert(tInfo->tipCase == PLL_INNER_INNER);
+x1_start       = pd.xVector[q_slot];
+x2_start       = pd.xVector[r_slot];
+assert(r_slot != p_slot);
+assert(q_slot != p_slot);
+assert(q_slot != r_slot);
+
+#if (defined(__SSE3) || defined(__AVX))
+if(tr->saveMemory)
+{
+x1_gapColumn   = &pd.gapColumn[(tInfo->qNumber - mxtips - 1) * states * rateHet];
+x2_gapColumn   = &pd.gapColumn[(tInfo->rNumber - mxtips - 1) * states * rateHet];
+x3_gapColumn   = &pd.gapColumn[(tInfo->pNumber - mxtips - 1) * states * rateHet];
+}
+#endif
+
+#if (defined(_FINE_GRAIN_MPI) || defined(_USE_PTHREADS))
+if(pd.ascBias && tr->threadID == 0)
+#else
+if(pd.ascBias)
+#endif          
+{                
+size_t
+k;
+
+int 
+*ex1_asc,
+*ex2_asc;
+
+x1_ascColumn = &pd.ascVector[(tInfo->qNumber - mxtips - 1) * pd.ascOffset];
+x2_ascColumn = &pd.ascVector[(tInfo->rNumber - mxtips - 1) * pd.ascOffset];
+x3_ascColumn = &pd.ascVector[(tInfo->pNumber - mxtips - 1) * pd.ascOffset];
+
+ex1_asc = &pd.ascExpVector[(tInfo->qNumber - mxtips - 1) * ascWidth];
+ex2_asc = &pd.ascExpVector[(tInfo->rNumber - mxtips - 1) * ascWidth];
+ex3_asc = &pd.ascExpVector[(tInfo->pNumber - mxtips - 1) * ascWidth];
+
+for(k = 0; k < ascWidth; k++)
+ex3_asc[k] = ex1_asc[k] + ex2_asc[k];
+}
+/* both child nodes are inner nodes, thus the initial value of the scaling vector 
+ex3 is the sum of the scaling values of the left and right child node */
+
+if(!fastScaling)
+{
+size_t
+k;
+
+int            
+*ex1      = pd.expVector[q_slot],
+*ex2      = pd.expVector[r_slot];                    
+
+for(k = 0; k < width; k++)
+ex3[k] = ex1[k] + ex2[k];
+}
+}
+
+/* set the pointers to the left and right P matrices to the pre-allocated memory space for storing them */
+
+left  = pd.left;
+right = pd.right;
+
+/* if we use per-partition branch length optimization 
+get the branch length of partition model and take the log otherwise 
+use the joint branch length among all partitions that is always stored 
+at index [0] */
+
+const auto zind = (pr->perGeneBranchLengths ? model : 0);
+double qz = tInfo->qz[zind];                                    
+double rz = tInfo->rz[zind];                  
+double qz = (qz > PLL_ZMIN) ? log(qz) : log(PLL_ZMIN);                        
+double rz = (rz > PLL_ZMIN) ? log(rz) : log(PLL_ZMIN);                       
+
+/* compute the left and right P matrices */
+*(psi.makePptr)(qz, rz, ps);
+
+*(psi.newviewPtr)(qz, rz, ps);
+
+        if(fastScaling)
+          {
+            pr->partitionData[model]->globalScaler[tInfo->pNumber] =
+              pr->partitionData[model]->globalScaler[tInfo->qNumber] +
+              pr->partitionData[model]->globalScaler[tInfo->rNumber] +
+              (unsigned int)scalerIncrement;
+            
+            /* check that we are not getting an integer overflow ! */
+
+            assert(pr->partitionData[model]->globalScaler[tInfo->pNumber] < INT_MAX);
+          }
+        
+        /* show the output vector */
+      } 
+    }
+  }
 }
 
 
@@ -118,7 +331,7 @@ void makenewzIterative(MTInstance & instance) {
     int model;
     const auto numberOfPartitions = instance.GetNumPartitions();
     const TraversalDescriptor & td = instance.GetTraversalDescriptor();
-    PartitionScoringInfoVec & psiv = instance.GetPartitionScoreInfoVec();
+    PartModelInfoVec & psiv = instance.GetPartitionScoreInfoVec();
         // call newvieIterative to get the likelihood arrays to the left and right of the branch
     pllNewviewIterative(tr, pr, 1);
         // loop over all partoitions to do the precomputation of the sumTable buffer 
@@ -206,10 +419,10 @@ void makenewzIterative(MTInstance & instance) {
             if (doAscBiasCorr) {
                 int pNumber = tr->td[0].ti[0].pNumber;
                 int qNumber = tr->td[0].ti[0].qNumber;
-                const int * const ex1_asc = &pr->partitionData[model]->ascExpVector[(pNumber - tr->mxtips - 1) * states];
-                const int * const ex2_asc = &pr->partitionData[model]->ascExpVector[(qNumber - tr->mxtips - 1) * states];
+                const int * const ex1_asc = &pr->partitionData[model]->ascExpVector[(pNumber - mxtips - 1) * states];
+                const int * const ex2_asc = &pr->partitionData[model]->ascExpVector[(qNumber - mxtips - 1) * states];
                 if (tipCase ==PLL_TIP_INNER) {
-                    const double * const exTip = (isTip(pNumber, tr->mxtips) ? ex2_asc : ex1_asc);
+                    const double * const exTip = (isTip(pNumber, mxtips) ? ex2_asc : ex1_asc);
                     for (auto i = 0; i < states; i++) {
                         pr->partitionData[model]->ascScaler[i] = pow(PLL_MINLIKELIHOOD, (double) exTip[i]);
                     }
@@ -241,7 +454,7 @@ static void topLevelMakenewz(MTInstance & instance,
                              const std::vector<double> & z0, // init branch lengths
                              int _maxiter,
                              std::vector<double> & result) {
-    ScoringInfo & si = instance.GetScoringInfo();
+    ConcatModelInfo & si = instance.GetConcatModelInfo();
     const auto numBranchParts = z0.size();
       // initialize loop convergence variables etc. 
       // maxiter is the maximum number of NR iterations we are going to do before giving up 
@@ -367,14 +580,14 @@ void makenewzGeneric(const unsigned numPartBranchLengths,
     //count = 0;
 
     /* Ensure p and q get a unpinnable slot in physical memory */
-    if(!isTip(q->number, tr->mxtips))
+    if(!isTip(q->number, mxtips))
     {
-    q_recom = getxVector(tr->rvec, q->number, &slot, tr->mxtips);
+    q_recom = getxVector(tr->rvec, q->number, &slot, mxtips);
     tr->td[0].ti[0].slot_q = slot;
     }
-    if(!isTip(p->number, tr->mxtips))
+    if(!isTip(p->number, mxtips))
     {
-    p_recom = getxVector(tr->rvec, p->number, &slot, tr->mxtips);
+    p_recom = getxVector(tr->rvec, p->number, &slot, mxtips);
     tr->td[0].ti[0].slot_p = slot;
     }
     }
@@ -385,10 +598,10 @@ void makenewzGeneric(const unsigned numPartBranchLengths,
 
     tr->td[0].count = 1;
 
-    if(p_recom || needsRecomp(tr->useRecom, tr->rvec, p, tr->mxtips))
+    if(p_recom || needsRecomp(tr->useRecom, tr->rvec, p, mxtips))
     computeTraversal(tr, p, PLL_TRUE, numBranches);
 
-    if(q_recom || needsRecomp(tr->useRecom, tr->rvec, q, tr->mxtips))
+    if(q_recom || needsRecomp(tr->useRecom, tr->rvec, q, mxtips))
     computeTraversal(tr, q, PLL_TRUE, numBranches);
 
     /* call the Newton-Raphson procedure */
@@ -398,8 +611,8 @@ void makenewzGeneric(const unsigned numPartBranchLengths,
     /* Mark node as unpinnable */
     if(tr->useRecom)
     {
-    unpinNode(tr->rvec, p->number, tr->mxtips);
-    unpinNode(tr->rvec, q->number, tr->mxtips);
+    unpinNode(tr->rvec, p->number, mxtips);
+    unpinNode(tr->rvec, q->number, mxtips);
     }
 
     /* fix eceuteModel this seems to be a bit redundant with topLevelMakenewz */
@@ -612,14 +825,14 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
       //count = 0;
 
     /* Ensure p and q get a unpinnable slot in physical memory */
-    if(!isTip(q->number, tr->mxtips))
+    if(!isTip(q->number, mxtips))
     {
-      q_recom = getxVector(tr->rvec, q->number, &slot, tr->mxtips);
+      q_recom = getxVector(tr->rvec, q->number, &slot, mxtips);
       tr->td[0].ti[0].slot_q = slot;
     }
-    if(!isTip(p->number, tr->mxtips))
+    if(!isTip(p->number, mxtips))
     {
-      p_recom = getxVector(tr->rvec, p->number, &slot, tr->mxtips);
+      p_recom = getxVector(tr->rvec, p->number, &slot, mxtips);
       tr->td[0].ti[0].slot_p = slot;
     }
   }
@@ -630,10 +843,10 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
 
   tr->td[0].count = 1;
 
-  if(p_recom || needsRecomp(tr->useRecom, tr->rvec, p, tr->mxtips))
+  if(p_recom || needsRecomp(tr->useRecom, tr->rvec, p, mxtips))
     computeTraversal(tr, p, PLL_TRUE, numBranches);
 
-  if(q_recom || needsRecomp(tr->useRecom, tr->rvec, q, tr->mxtips))
+  if(q_recom || needsRecomp(tr->useRecom, tr->rvec, q, mxtips))
     computeTraversal(tr, q, PLL_TRUE, numBranches);
 
   /* call the Newton-Raphson procedure */
@@ -643,8 +856,8 @@ void makenewzGeneric(pllInstance *tr, partitionList * pr, nodeptr p, nodeptr q, 
   /* Mark node as unpinnable */
   if(tr->useRecom)
   {
-    unpinNode(tr->rvec, p->number, tr->mxtips);
-    unpinNode(tr->rvec, q->number, tr->mxtips);
+    unpinNode(tr->rvec, p->number, mxtips);
+    unpinNode(tr->rvec, q->number, mxtips);
   }
 
   /* fix eceuteModel this seems to be a bit redundant with topLevelMakenewz */

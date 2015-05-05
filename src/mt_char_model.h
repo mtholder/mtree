@@ -81,7 +81,7 @@ class MkCovarCharModel: public MkCharModel {
   public:
       MkCovarCharModel(unsigned numStates, unsigned numRateCats)
           :MkCharModel(numStates, numRateCats),
-          probMate(numStates*numStates*numRateCats*numRateCats, 0.0),
+          probMat(numStates*numStates*numRateCats*numRateCats, 0.0),
           rootStateFreq(numStates, 1.0/double(numStates)) {
           }
           virtual ~MkCovarCharModel() {

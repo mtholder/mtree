@@ -26,6 +26,7 @@ class MTInstance {
         Tree tree;
         OptimizationSettings optSettings;
         bool HasSearchConverged;
+        bool curvatOK;
         CharModel & GetCharModel() {
             return *charModelPtr;
         }
@@ -41,7 +42,8 @@ class MTInstance {
                    CharModel *cm)
             :partMat(numTaxa, numCharsPerPartition, orig2compressed, patternWts),
             tree(2*numTaxa - 1, numTaxa),
-            HasSearchConverged(false),
+            HasSearchConverged(FALSE),
+            curvatOK(TRUE),
             charModelPtr(cm) {
         }
 };

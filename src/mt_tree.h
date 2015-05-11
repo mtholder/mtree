@@ -104,8 +104,6 @@ class Node {
         void * GetData(unsigned i) {
             return data[i];
         }
-    private:
-    public:
         Node * parent;
         Node * leftChild;
         Node * rightSib;

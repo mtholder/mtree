@@ -16,7 +16,7 @@ config.h
 config.log
 config.status
 reconf.sh
-src/.deps/
+src/.deps
 src/Makefile
 stamp-h1
 tests/Makefile

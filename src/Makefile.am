@@ -17,7 +17,8 @@ noinst_HEADERS = \
 
 mtree_SOURCES = \
 	likelihood.cpp \
-	optimize_branches.cpp \
+	mt_numerical_optimization.cpp \
+	mt_optimize_branches.cpp \
 	main.cpp \
 	ini.c \
 	INIReader.cpp \

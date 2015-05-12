@@ -5,10 +5,13 @@
 namespace mt {
 
 class NCL2MT;
+constexpr double PLL_ZMIN = 1.0E-15;  // max branch prop. to -log(PLL_ZMIN) (= 34)
+constexpr double PLL_ZMAX = 1.0 - 1.0E-6; // min branch prop. to 1.0-zmax (= 1.0E-6)
 
 enum ProcessActionsEnum {
     SCORE_ACTION=0,
-    TREE_SEARCH=1
+    TREE_SEARCH=1,
+    OPTIMIZE_EDGE_LENGTH=2
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;

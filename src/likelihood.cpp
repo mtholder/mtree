@@ -1,5 +1,6 @@
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
+#include "mt_optimize_branches.h"
 #include "mt_char_model.h"
 #include "mt_log.h"
 #include "mt_data.h"
@@ -177,6 +178,18 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 
 namespace mt {
 
+void doEdgeLengthOptimization(ostream * os, MTInstance & instance) {
+    //int steps = 10;
+    double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+    Node * p = instance.tree.GetLeaf(4)->parent;
+    Arc edge{p->parent, p};
+    const double origLen = edge.GetEdgeLen();
+    *os << "Starting likelihood = " << startL << " for branch length = " << origLen << "\n";
+    double endL = optimizeAllLengthsForOneEdge(instance, edge);
+    const double endLen = edge.GetEdgeLen();
+    *os << "Likelihood after optimizing one branch = " << endL << " for branch length = " << endLen << "\n";
+}
+
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     action = SCORE_ACTION;
@@ -185,6 +198,8 @@ void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum act
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
+    } else if (action == OPTIMIZE_EDGE_LENGTH) {
+        doEdgeLengthOptimization(os, instance);
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());

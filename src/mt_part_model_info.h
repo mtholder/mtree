@@ -6,6 +6,7 @@
 #include <iostream>
 #include <vector>
 #include "mt_log.h"
+
 namespace mt {
 // roughly pInfo in PLL
 class PartModelInfo {
@@ -25,15 +26,11 @@ class PartModelInfo {
     bool CorrectForAscBias() const {
         return correctForAscBias;
     }
-    bool GetUseRecom() const {
-        return useRecom;
-    }
     private:
     bool executeMask;
     std::size_t numRateCategories;
     std::size_t numStates;
     bool correctForAscBias;
-    bool useRecom;
 };
 
 using PartModelInfoVec = std::vector<PartModelInfo>;

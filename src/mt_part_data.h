@@ -6,22 +6,23 @@
 #include <iostream>
 #include <vector>
 #include "mt_log.h"
-namespace mt {
+#include "mt_instance.h"
 
+namespace mt {
+class MTInstance;
+class TraversalInfo;
 class SlotIndices {
     public:
         const int p;
         const int q;
         const int r;
-        SlotIndices(const MTInstance &instance, const TraversalInfo & tInfo) 
-            :p(instance.GetUseRecom() ? tInfo.slot_p : tInfo.pNumber - instance.GetMxTips() - 1),
-            q(instance.GetUseRecom() ? tInfo.slot_p : tInfo.pNumber - instance.GetMxTips() - 1),
-            r(instance.GetUseRecom() ? tInfo.slot_p : tInfo.pNumber - instance.GetMxTips() - 1) {
-        }
+        SlotIndices(const MTInstance &instance, const TraversalInfo & tInfo);
 };
+
 class PartCalcs {
+    public:
     double * GetCLArray(std::size_t slotNumber) {
-        &(internalCLVector.at(slotNumber)[0]);
+        return &(internalCLVector.at(slotNumber).at(0));
     }
     private:
     std::vector<std::vector<double> > internalCLVector;
@@ -31,13 +32,12 @@ class PartCalcs {
 class PartData {
     mutable PartCalcs partCalcs;
     public:
-    allocCLArray
     std::size_t GetNumStates() const {
         return numStates;
     }
-    double * const GetCLArray(std::size_t slotNumber) const {
-        return partCalcs.GetCLArray(slotNumber)
-v;    }
+    double * GetCLArray(std::size_t slotNumber) const {
+        return partCalcs.GetCLArray(slotNumber);
+    }
     unsigned char * GetYArrayPtr(std::size_t yNumber) const;
     double * GetAscArrayPtr(std::size_t n) const; // pointer math... * pr->partitionData[model]->ascOffset
     unsigned int * GetGapArrayPtr(std::size_t n) const; // pointer math... * pr->partitionData[model]->gapVectorLength

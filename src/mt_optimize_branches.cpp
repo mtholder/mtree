@@ -37,11 +37,13 @@ struct NRSumTable {
         x2_gap(nullptr) {
     }
 };
+
 // GetNRSumTable = getVects in PLL:
 // generic function to get the required pointers to the data associated with the left and right node that define a branch
 static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
     NRSumTable r;
     const PartModelInfo & psi = instance.GetPartitionScoreInfo(modelIndex);
+    const PartData & pd = instance.GetPartitionData(modelIndex);
     const TraversalDescriptor & td = instance.GetTraversalDescriptor();
     const TraversalInfo & ti = td.Top();
         // get the left and right node number of the nodes defining the branch we want to optimize 

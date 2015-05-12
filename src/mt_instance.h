@@ -2,6 +2,9 @@
 #define __MT_INSTANCE_H__
 #include "mt_tree.h"
 #include "mt_data.h"
+#include "mt_part_model_info.h"
+#include "mt_part_data.h"
+
 namespace mt {
 
 class NCL2MT;
@@ -27,6 +30,7 @@ struct OptimizationSettings {
         :maxIterBrLenSmoothing(20) {
     }
 };
+
 bool isTip(int n, std::size_t mxtips);
 class TraversalInfo {
     public:
@@ -41,6 +45,8 @@ class TraversalInfo {
     int slot_q;                   /**< In recomputation mode, the RAM slot index for likelihood vector of node q, otherwise unused */
     int slot_r;                   /**< In recomputation mode, the RAM slot index for likelihood vector of node r, otherwise unused */
 };
+
+class PartModelInfo;
 
 class ConcatModelInfo {
     public:
@@ -58,6 +64,24 @@ class ConcatModelInfo {
         }
     private:
         std::vector<PartModelInfo > psiVec;
+};
+
+class ConcatData {
+    public:
+        PartData & GetPartitionData(std::size_t i) {
+            return pdVec.at(i);
+        }
+        std::vector<PartData> & GetPartitionDataVec() {
+            return pdVec;
+        }
+        const PartData & GetPartitionDataInfo(std::size_t i) const {
+            return pdVec.at(i);
+        }
+        const std::vector<PartData> & GetPartitionDataVec() const {
+            return pdVec;
+        }
+    private:
+        std::vector<PartData > pdVec;
 };
 
 class TraversalDescriptor {
@@ -97,6 +121,7 @@ class TraversalDescriptor {
 class MTInstance {
     friend class NCL2MT;
     ConcatModelInfo si;
+    ConcatData cd;
     TraversalDescriptor td;
     public:
         PartitionedMatrix partMat;
@@ -104,6 +129,9 @@ class MTInstance {
         OptimizationSettings optSettings;
         PartModelInfo & GetPartitionScoreInfo(std::size_t i) {
             return si.GetPartitionScoreInfo(i);
+        }
+        PartData & GetPartitionData(std::size_t i) {
+            return cd.GetPartitionData(i);
         }
         ConcatModelInfo & GetConcatModelInfo() {
             return si;
@@ -134,6 +162,10 @@ class MTInstance {
         bool GetSaveMemory() const {
             return false;
         }
+        bool GetUseRecom() const {
+            return false; // should be memory dependent, and const for a run
+        }
+
     private:
         MTInstance(const MTInstance &) = delete;
         MTInstance & operator=(const MTInstance &) = delete;
@@ -158,7 +190,6 @@ void doAnalysis(std::ostream * os,
                 ProcessActionsEnum action);
 
 void SetExecuteMaskForBranchLengthPart(MTInstance & instance, std::size_t brLenPartIndex, bool val);
-
 
 inline bool MTInstance::DoAscBiasCorr(std::size_t modelIndex) const {
     const PartModelInfo & psi{si.GetPartitionScoreInfo(modelIndex)};
@@ -216,8 +247,8 @@ inline void storeValuesInTraversalDescriptor(MTInstance & instance,
 }
 
 constexpr double PLL_ZMIN = 1.0E-15;  // max branch prop. to -log(PLL_ZMIN) (= 34)
-constexpr double PLL_ZMAX = 1.0 - 1.0E-6; // min branch prop. to 1.0-zmax (= 1.0E-6) 
-
-
+constexpr double PLL_ZMAX = 1.0 - 1.0E-6; // min branch prop. to 1.0-zmax (= 1.0E-6)
 } // namespace
+
+#include "mt_instance_inlines.h"
 #endif

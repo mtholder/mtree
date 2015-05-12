@@ -11,3 +11,12 @@ configure
 config.guess
 depcomp
 config.sub
+Makefile
+config.h
+config.log
+config.status
+reconf.sh
+src/.deps
+src/Makefile
+stamp-h1
+tests/Makefile

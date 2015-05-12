@@ -4,6 +4,7 @@
 #include "mt_char_model.h"
 #include "mt_log.h"
 #include "mt_data.h"
+#include "mt_likelihood.h"
 #include "search.h"
 #include <algorithm>
 using namespace std;
@@ -17,17 +18,17 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
     }
 }
 
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
-    Node * virtRoot = tree.GetRoot();
+double ScoreTree(const PartitionedMatrix &partMat, const Tree &tree, const CharModel &cm) {
+    const Node * virtRoot = tree.GetRoot();
     virtRoot = virtRoot->leftChild->rightSib;
     //Set up a traversal
-    PostorderForNodeIterator pnit = postorder(virtRoot);
-    Arc c = pnit.get();
-    assert(c.toNode);
+    ConstPostorderForNodeIterator pnit = postorder(virtRoot);
+    ConstArc c = pnit.get();
+    assert(c.toNode());
     unsigned partIndex = 0;
     unsigned numChars =  c.GetNumChars(partIndex);
-    while (c.toNode) {
-        _DEBUG_VAL(c.fromNode->number);
+    while (c.toNode()) {
+        _DEBUG_VAL(c.fromNode()->number);
         const double edgeLen = c.GetEdgeLen();
         if (c.IsFromLeaf()) {
             const LeafCharacterVector * data = c.GetFromNdData(partIndex);
@@ -82,7 +83,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
                              double *claElements,
                              double *cla,
                              double edgeLen,
-                             unsigned numChars) {
+                             unsigned numChars) const {
     /* fill the summed probabilities for each state code */
 
     const double * tiprob = this->calcTransitionProb(edgeLen);
@@ -111,7 +112,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     }
 }
 
-void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) {
+void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) const{
     const double * tiprob = this->calcTransitionProb(edgeLen);
     const unsigned lenCLAWord = nStates*nRateCats;
     const unsigned nssq = nStates * nStates;

@@ -28,9 +28,16 @@ class CharModel {
 
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
-        virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
-        virtual double * calcTransitionProb(double edgeLen) = 0;
-        virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
+        virtual void fillLeafWork(const LeafCharacterVector *,
+                                  double * claElements,
+                                  double * cla,
+                                  double edgeLen,
+                                  unsigned numChars) const;
+        virtual double * calcTransitionProb(double edgeLen) const = 0;
+        virtual void conditionOnSingleEdge(const double *beforeEdge,
+                                           double * afterEdge,
+                                           double edgeLen,
+                                           unsigned numChars) const;
     protected:
         unsigned nStates;
         unsigned nRateCats;
@@ -51,7 +58,7 @@ class MkCharModel: public CharModel {
             return &(rootStateFreq[0]);
         }
         //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
-        virtual double * calcTransitionProb(double edgeLen) {
+        virtual double * calcTransitionProb(double edgeLen) const {
             const double fns = double(nStates);
             const double fnsmo = fns - 1.0;
             const unsigned nsSq = nStates*nStates;
@@ -70,7 +77,7 @@ class MkCharModel: public CharModel {
             return &(probMat[0]);
         }
     private:
-        std::vector<double> probMat;
+        mutable std::vector<double> probMat;
         std::vector<double> rootStateFreq;
 };
 
@@ -90,7 +97,7 @@ class MkCovarCharModel: public MkCharModel {
             return &(rootStateFreq[0]);
           }
 
-          virtual double * calcTransitionProb(double edgeLen) {
+          virtual double * calcTransitionProb(double edgeLen) const {
 
             const double fns = double(nStates);
             const double fnsmo = fns - 1.0;
@@ -135,7 +142,7 @@ class MkCovarCharModel: public MkCharModel {
             }
 
   private:
-      std::vector<double> probMat;
+      mutable std::vector<double> probMat;
       std::vector<double> rootStateFreq;
       double switchRate;
 };

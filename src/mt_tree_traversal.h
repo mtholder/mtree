@@ -148,8 +148,31 @@ class PostorderForNodeIterator: public ArcIterator {
         bool belowNode;
 };
 
+class ConstPostorderForNodeIterator {
+    public:
+        ConstPostorderForNodeIterator(const Node * vr)
+            :pfni(const_cast<Node*>(vr)){
+        }
+        ConstArc get() {
+            return ConstArc(pfni.get());
+        }
+        ConstArc next() {
+            return ConstArc{pfni.next()};
+        }
+        const Node * GetCurrNode() {
+            return const_cast<const Node*>(pfni.GetCurrNode());
+        }
+    private:
+        PostorderForNodeIterator pfni;
+
+};
+
+
 inline PostorderForNodeIterator postorder(Node *c) {
     return PostorderForNodeIterator(c);
+}
+inline ConstPostorderForNodeIterator postorder(const Node *c) {
+    return ConstPostorderForNodeIterator(c);
 }
 }
 #endif

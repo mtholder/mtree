@@ -39,6 +39,15 @@ class Node {
              number(UINT_MAX),
              edgeLen(-1.0) {
         }
+        std::vector<const Node *> GetChildren() const {
+            std::vector<const Node *> c;
+            const Node * curr = leftChild;
+            while (curr) {
+                c.push_back(curr);
+                curr = curr->rightSib;
+            }
+            return c;
+        }
         std::vector<Node *> GetChildren() {
             std::vector<Node *> c;
             Node * curr = leftChild;
@@ -98,7 +107,7 @@ class Node {
             }
             this->work[i] = d;
         }
-        void * GetWork(unsigned i) {
+        void * GetWork(unsigned i) const {
             return work[i];
         }
         void * GetData(unsigned i) {
@@ -125,6 +134,9 @@ class Tree {
             this->root = r;
         }
         Node * GetRoot() {
+            return this->root;
+        }
+        const Node * GetRoot() const {
             return this->root;
         }
         Node * GetNode(unsigned i) {
@@ -230,27 +242,28 @@ class Arc {
         bool IsToLeaf() const {
             return toNode->IsLeaf();
         }
-        const LeafCharacterVector * GetFromNdData(unsigned partIndex) {
+        const LeafCharacterVector * GetFromNdData(unsigned partIndex) const {
             assert(IsFromLeaf());
             return (const LeafCharacterVector *)fromNode->GetData(partIndex);
         }
-        LeafWork * GetFromNdLeafWork(unsigned partIndex) {
+        LeafWork * GetFromNdLeafWork(unsigned partIndex) const {
             assert(IsFromLeaf());
             return (LeafWork *)fromNode->GetWork(partIndex);
         }
-        InternalNodeWork * GetFromNdIntWork(unsigned partIndex) {
+        InternalNodeWork * GetFromNdIntWork(unsigned partIndex) const {
             return (InternalNodeWork *)fromNode->GetWork(partIndex);
         }
-        InternalNodeWork * GetToNdIntWork(unsigned partIndex) {
+        InternalNodeWork * GetToNdIntWork(unsigned partIndex) const {
             return (InternalNodeWork *)toNode->GetWork(partIndex);
         }
-        double * GetFromNdCLA(unsigned partIndex, bool crossedEdge);
-        double * GetToNdCLA(unsigned partIndex, bool crossedEdge);
-        std::vector<const double *> GetPrevCLAs(unsigned partIndex);
-        unsigned GetLenCLA(unsigned partIndex) {
+
+        double * GetFromNdCLA(unsigned partIndex, bool crossedEdge) const;
+        double * GetToNdCLA(unsigned partIndex, bool crossedEdge) const;
+        std::vector<const double *> GetPrevCLAs(unsigned partIndex) const;
+        unsigned GetLenCLA(unsigned partIndex) const {
             return GetFromNdIntWork(partIndex)->GetLenCLA();
         }
-        unsigned GetNumChars(unsigned partIndex) {
+        unsigned GetNumChars(unsigned partIndex) const {
             return GetFromNdIntWork(partIndex)->nChars;
         }
         Node * fromNode;
@@ -260,7 +273,60 @@ class Arc {
         bool fromIsChild;
 };
 
-inline double * Arc::GetFromNdCLA(unsigned partIndex, bool crossedEdge) {
+class ConstArc {
+    Arc arc;
+    public:
+        ConstArc(const Arc & a)
+            :arc(a) {
+        }
+        ConstArc(const Node * fromNd, const Node * toNd)
+            :arc(const_cast<Node *>(fromNd), const_cast<Node *>(toNd)) {
+        }
+        const Node * toNode() const {
+            return arc.toNode;
+        }
+        const Node * fromNode() const {
+            return arc.toNode;
+        }
+        double GetEdgeLen() const {
+            return arc.GetEdgeLen();
+        }
+        bool IsFromLeaf() const {
+            return arc.IsFromLeaf();
+        }
+        bool IsToLeaf() const {
+            return arc.IsToLeaf();
+        }
+        const LeafCharacterVector * GetFromNdData(unsigned partIndex) const {
+            return arc.GetFromNdData(partIndex);
+        }
+        LeafWork * GetFromNdLeafWork(unsigned partIndex) const {
+           return arc.GetFromNdLeafWork(partIndex);
+        }
+        InternalNodeWork * GetFromNdIntWork(unsigned partIndex) const {
+            return arc.GetFromNdIntWork(partIndex);
+        }
+        InternalNodeWork * GetToNdIntWork(unsigned partIndex) const {
+            return arc.GetToNdIntWork(partIndex);
+        }
+        double * GetFromNdCLA(unsigned partIndex, bool crossedEdge) const {
+            return arc.GetFromNdCLA(partIndex, crossedEdge);
+        }
+        double * GetToNdCLA(unsigned partIndex, bool crossedEdge) const {
+            return arc.GetToNdCLA(partIndex, crossedEdge);
+        }
+        std::vector<const double *> GetPrevCLAs(unsigned partIndex) const {
+            return arc.GetPrevCLAs(partIndex);
+        }
+        unsigned GetLenCLA(unsigned partIndex) const {
+            return arc.GetLenCLA(partIndex);
+        }
+        unsigned GetNumChars(unsigned partIndex) const {
+            return arc.GetNumChars(partIndex);
+        }
+};
+
+inline double * Arc::GetFromNdCLA(unsigned partIndex, bool crossedEdge) const {
     if (fromIsChild) {
         InternalNodeWork * work = GetFromNdIntWork(partIndex);
         if (crossedEdge) {
@@ -278,7 +344,7 @@ inline double * Arc::GetFromNdCLA(unsigned partIndex, bool crossedEdge) {
     }
 }
 
-inline double * Arc::GetToNdCLA(unsigned partIndex, bool crossedEdge) {
+inline double * Arc::GetToNdCLA(unsigned partIndex, bool crossedEdge) const {
     if (fromIsChild) {
         InternalNodeWork * work = GetFromNdIntWork(partIndex);
         if (crossedEdge) {
@@ -296,9 +362,11 @@ inline double * Arc::GetToNdCLA(unsigned partIndex, bool crossedEdge) {
     }
 }
 
-inline std::vector<const double *> GetSurroundingCLA(Node * fromNode, Node * avoid, unsigned partIndex) {
+inline std::vector<const double *> GetSurroundingCLA(const Node * fromNode,
+                                                     const Node * avoid,
+                                                     unsigned partIndex) {
     std::vector<const double *> pcla;
-    std::vector<Node *> c = fromNode->GetChildren();
+    std::vector<const Node *> c = fromNode->GetChildren();
     for (auto i : c) {
         if (i != avoid) {
             InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
@@ -313,11 +381,12 @@ inline std::vector<const double *> GetSurroundingCLA(Node * fromNode, Node * avo
     }
     return pcla;
 }
-inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
+
+inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) const {
     std::vector<const double *> pcla;
     if (fromIsChild) {
         assert(fromNode->leftChild);
-        std::vector<Node *> c = fromNode->GetChildren();
+        std::vector<const Node *> c = const_cast<const Node *>(fromNode)->GetChildren();
         for (auto i : c) {
             InternalNodeWork * iw = (InternalNodeWork *)i->GetWork(partIndex);
             double * ic = &(iw->claAtParFromNd[0]);
@@ -328,7 +397,6 @@ inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
     }
     return pcla;
 }
-
 
 } //namespace
 #endif

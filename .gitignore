@@ -20,3 +20,5 @@ src/.deps
 src/Makefile
 stamp-h1
 tests/Makefile
+tests/.test_output
+src/mtree

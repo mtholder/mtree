@@ -12,5 +12,9 @@ inline SlotIndices::SlotIndices(const MTInstance &instance, const TraversalInfo 
     r(instance.GetUseRecom() ? tInfo.slot_p : tInfo.pNumber - instance.GetMxTips() - 1) {
 }
 
+inline bool PartModelInfo::GetUseRecom() const{
+    return instance.GetUseRecom();
+}
+
 } // namespace
 #endif

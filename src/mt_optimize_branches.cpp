@@ -70,36 +70,36 @@ static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
             const auto yNumber = (qIsTip ? qNumber : pNumber);
             const auto x2Number = (qIsTip ? pNumber : qNumber);
             const auto slotNumber = (qIsTip ? p_slot : q_slot);
-            r.tipX1 = psi.GetYArrayPtr(yNumber);
-            r.x2_start = psi.GetCLArray(slotNumber);
+            r.tipX1 = pd.GetYArrayPtr(yNumber);
+            r.x2_start = pd.GetCLArray(slotNumber);
             if (doAscBiasCorr) {
-                r.x2_start_asc = psi.GetAscArrayPtr(x2Number - mxtips - 1); // pointer math... * pr->partitionData[model]->ascOffset
+                r.x2_start_asc = pd.GetAscArrayPtr(x2Number - mxtips - 1); // pointer math... * pr->partitionData[model]->ascOffset
             }
             if (instance.GetSaveMemory()) {
-                r.x2_gap = psi.GetGapArrayPtr(x2Number); // pointer math... * pr->partitionData[model]->gapVectorLength
-                r.x2_gapColumn = psi.GetGapColumn(x2Number - mxtips - 1); // * states * rateHet];
+                r.x2_gap = pd.GetGapArrayPtr(x2Number); // pointer math... * pr->partitionData[model]->gapVectorLength
+                r.x2_gapColumn = pd.GetGapColumn(x2Number - mxtips - 1); // * states * rateHet];
             }
         } else {
             // note that tip tip should normally not occur since this means that we are trying to optimize 
             // a branch in a two-taxon tree. However, this has been inherited be some RAxML function 
             // that optimized pair-wise distances between all taxa in a tree
             r.tipCase = PLL_TIP_TIP;
-            r.tipX1 = psi.GetYArrayPtr(pNumber);
-            r.tipX2 = psi.GetYArrayPtr(qNumber);
+            r.tipX1 = pd.GetYArrayPtr(pNumber);
+            r.tipX2 = pd.GetYArrayPtr(qNumber);
         }
     } else {
         r.tipCase = PLL_INNER_INNER;
-        r.x1_start = psi.GetCLArray(p_slot);
-        r.x2_start = psi.GetCLArray(q_slot);
+        r.x1_start = pd.GetCLArray(p_slot);
+        r.x2_start = pd.GetCLArray(q_slot);
         if (doAscBiasCorr) {
-            r.x1_start_asc = psi.GetAscArrayPtr(pNumber - mxtips - 1);
-            r.x2_start_asc = psi.GetAscArrayPtr(qNumber - mxtips - 1);
+            r.x1_start_asc = pd.GetAscArrayPtr(pNumber - mxtips - 1);
+            r.x2_start_asc = pd.GetAscArrayPtr(qNumber - mxtips - 1);
         }
         if (instance.GetSaveMemory()) {
-            r.x1_gap = psi.GetGapArrayPtr(pNumber);
-            r.x1_gapColumn =psi.GetGapColumn(pNumber - mxtips - 1);
-            r.x2_gap = psi.GetGapArrayPtr(qNumber);
-            r.x2_gapColumn = psi.GetGapColumn(qNumber - mxtips - 1);
+            r.x1_gap = pd.GetGapArrayPtr(pNumber);
+            r.x1_gapColumn =pd.GetGapColumn(pNumber - mxtips - 1);
+            r.x2_gap = pd.GetGapArrayPtr(qNumber);
+            r.x2_gapColumn = pd.GetGapColumn(qNumber - mxtips - 1);
         }
     }
     return r;
@@ -120,7 +120,7 @@ static NRSumTable GetNRSumTable(MTInstance & instance, std::size_t modelIndex) {
  */
 void pllNewviewIterative (MTInstance & instance, int startIndex) {
     const auto & td{instance.GetTraversalDescriptor()};
-    const auto & partDataVec{instance.GetParitionDataVec()};
+    const auto & partDataVec{instance.GetPartitionDataVec()};
     auto tiIt = instance.GetTraversalInfoIt();
     const auto mxtips = instance.GetMxTips();
     // select fastScaling or per-site scaling of conidtional likelihood entries
@@ -128,7 +128,7 @@ void pllNewviewIterative (MTInstance & instance, int startIndex) {
 
         // loop over traversal descriptor length. Note that on average we only re-compute the conditionals on 3 -4      nodes in RAxML
     for(auto i = startIndex; i < td.size(); i++) {
-        const auto & tInfo = *tiIt;
+        const auto & tInfo = *tiIt++;
             // Note that the slots refer to different things if recomputation is applied
         SlotIndices slots(instance);
         // now loop over all partitions for nodes p, q, and r of the current traversal vector entry 

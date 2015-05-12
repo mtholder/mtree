@@ -64,6 +64,7 @@ class ConcatModelInfo {
         }
     private:
         std::vector<PartModelInfo > psiVec;
+        friend class MTInstance;
 };
 
 class ConcatData {
@@ -82,6 +83,7 @@ class ConcatData {
         }
     private:
         std::vector<PartData > pdVec;
+        friend class MTInstance;
 };
 
 class TraversalDescriptor {
@@ -132,6 +134,9 @@ class MTInstance {
         }
         PartData & GetPartitionData(std::size_t i) {
             return cd.GetPartitionData(i);
+        }
+        const std::vector<PartData> & GetPartitionDataVec() const {
+            return cd.GetPartitionDataVec();
         }
         ConcatModelInfo & GetConcatModelInfo() {
             return si;

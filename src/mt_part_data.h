@@ -48,7 +48,6 @@ class PartData {
     std::size_t numStates;
     bool correctForAscBias;
     bool useRecom;
-
 };
 } // namespace mt
 #endif

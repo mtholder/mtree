@@ -199,7 +199,7 @@ void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum act
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
-    } else if (action == OPTIMIZE_EDGE_LENGTH) {
+    } else if (action == OPTIMIZE_EDGE_LENGTHS) {
         doEdgeLengthOptimization(os, instance);
     } else if (action == TREE_SEARCH) {
       //int steps = 10;

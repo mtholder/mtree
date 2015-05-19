@@ -14,6 +14,9 @@ function runcheck
 }
 
 runcheck "${t}/jc.nex" "${t}/jc.ini" "-76.66761"
+
+runcheck "${t}/jc.nex" "${t}/jc-optimize-branch-lengths.ini" "-60.66761"
+
 if test $failed -gt 0
 then
     echo "Failed ${failed} / " $(expr $passed + $failed) " tests."

@@ -46,6 +46,7 @@ class INIValueChecker {
     public:
         INIValueChecker() {
             actionAction2Enum["LScore"] = SCORE_ACTION;
+            actionAction2Enum["OptimizeBranchLengths"] = OPTIMIZE_EDGE_LENGTHS;
         }
 
         bool isLegalActionAction(const std::string & value) const {

@@ -49,6 +49,10 @@ INI file parsing code (ini.c, ini.h, INIReader.cpp, INIReader.cpp)
     is from the inih project https://code.google.com/p/inih/ which
     is released under the BSD License.
 
+It also uses easyloggingpp which is distributed under an MIT License. See
+  http://github.com/easylogging/ for info on that project. The file from
+  that project is src/easylogging++.h
+
 Thanks to the US National Science Foundation and the
     Heidelberg Institute for Theoretical Studies.
 

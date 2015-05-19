@@ -11,6 +11,10 @@
 #include "mt_ini_options.h"
 #include "mt_char_model.h"
 #include "search.h"
+
+INITIALIZE_EASYLOGGINGPP
+static el::Configurations defaultConf;
+
 using namespace std;
 namespace mt {
     class NCL2MT {
@@ -32,6 +36,8 @@ namespace mt {
 bool preDataINICheck(INIReader & iniReader, std::ostream & err);
 
 bool gQuietMode = false;
+bool gTraceMode= false;
+bool gVerboseMode = false;
 long gStrictLevel = 2;
 bool gValidateInternals = true;
 
@@ -443,6 +449,24 @@ int do_main(int argc, char *argv[]) {
         cerr << "Expecting an INI file specified with a -m flag\n";
         return 8;
     }
+    // Logger configuration
+    defaultConf.setToDefault();
+    if (gQuietMode) {
+        defaultConf.set(el::Level::Global, el::ConfigurationType::Enabled, "false");
+    } else {
+        defaultConf.set(el::Level::Trace, el::ConfigurationType::Enabled, "false");
+        defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "false");
+    }
+    el::Loggers::reconfigureLogger("default", defaultConf);
+    if (gTraceMode) {
+        defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "true");
+        el::Loggers::reconfigureLogger("default", defaultConf);
+    }
+    if (gVerboseMode) {
+        defaultConf.set(el::Level::Debug, el::ConfigurationType::Enabled, "true");
+        el::Loggers::reconfigureLogger("default", defaultConf);
+    }
+
     bool readfile = false;
     for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];

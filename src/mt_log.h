@@ -2,6 +2,7 @@
 #define __LOG_H__
 #include <cstdlib>
 #include <iostream>
+#include "easylogging++.hpp"
 
 template<typename T>
 inline void _debug_vecl(const char * file, const char * func, int lineno, const char * l, const T &v) {
@@ -50,5 +51,7 @@ inline void _debug_cla(const char * file,
 #define _DEBUG_VEC(a) (_debug_vecl(__FILE__, __FUNCTION__, __LINE__, "" #a "", a))
 #define _DEBUG_VAL(a) (_debug_val(__FILE__, __FUNCTION__, __LINE__, "" #a "", a))
 #define _DEBUG_CLA(a, r, s, c) (_debug_cla(__FILE__, __FUNCTION__, __LINE__, "" #a "", a, r, s, c))
+
+
 
 #endif

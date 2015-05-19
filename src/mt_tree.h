@@ -177,9 +177,9 @@ class InternalNodeWork {
              claAtParFromNd(numStates*numRates*numChars),
              claAtParFromPar(numStates*numRates*numChars),
              nChars(numChars) {
-            _DEBUG_VAL(numChars);
-            _DEBUG_VAL(numStates);
-            _DEBUG_VAL(numRates);
+            //_DEBUG_VAL(numChars);
+            //_DEBUG_VAL(numStates);
+            //_DEBUG_VAL(numRates);
             //_DEBUG_VEC(claAtNdFromNd);
             //_DEBUG_VEC(claAtNdFromPar);
             //_DEBUG_VEC(claAtParFromNd);

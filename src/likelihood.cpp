@@ -198,6 +198,8 @@ void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum act
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
+    } else if (action == OPTIMIZE_MISSING_EDGE_LENGTHS) {
+        doMissingEdgeLengthOptimization(os, instance);
     } else if (action == OPTIMIZE_EDGE_LENGTHS) {
         doEdgeLengthOptimization(os, instance);
     } else if (action == TREE_SEARCH) {

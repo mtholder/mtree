@@ -11,7 +11,8 @@ constexpr double PLL_ZMAX = 1.0 - 1.0E-6; // min branch prop. to 1.0-zmax (= 1.0
 enum ProcessActionsEnum {
     SCORE_ACTION=0,
     TREE_SEARCH=1,
-    OPTIMIZE_EDGE_LENGTHS=2
+    OPTIMIZE_EDGE_LENGTHS=2,
+    OPTIMIZE_MISSING_EDGE_LENGTHS=3
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;

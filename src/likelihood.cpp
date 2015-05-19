@@ -191,6 +191,18 @@ void doEdgeLengthOptimization(ostream * os, MTInstance & instance) {
     *os << "Likelihood after optimizing one branch = " << endL << " for branch length = " << endLen << "\n";
 }
 
+void doMissingEdgeLengthOptimization(ostream * os, MTInstance & instance) {
+    //int steps = 10;
+    double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+    Node * p = instance.tree.GetLeaf(4)->parent;
+    Arc edge{p->parent, p};
+    const double origLen = edge.GetEdgeLen();
+    *os << "Starting likelihood = " << startL << " for branch length = " << origLen << "\n";
+    double endL = optimizeAllLengthsForOneEdge(instance, edge);
+    const double endLen = edge.GetEdgeLen();
+    *os << "Likelihood after optimizing one branch = " << endL << " for branch length = " << endLen << "\n";
+}
+
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     if (action == SCORE_ACTION) {

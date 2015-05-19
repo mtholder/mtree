@@ -385,6 +385,7 @@ void printHelp(std::ostream & out) {
     }
     out << "    -h help. on the command line shows this help message\n\n";
     out << "    -q quiet. suppress NCL status messages while reading files\n\n";
+    out << "    -v verbose logging mode.\n\n";
     out << "    -x do NOT validate internal labels in trees as taxa labels\n\n";
     out << "    -X do NOT treat numbers in trees as taxon numbers, treat them as arbitrary\n        labels (should not be used with NEXUS files).\n\n";
 }
@@ -405,6 +406,8 @@ int do_main(int argc, char *argv[]) {
             return 1;
         } else if (filepath[1] == 'q') {
             gQuietMode = true;
+        } else if (filepath[1] == 'v') {
+            gVerboseMode = true;
         } else if (filepath[1] == 'x') {
             gValidateInternals = false;
         } else if (filepath[1] == 'f') {

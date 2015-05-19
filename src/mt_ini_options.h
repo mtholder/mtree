@@ -53,6 +53,7 @@ class INIValueChecker {
             return actionAction2Enum.find(value) != actionAction2Enum.end();
         }
         ProcessActionsEnum parseActionAction(const std::string &value) const {
+            LOG(DEBUG) << "parseActionAction value =" << value;
             auto it = actionAction2Enum.find(value);
             if (it == actionAction2Enum.end()) {
                 throw IllegalINIValueError("action", "action", value);

@@ -193,7 +193,6 @@ void doEdgeLengthOptimization(ostream * os, MTInstance & instance) {
 
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
-    action = SCORE_ACTION;
     if (action == SCORE_ACTION) {
         const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
         if (os) {

@@ -258,7 +258,7 @@ int processContent(PublicNexusReader & nexusReader,
     mt::ModelDescription md(mt::ModelDescription::NO_ASC_BIAS); //@TODO should be run-time setting
     mt::NCL2MT ncl2mt;
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
-        const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
+        const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), -1, -0.1, true);
         ncl2mt.processTree(os,
                            ntaxTotal,
                            dm,

@@ -27,10 +27,16 @@ class PostorderArcIterator:public ArcIterator {
         PostorderArcIterator(Node * r, Node * avoidNode=nullptr)
             :ArcIterator(r),
              avoid(avoidNode) {
-            this->reset(r, avoidNode);
+            if (r != nullptr) {
+                this->reset(r, avoidNode);
+            } else {
+                this->currNd = avoidNode;
+            }
         }
         bool operator==(const PostorderArcIterator &other) const {
-            return (this->currNd == other.currNd) && (this->ancStack == other.ancStack);
+            return ((this->currNd == other.currNd)
+                    && (this->ancStack == other.ancStack)
+                    && (this->avoid == other.avoid));
         }
         bool operator!=(const PostorderArcIterator &other) const {
             return ! (*this == other);
@@ -46,8 +52,10 @@ class PostorderArcIterator:public ArcIterator {
             return *this;
         }
         virtual Arc get() const {
-            return Arc(this->currNd,
-                       (ancStack.empty() ? nullptr : this->currNd->parent));
+            if (ancStack.empty()) {
+                return Arc(nullptr, this->currNd);
+            }
+            return Arc(this->currNd, this->currNd->parent);
         }
         void reset(Node *r, Node *avoidNode) {
             while (!ancStack.empty()) {
@@ -187,17 +195,15 @@ class ConstPostorderForNodeIterator {
 class PostArcIter {
     private:
     Node * startNode;
-    Node * avoid;
     public:
-    explicit PostArcIter(Node *s, Node *a=nullptr)
-        :startNode(s),
-        avoid(a) {
+    explicit PostArcIter(Node *s)
+        :startNode(s) {
     }
     PostorderArcIterator begin() const {
-        return PostorderArcIterator{startNode, avoid};
+        return PostorderArcIterator{startNode, startNode};
     }
     PostorderArcIterator end() const {
-        return PostorderArcIterator{nullptr, nullptr};
+        return PostorderArcIterator{nullptr, startNode};
     }
 };
 

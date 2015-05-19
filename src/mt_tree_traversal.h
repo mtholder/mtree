@@ -3,32 +3,49 @@
 #include "mt_tree.h"
 namespace mt {
 
-class ArcIterator {
+class ArcIterator : std::forward_iterator_tag {
     public:
         ArcIterator(Node *c) 
             : currNd(c) {
         }
         virtual ~ArcIterator(){}
-        virtual Arc get() = 0;
+        virtual Arc get() const = 0;
         Arc next() {
-            this->advance();
+            this->_advance();
             return this->get();
         }
-        virtual void advance() = 0;
+        virtual void _advance() = 0;
         Node * GetCurrNode() {
             return currNd;
         }
         Node * currNd;
+
 };
 
 class PostorderArcIterator:public ArcIterator {
     public:
-        PostorderArcIterator(Node * r, Node * avoidNode)
+        PostorderArcIterator(Node * r, Node * avoidNode=nullptr)
             :ArcIterator(r),
              avoid(avoidNode) {
             this->reset(r, avoidNode);
         }
-        virtual Arc get() {
+        bool operator==(const PostorderArcIterator &other) const {
+            return (this->currNd == other.currNd) && (this->ancStack == other.ancStack);
+        }
+        bool operator!=(const PostorderArcIterator &other) const {
+            return ! (*this == other);
+        }
+        Arc operator*() const {
+            return get();
+        }
+        PostorderArcIterator & operator++() {
+            if (currNd == nullptr && ancStack.empty()) {
+                throw std::out_of_range("Incremented a dead PostorderArcIterator");
+            }
+            _advance();
+            return *this;
+        }
+        virtual Arc get() const {
             return Arc(this->currNd,
                        (ancStack.empty() ? nullptr : this->currNd->parent));
         }
@@ -52,7 +69,7 @@ class PostorderArcIterator:public ArcIterator {
                 }
             }
         }
-        void advance() {
+        void _advance() {
             if (ancStack.empty()) {
                 currNd = nullptr;
                 return;
@@ -112,15 +129,15 @@ class PostorderForNodeIterator: public ArcIterator {
                 currNd = post.GetCurrNode();
             }
         }
-        Arc get() {
+        Arc get() const {
             if (currNd == rootOfCurrPost) {
                 return Arc(currNd, (currNd == refNode ? nullptr : avoid));
             } else {
                 return post.get();
             }
         }
-        void advance() {
-            post.advance();
+        void _advance() {
+            post._advance();
             currNd = post.GetCurrNode();
             if (currNd == nullptr && belowNode) {
                 if (avoid == refNode) {
@@ -167,6 +184,23 @@ class ConstPostorderForNodeIterator {
 
 };
 
+class PostArcIter {
+    private:
+    Node * startNode;
+    Node * avoid;
+    public:
+    explicit PostArcIter(Node *s, Node *a=nullptr)
+        :startNode(s),
+        avoid(a) {
+    }
+    PostorderArcIterator begin() const {
+        return PostorderArcIterator{startNode, avoid};
+    }
+    PostorderArcIterator end() const {
+        return PostorderArcIterator{nullptr, nullptr};
+    }
+};
+
 
 inline PostorderForNodeIterator postorder(Node *c) {
     return PostorderForNodeIterator(c);
@@ -174,5 +208,6 @@ inline PostorderForNodeIterator postorder(Node *c) {
 inline ConstPostorderForNodeIterator postorder(const Node *c) {
     return ConstPostorderForNodeIterator(c);
 }
-}
+
+} // namespace mt
 #endif

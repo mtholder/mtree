@@ -179,23 +179,37 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 
 namespace mt {
 
+constexpr double DEFAULT_EDGE_LEN = 0.1;
+
+template <typename T>
+void doEdgeLengthOptimizationOnSet(ostream * os, MTInstance & instance, T & toOptimize) {
+    for (auto arc : toOptimize) {
+        *os << "starting edge length = " << arc.GetEdgeLen() << '\n';
+        optimizeAllLengthsForOneEdge(instance, arc);
+        *os << "optimized edge length = " << arc.GetEdgeLen() << '\n';
+    }
+}
+
 void doEdgeLengthOptimization(ostream * os, MTInstance & instance) {
     //int steps = 10;
-    double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
-    Node * p = instance.tree.GetLeaf(4)->parent;
-    Arc edge{p->parent, p};
-    const double origLen = edge.GetEdgeLen();
-    *os << "Starting likelihood = " << startL << " for branch length = " << origLen << "\n";
-    double endL = optimizeAllLengthsForOneEdge(instance, edge);
-    const double endLen = edge.GetEdgeLen();
-    *os << "Likelihood after optimizing one branch = " << endL << " for branch length = " << endLen << "\n";
+    auto & tree = instance.tree;
+    std::vector<Arc> toOptimize;
+    for (auto a : PostArcIter(tree.GetRoot())) {
+        toOptimize.push_back(a);
+    }
+    doEdgeLengthOptimizationOnSet(os, instance, toOptimize);
 }
 
 void doMissingEdgeLengthOptimization(ostream * os, MTInstance & instance) {
     auto & tree = instance.tree;
+    std::vector<Arc> toOptimize;
     for (auto a : PostArcIter(tree.GetRoot())) {
-        *os << "edge length " << a.GetEdgeLen() << '\n';
+        if (a.GetEdgeLen() < 0.0) {
+            a.SetEdgeLen(DEFAULT_EDGE_LEN);
+            toOptimize.push_back(a);
+        }
     }
+    doEdgeLengthOptimizationOnSet(os, instance, toOptimize);
     /*
     double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
 

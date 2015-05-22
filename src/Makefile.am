@@ -13,7 +13,7 @@ noinst_HEADERS = \
 	mt_tree_traversal.h \
 	INIReader.h \
 	ini.h \
-  search.h
+	search.h
 
 mtree_SOURCES = \
 	likelihood.cpp \
@@ -22,5 +22,6 @@ mtree_SOURCES = \
 	ini.c \
 	INIReader.cpp \
 	mt_opt_model.cpp \
-  search.cpp
+	search.cpp
+
 mtree_LDADD =  $(LDADD) @MTREE_LIBS@

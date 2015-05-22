@@ -21,5 +21,6 @@ mtree_SOURCES = \
 	main.cpp \
 	ini.c \
 	INIReader.cpp \
+	mt_opt_model.cpp \
   search.cpp
 mtree_LDADD =  $(LDADD) @MTREE_LIBS@

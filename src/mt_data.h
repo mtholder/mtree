@@ -4,6 +4,17 @@
 #include "mt_log.h"
 namespace mt {
 
+// Some Variables - should these go in a more general header file?
+#define MAX_ITERS               100
+#define MAX_REARRANGEMENTS      100
+#define BZ_EPSILON              1.e-5
+#define BRENT_VAR               0.3819660
+#define GOLDEN_RAT              1.618034
+#define BRAK_VAR1               1.e-20
+#define BRAK_VAR2               100.0
+
+#define MTREE_SIGN(a,b)         ((b) > 0.0 ? fabs(a) : -fabs(a))
+
 typedef unsigned int char_state_t;
 class CharStateToPrimitiveInd {
     public:

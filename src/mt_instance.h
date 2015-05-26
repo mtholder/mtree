@@ -2,6 +2,7 @@
 #define __MT_INSTANCE_H__
 #include "mt_tree.h"
 #include "mt_data.h"
+#include "mt_char_model.h"
 namespace mt {
 
 class NCL2MT;
@@ -28,6 +29,9 @@ class MTInstance {
         bool HasSearchConverged;
         CharModel & GetCharModel() {
             return *charModelPtr;
+        }
+        void changeRate(int pos, double val) {
+          this->charModelPtr->alterRateFreq(pos, val);
         }
     private:
         MTInstance(const MTInstance &) = delete;

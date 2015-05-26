@@ -3,9 +3,11 @@
 #include "mt_tree.h"
 namespace mt {
 
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm);
+
 class ArcIterator {
     public:
-        ArcIterator(Node *c) 
+        ArcIterator(Node *c)
             : currNd(c) {
         }
         virtual ~ArcIterator(){}

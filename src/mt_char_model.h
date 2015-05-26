@@ -25,7 +25,12 @@ class CharModel {
         virtual unsigned GetNumStates() const {
             return nStates;
         }
-
+        virtual const double GetRate(int pos) {
+            return rates[pos];
+        }
+        virtual void alterRateFreq(unsigned position, double value){
+          this->rates[position] = value;
+        }
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);

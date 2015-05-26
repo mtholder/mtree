@@ -18,7 +18,7 @@ static void changeParam (MTInstance &instance, int position, double value, int p
   switch (paramType){
 
     case SUB_RATE:
-      instance->charModelPtr.alterRateFreq(position, value);
+      instance.changeRate(position, value);
       break;
 
     case ALPHA_P:
@@ -42,10 +42,10 @@ static void mtreeBrentGeneric (MTInstance &instance, double ax, double bx, doubl
          d = 0.0,
          a = std::min(cx,ax),
          b = std::max(cx,ax),
-         x = w = v = bx,
-         fw = fv = fx = fb;
+         x = bx, w = bx, v = bx,
+         fw = fb, fv = fb, fx = fb;
 
-  double xm, tol1, tol2, r, q, p, u, etemp;
+  double xm, tol1, tol2, fu, r, q, p, u, etemp;
 
   assert(a >= lowerBound && a <= upperBound);
   assert(b >= lowerBound && b <= upperBound);
@@ -54,7 +54,7 @@ static void mtreeBrentGeneric (MTInstance &instance, double ax, double bx, doubl
   assert(w >= lowerBound && w <= upperBound);
 
   // core iteration
-  for (i = 0, i < MAX_ITERS, i++) {
+  for (int i = 0; i < MAX_ITERS; i++) {
 
     if (converged)
       return;

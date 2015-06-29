@@ -12,6 +12,8 @@ namespace mt {
 #define GOLDEN_RAT              1.618034
 #define BRAK_VAR1               1.e-20
 #define BRAK_VAR2               100.0
+#define MT_RATE_MIN             0.0000001
+#define MT_RATE_MAX             1000000.0
 
 #define MTREE_SIGN(a,b)         ((b) > 0.0 ? fabs(a) : -fabs(a))
 

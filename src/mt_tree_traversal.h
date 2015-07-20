@@ -87,6 +87,21 @@ class PostorderArcIterator:public ArcIterator {
     std::stack<Node *>ancStack;
 
 };
+
+class PreOrderArcIterator: public ArcIterator {
+    public:
+        PreOrderArcIterator(Node * vr, Node * avoidNode)
+            :ArcIterator(vr){
+            // avoid(avoidNode)
+            // do stuff
+          }
+    private:
+        Node * avoid;
+        std::stack<Node *> ancStack;
+
+
+};
+
 class PostorderForNodeIterator: public ArcIterator {
     public:
         PostorderForNodeIterator(Node * vr)

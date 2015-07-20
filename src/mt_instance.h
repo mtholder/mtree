@@ -1,8 +1,10 @@
 #if !defined(__MT_INSTANCE_H__)
 #define __MT_INSTANCE_H__
+
 #include "mt_tree.h"
-#include "mt_data.h"
 #include "mt_char_model.h"
+#include "mt_data.h"
+
 namespace mt {
 
 class NCL2MT;
@@ -20,6 +22,8 @@ struct OptimizationSettings {
         :maxIterBrLenSmoothing(20) {
     }
 };
+
+
 class MTInstance {
     friend class NCL2MT;
     public:
@@ -27,7 +31,7 @@ class MTInstance {
         Tree tree;
         OptimizationSettings optSettings;
         bool HasSearchConverged;
-        CharModel & GetCharModel() {
+        CharModel & GetCharModel() const {
             return *charModelPtr;
         }
         void changeRate(int pos, double val) {

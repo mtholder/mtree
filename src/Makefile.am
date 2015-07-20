@@ -12,6 +12,7 @@ noinst_HEADERS = \
 	mt_tree.h \
 	mt_tree_traversal.h \
 	INIReader.h \
+  pattern_class.h \
 	ini.h \
 	search.h
 
@@ -21,6 +22,7 @@ mtree_SOURCES = \
 	main.cpp \
 	ini.c \
 	INIReader.cpp \
+	pattern_class.cpp \
 	mt_opt_model.cpp \
 	search.cpp
 

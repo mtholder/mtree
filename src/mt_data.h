@@ -15,6 +15,7 @@ namespace mt {
 #define MT_RATE_MIN             0.0000001
 #define MT_RATE_MAX             1000000.0
 
+// Some macros
 #define MTREE_SIGN(a,b)         ((b) > 0.0 ? fabs(a) : -fabs(a))
 
 typedef unsigned int char_state_t;
@@ -35,6 +36,7 @@ class CharStateToPrimitiveInd {
     private:
         std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;
 };
+
 class LeafCharacterVector {
     public:
         LeafCharacterVector()

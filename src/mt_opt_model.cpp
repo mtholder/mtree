@@ -22,7 +22,7 @@ static void changeParam (MTInstance &instance, int position, double value, int p
       break;
 
     //case ALPHA_P:
-      // write function to change alpha (shape) parameter, if necessary
+      // write function to change alpha (shape) parameter
     //  break;
   }
 

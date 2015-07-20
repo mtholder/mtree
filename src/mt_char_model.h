@@ -2,6 +2,10 @@
 #define __CHAR_MODEL_H__
 #include <vector>
 #include <cmath>
+#include <string>
+#include <utility>
+#include "ncl/nxsallocatematrix.h"
+#include "pattern_class.h"
 namespace mt {
 
 class LeafCharacterVector;
@@ -16,7 +20,7 @@ class CharModel {
         }
         virtual ~CharModel() {
         }
-        virtual const double * GetRateCatProb() const {
+        virtual const double * GetRateCatProb()const {
             return &(rateProb[0]);
         }
         virtual unsigned GetNumRates() const {
@@ -25,9 +29,27 @@ class CharModel {
         virtual unsigned GetNumStates() const {
             return nStates;
         }
-        virtual const double GetRate(int pos) {
+        virtual const double GetRate(int pos) const {
             return rates[pos];
         }
+        // Members for PhyPatClassProb calculations
+        bool isMkvSymm;
+        ScopedDblThreeDMatrix firstMatVec;
+        ScopedDblThreeDMatrix secMatVec;
+        BitField lastBitField;
+        std::vector<BitField> singleStateCodes;
+        std::vector<unsigned> stateCodeToNumStates;
+        std::map<BitField, std::string> stateCodesToSymbols;
+        VMaskToVecMaskPair pairsForIntersectionForEachDownPass;
+        VMaskToVecMaskPair pairsForUnionForEachDownPass;
+        BitFieldMatrix statesSupersets;
+        unsigned getnstates(BitField mask) const {
+          return stateCodeToNumStates[mask];
+        }
+        const std::string & toSymbol(BitField sc) const {
+			    return this->stateCodesToSymbols.find(sc)->second;
+		    }
+
         virtual void alterRateFreq(unsigned position, double value){
           this->rates[position] = value;
         }

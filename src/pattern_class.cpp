@@ -1,6 +1,7 @@
 #include "mt_instance.h"
 #include "mt_data.h"
 #include "mt_tree.h"
+#include "mt_tree_traversal.h"
 #include "pattern_class.h"
 #include "ncl/nxsallocatematrix.h"
 
@@ -10,7 +11,7 @@
 
 // Functions for calculating pattern class probabilities as implemented in PhyPatClassProb
 // by Mark Holder and Jordan Koch
-// Calculates for ascertainment bias and parsimony-informative data
+// Used to correct for ascertainment bias and parsimony-informative data
 
 namespace mt {
 
@@ -18,17 +19,21 @@ namespace mt {
 #define GetPatData      instance.GetCharModel()
 
 
-/* void freeProbInfo(const std::vector<Node > & preordervec, NodeIDToProbInfo & nodeIDToProbInfo) {
-  for(std::vector<Node *>::const_reverse_iterator ndIt = preordervec.rbegin();
-      ndIt != preordervec.rend(); ++ndIt) {
-        const Node * nd = *ndIt;
+ void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {
+  //for(std::vector<Node *>::const_reverse_iterator ndIt = preordervec.rbegin();
+      //ndIt != preordervec.rend(); ++ndIt) 
+      Arc travArc = iter.get();
+      while (travArc.toNode)
+      {
+        const Node * nd = travArc.fromNode;
         std::vector<Node *> children = nd->GetChildren();
         const unsigned numChildren = children.size();
         NodeID currNdID(nd, 0);
         if (numChildren > 0)
           delete nodeIDToProbInfo[currNdID];
+  	travArc = iter.next();
       }
-} */
+} 
 
 void ProbInfo::addToAncProbVecSymmetric(std::vector<double> & pVec,
 		const double *** leftPMatVec, const std::vector<double> * leftProbs,
@@ -510,20 +515,24 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
 
 }
 
-// Traverse the tree and calculate pattern class probabilities
+// Traverse the tree (postorder) and calculate pattern class probabilities
 void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 {
     ProbInfo * rootpinfo;
     bool needToDelRootProbInfo = false;
     ProbInfo tiprobinfo;
     NodeIDToProbInfo nodeIDToProbInfo;
-    std::vector<Node *> preorderVec; // = instance.GetPreorderTraversal -----------> need to write this so preorderVec properly initialized
+    
+    Node * vRoot = instance.tree.GetRoot();
+    vRoot = vRoot->leftChild->rightSib;
+    PostorderForNodeIterator postTravIter = postorder(vRoot);
+    Arc postTravArc = postTravIter.get();
     //tiprobinfo.createForTip(instance);
     try {
-      int ndInd = preorderVec.size() - 1;
-      for (; ndInd >= 0; ndInd--)
-      {
-        const Node * nd = preorderVec[ndInd];
+      //int ndInd = preorderVec.size() - 1;
+      //for (; ndInd >= 0; ndInd--)
+      while (postTravArc.toNode) {
+      	const Node * nd = postTravArc.fromNode; 
         std::vector<Node *> children = nd->GetChildren();
         const unsigned numChildren = children.size();
         NodeID currNdID(nd, 0);
@@ -543,11 +552,11 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
           assert(leftPIIt != nodeIDToProbInfo.end());
           ProbInfo * leftPI = leftPIIt->second;
           assert(leftPI);
-				  NodeIDToProbInfo::const_iterator rightPIIt= nodeIDToProbInfo.find(NodeID(rightNd, 0));
-				  assert(rightPIIt != nodeIDToProbInfo.end());
-				  ProbInfo * rightPI = rightPIIt->second;
-				  assert(rightPI != 0L);
-				  ProbInfo lt, rt;
+          NodeIDToProbInfo::const_iterator rightPIIt= nodeIDToProbInfo.find(NodeID(rightNd, 0));
+          assert(rightPIIt != nodeIDToProbInfo.end());
+          ProbInfo * rightPI = rightPIIt->second;
+          assert(rightPI != 0L);
+          ProbInfo lt, rt;
           if (GetPatData.isMkvSymm) {
             currProbInfo->calculateSymmetric(*leftPI, leftNd->GetEdgeLen(), *rightPI, rightNd->GetEdgeLen(), fn, instance);
           }
@@ -563,12 +572,12 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
             nodeIDToProbInfo[NodeID(rightNd, 0)] = 0L;
           }
           if (numChildren > 2) {
-            if (nd != preorderVec[0] || numChildren > 3) {
+            if (nd != instance.tree.GetRoot() || numChildren > 3) {
               std::cout << "Parsimony scoring on non-binary trees is not supported\n";
               throw; 
             }
             const Node * lastNd = children.at(2);
-            NodeIDToProbInfo::const_iterator lastPIIt= nodeIDToProbInfo.find(NodeID(lastNd, 0));
+            NodeIDToProbInfo::const_iterator lastPIIt = nodeIDToProbInfo.find(NodeID(lastNd, 0));
             assert(lastPIIt != nodeIDToProbInfo.end());
             ProbInfo * lastPI = lastPIIt->second;
             assert(lastPI);
@@ -580,21 +589,26 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
             else {
               rootpinfo->calculate(*currProbInfo, 0.0, *lastPI, lastNd->GetEdgeLen(), fn, instance);
             }
-          } else if (nd == preorderVec[0])
+          } else if (nd == instance.tree.GetRoot())
             rootpinfo = currProbInfo;
         }
+        _DEBUG_VAL(postTravArc.fromNode->number);
+        // advance
+        postTravArc = postTravIter.next();
       }
       assert(rootpinfo != 0L);
       //const ExpectedPatternSummary eps(*rootpinfo, instance);
       //eps.write(std::cout, instance);
     }
     catch (...) {
-      //freeProbInfo(preorderVec, nodeIDToProbInfo); ---> un-comment when preorderVec is fixed
+      PostorderForNodeIterator pInfoFreer1 = postorder(vRoot);
+      freeProbInfo(pInfoFreer1, nodeIDToProbInfo);
       if (needToDelRootProbInfo)
         delete rootpinfo;
       throw;
     }
-    //freeProbInfo(preorderVec, nodeIDToProbInfo);
+    PostorderForNodeIterator pInfoFreer2 = postorder(vRoot);
+    freeProbInfo(pInfoFreer2, nodeIDToProbInfo);
     if (needToDelRootProbInfo)
       delete rootpinfo;
 }

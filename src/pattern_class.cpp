@@ -4,6 +4,7 @@
 #include "mt_tree_traversal.h"
 #include "pattern_class.h"
 #include "ncl/nxsallocatematrix.h"
+#include "ncl/nxsmultiformat.h"
 
 #include <utility>
 #include <vector>
@@ -15,13 +16,11 @@
 
 namespace mt {
 
-
+//MACROS
 #define GetPatData      instance.GetCharModel()
 
 
- void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {
-  //for(std::vector<Node *>::const_reverse_iterator ndIt = preordervec.rbegin();
-      //ndIt != preordervec.rend(); ++ndIt) 
+ void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) { 
       Arc travArc = iter.get();
       while (travArc.toNode)
       {
@@ -34,6 +33,22 @@ namespace mt {
   	travArc = iter.next();
       }
 } 
+
+void ProbInfo::createForTip(const MTInstance & instance) {
+	this->byParsScore.resize(1);
+	ProbForParsScore & forZeroSteps = this->byParsScore[0];
+	unsigned stateIndex = 0;
+	for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
+		 	scIt != GetPatData.singleStateCodes.end();
+		 	++scIt, ++stateIndex) {
+		const BitField sc = *scIt;
+		std::vector<double> & pVec = forZeroSteps.byDownPass[sc][sc];
+		pVec.assign(GetPatData.GetNumRates()*GetPatData.GetNumStates(), 0.0);
+		for (unsigned r = 0; r < GetPatData.GetNumRates(); ++r)
+			pVec[GetPatData.GetNumStates()*r + stateIndex] = 1.0;
+	}
+	this->nLeavesBelow = 1;
+}
 
 void ProbInfo::addToAncProbVecSymmetric(std::vector<double> & pVec,
 		const double *** leftPMatVec, const std::vector<double> * leftProbs,
@@ -105,6 +120,151 @@ void ProbInfo::addToAncProbVec(std::vector<double> & pVec,
 		rOffset += GetPatData.GetNumStates();
 	}
 }
+
+std::set<BitField> toElements(BitField sc) {
+	std::set<BitField> ret;
+	BitField curr = 1;
+	while (curr <= sc) {
+		if (curr & sc)
+			ret.insert(curr);
+		curr *= 2;
+	}
+	return ret;
+}
+
+std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock, 
+				    BitFieldMatrix & bfMat) {
+	std::vector<const NxsDiscreteDatatypeMapper *> mappers = charsBlock.GetAllDatatypeMappers();
+	assert(!(mappers.empty() || mappers[0] == NULL));
+	// Fix once algorithm allows for missing data/mixed datasets
+	assert(mappers.size() == 1);
+	
+	NxsUnsignedSet scratchSet;
+	NxsUnsignedSet * toInclude;
+	for (unsigned i = 0; i < charsBlock.GetNChar(); ++i)
+		scratchSet.insert(i);
+	toInclude = & scratchSet;
+	std::set <const NxsDiscreteDatatypeMapper *> usedMappers;
+	for (NxsUnsignedSet::const_iterator indIt = toInclude->begin(); indIt != toInclude->end(); ++indIt) {
+		unsigned charIndex = *indIt;
+		usedMappers.insert(charsBlock.GetDatatypeMapperForChar(charIndex));
+	}
+	assert(usedMappers.size() == 1);
+	const NxsDiscreteDatatypeMapper & mapper = **usedMappers.begin();
+	NxsCharactersBlock::DataTypesEnum inDatatype = mapper.GetDatatype();
+	const unsigned nStates =  mapper.GetNumStates();
+	//assert(nStates <= MAX_NUM_STATES);
+	for (NxsDiscreteStateCell i = 0; i < (NxsDiscreteStateCell)nStates; ++i)
+		assert(mapper.GetStateSetForCode(i).size() == 1);
+	const std::string fundamentalSymbols = mapper.GetSymbols();
+	assert(fundamentalSymbols.length() == nStates);
+	const unsigned nTaxa = charsBlock.GetNTax();
+	const unsigned includedNChar = toInclude->size();
+	bfMat.resize(nTaxa);
+	for (unsigned i = 0; i < nTaxa; ++i) {
+		BitFieldRow & bfRow = bfMat[i];
+		bfRow.resize(includedNChar);
+		const NxsDiscreteStateRow & row = charsBlock.GetDiscreteMatrixRow(i);
+		assert(!row.empty());
+		unsigned j = 0;
+		for (NxsUnsignedSet::const_iterator tIncIt = toInclude->begin(); tIncIt != toInclude->end(); ++tIncIt, ++j) {
+			const NxsDiscreteStateCell & cell = row.at(*tIncIt);
+			// Change assert when accounted for missing data
+			assert(!(cell < 0 || cell >= (NxsDiscreteStateCell) nStates));
+			const int bfi = 1 << (int) cell;
+			bfRow[j] = BitField(bfi);
+		}
+	}
+	return fundamentalSymbols;
+}
+
+void initInfo(MTInstance &instance) {
+	GetPatData.isMkvSymm = false;
+	GetPatData.pVecLen = GetPatData.GetNumStates()*GetPatData.GetNumRates();
+	GetPatData.singleStateCodes.clear();
+	GetPatData.multiStateCodes.clear();
+	GetPatData.stateCodesToSymbols.clear();
+	unsigned lbfU = (1 << GetPatData.GetNumStates()) - 1;
+	GetPatData.stateCodeToNumStates.assign(lbfU + 1, 0);
+	GetPatData.lastBitField = BitField(lbfU);
+	BitField sc = 1;
+	for (;; sc++) {
+		const std::set<BitField> sbf = toElements(sc);
+		if (sbf.size() == 1) {
+			unsigned stInd = GetPatData.singleStateCodes.size();
+			GetPatData.singleStateCodes.push_back(sc);
+			GetPatData.stateIndexToStateCode.push_back(sc);
+			assert(GetPatData.stateIndexToStateCode[stInd] == sc);
+			GetPatData.stateCodesToSymbols[sc] = GetPatData.alphabet[stInd]; // FIX THIS
+			GetPatData.stateCodeToNumStates.at(sc) = 1;
+		} else {
+			GetPatData.multiStateCodes.push_back(sc);
+			std::string sym;
+			for (std::set<BitField>::const_iterator sbfIt = sbf.begin(); sbfIt != sbf.end(); ++sbfIt)
+				sym.append(GetPatData.stateCodesToSymbols[*sbfIt]);
+			GetPatData.stateCodeToNumStates.at(sc) = sbf.size();
+			GetPatData.stateCodesToSymbols[sc] = sym;
+		}
+		
+		if (sc == GetPatData.lastBitField)
+			break;
+		
+	}
+	GetPatData.pairsForUnionForEachDownPass.clear();
+	GetPatData.pairsForUnionForEachDownPass.resize(GetPatData.lastBitField + 1);
+	GetPatData.pairsForIntersectionForEachDownPass.clear();
+	GetPatData.pairsForIntersectionForEachDownPass.resize(GetPatData.lastBitField + 1);
+        
+	for (sc = 1;; sc++) {
+		if (GetPatData.stateCodeToNumStates[sc] > 1) {
+			VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
+			for (BitField leftSC = 1; leftSC < sc; ++leftSC) {
+				if ((leftSC | sc) != sc)
+					continue;
+				BitField rightSC = sc - leftSC;
+				assert((rightSC | leftSC) == sc);
+				forUnions.push_back(MaskPair(leftSC, rightSC));
+			}
+		}
+		VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[sc];
+		for (BitField leftSC = 1; leftSC <= GetPatData.lastBitField ; ++leftSC) {
+			for (BitField rightSC = 1; rightSC <= GetPatData.lastBitField ; ++rightSC) {
+				if ((leftSC & rightSC) != sc)
+					continue;
+				forIntersections.push_back(MaskPair(leftSC, rightSC));
+			}
+		}
+
+		if (sc == GetPatData.lastBitField)
+			break;
+
+	}
+        GetPatData.statesSupersets.clear();
+	GetPatData.statesSupersets.resize(GetPatData.lastBitField + 1);
+	for (sc = 1;;++sc) {
+		BitFieldRow & ssRow = GetPatData.statesSupersets[sc];
+		for (BitField ss = sc;; ++ss) {
+			if ((ss & sc) == sc)
+				ssRow.push_back(ss);
+			if (ss == GetPatData.lastBitField)
+				break;
+		}
+
+		if (sc == GetPatData.lastBitField)
+			break;
+
+	}
+	
+	for (sc = 1;; sc++) {
+		const VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
+		const VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[sc];
+		if (sc == GetPatData.lastBitField) 
+			break;
+	}
+}
+
+
+       
 
 
 // \returns true if there were probabalities that were summed
@@ -516,8 +676,10 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
 }
 
 // Traverse the tree (postorder) and calculate pattern class probabilities
+// differs from original code in using Arc objects to traverse tree rather than a vector
 void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 {
+    initInfo(instance);
     ProbInfo * rootpinfo;
     bool needToDelRootProbInfo = false;
     ProbInfo tiprobinfo;
@@ -527,10 +689,8 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
     vRoot = vRoot->leftChild->rightSib;
     PostorderForNodeIterator postTravIter = postorder(vRoot);
     Arc postTravArc = postTravIter.get();
-    //tiprobinfo.createForTip(instance);
+    tiprobinfo.createForTip(instance);
     try {
-      //int ndInd = preorderVec.size() - 1;
-      //for (; ndInd >= 0; ndInd--)
       while (postTravArc.toNode) {
       	const Node * nd = postTravArc.fromNode; 
         std::vector<Node *> children = nd->GetChildren();
@@ -593,7 +753,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
             rootpinfo = currProbInfo;
         }
         _DEBUG_VAL(postTravArc.fromNode->number);
-        // advance
+        // advance arc
         postTravArc = postTravIter.next();
       }
       assert(rootpinfo != 0L);

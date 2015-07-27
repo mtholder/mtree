@@ -36,9 +36,13 @@ class CharModel {
         bool isMkvSymm;
         ScopedDblThreeDMatrix firstMatVec;
         ScopedDblThreeDMatrix secMatVec;
+        unsigned pVecLen;
+        std::string alphabet;
         BitField lastBitField;
         std::vector<BitField> singleStateCodes;
+        std::vector<BitField> stateIndexToStateCode;
         std::vector<unsigned> stateCodeToNumStates;
+        std::vector<BitField> multiStateCodes;
         std::map<BitField, std::string> stateCodesToSymbols;
         VMaskToVecMaskPair pairsForIntersectionForEachDownPass;
         VMaskToVecMaskPair pairsForUnionForEachDownPass;
@@ -58,6 +62,10 @@ class CharModel {
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
+        
+        virtual void optimizeParams(unsigned modelType){
+        		
+        };
     protected:
         unsigned nStates;
         unsigned nRateCats;

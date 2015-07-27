@@ -11,12 +11,14 @@
 #include "mt_ini_options.h"
 #include "mt_char_model.h"
 #include "search.h"
+#include "pattern_class.h"
 using namespace std;
 namespace mt {
     class NCL2MT {
         public:
             void processTree(std::ostream * os,
                 unsigned numTaxa,
+                const NxsCharactersBlock * charsBlock,
                 const NxsDiscreteDatatypeMapper * dataMapper,
                 const NxsCDiscreteStateSet ** compressedMatrix,
                 const vector<double> & patternWeights,
@@ -72,6 +74,7 @@ ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & mInstance,
 }
 void NCL2MT::processTree(std::ostream *os,
             unsigned numTaxa,
+            const NxsCharactersBlock * charsBlock,
             const NxsDiscreteDatatypeMapper * dataMapper,
             const NxsCDiscreteStateSet ** compressedMatrix,
             const vector<double> & patternWeights,
@@ -138,6 +141,8 @@ void NCL2MT::processTree(std::ostream *os,
         cm = new mt::MkCharModel(numStates, numRateCats);
     }
     unsigned numNodes = 2 * numTaxa - 1;
+    BitFieldMatrix bMat;
+    cm->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);
     mt::MTInstance mtInstance(numTaxa, partLengths, origToComp, patternWeights, cm);
     mt::PartitionedMatrix & partMat = mtInstance.partMat;
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
@@ -255,6 +260,7 @@ int processContent(PublicNexusReader & nexusReader,
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
         ncl2mt.processTree(os,
                            ntaxTotal,
+                           charBlock,
                            dm,
                            (const NxsCDiscreteStateSet **) matrixAlias,
                            patternWeights,

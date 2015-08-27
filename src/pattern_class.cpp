@@ -3,6 +3,7 @@
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
 #include "pattern_class.h"
+#include "parsimony.h"
 #include "ncl/nxsallocatematrix.h"
 #include "ncl/nxsmultiformat.h"
 
@@ -19,8 +20,8 @@ namespace mt {
 //MACROS
 #define GetPatData      instance.GetCharModel()
 
-
- void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) { 
+// free nodeIDToProbInfo data structure for each node
+ void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {
       Arc travArc = iter.get();
       while (travArc.toNode)
       {
@@ -30,9 +31,9 @@ namespace mt {
         NodeID currNdID(nd, 0);
         if (numChildren > 0)
           delete nodeIDToProbInfo[currNdID];
-  	travArc = iter.next();
+  	    travArc = iter.next();
       }
-} 
+}
 
 void ProbInfo::createForTip(const MTInstance & instance) {
 	this->byParsScore.resize(1);
@@ -132,13 +133,13 @@ std::set<BitField> toElements(BitField sc) {
 	return ret;
 }
 
-std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock, 
+std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
 				    BitFieldMatrix & bfMat) {
 	std::vector<const NxsDiscreteDatatypeMapper *> mappers = charsBlock.GetAllDatatypeMappers();
 	assert(!(mappers.empty() || mappers[0] == NULL));
 	// Fix once algorithm allows for missing data/mixed datasets
 	assert(mappers.size() == 1);
-	
+
 	NxsUnsignedSet scratchSet;
 	NxsUnsignedSet * toInclude;
 	for (unsigned i = 0; i < charsBlock.GetNChar(); ++i)
@@ -181,6 +182,7 @@ std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
 void initInfo(MTInstance &instance) {
 	GetPatData.isMkvSymm = false;
 	GetPatData.pVecLen = GetPatData.GetNumStates()*GetPatData.GetNumRates();
+	GetPatData.categStateProb.assign(GetPatData.pVecLen, 1.0/((double)GetPatData.pVecLen));
 	GetPatData.singleStateCodes.clear();
 	GetPatData.multiStateCodes.clear();
 	GetPatData.stateCodesToSymbols.clear();
@@ -205,16 +207,16 @@ void initInfo(MTInstance &instance) {
 			GetPatData.stateCodeToNumStates.at(sc) = sbf.size();
 			GetPatData.stateCodesToSymbols[sc] = sym;
 		}
-		
+
 		if (sc == GetPatData.lastBitField)
 			break;
-		
+
 	}
 	GetPatData.pairsForUnionForEachDownPass.clear();
 	GetPatData.pairsForUnionForEachDownPass.resize(GetPatData.lastBitField + 1);
 	GetPatData.pairsForIntersectionForEachDownPass.clear();
 	GetPatData.pairsForIntersectionForEachDownPass.resize(GetPatData.lastBitField + 1);
-        
+
 	for (sc = 1;; sc++) {
 		if (GetPatData.stateCodeToNumStates[sc] > 1) {
 			VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
@@ -254,17 +256,14 @@ void initInfo(MTInstance &instance) {
 			break;
 
 	}
-	
+
 	for (sc = 1;; sc++) {
 		const VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
 		const VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[sc];
-		if (sc == GetPatData.lastBitField) 
+		if (sc == GetPatData.lastBitField)
 			break;
 	}
 }
-
-
-       
 
 
 // \returns true if there were probabalities that were summed
@@ -675,8 +674,114 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
 
 }
 
+unsigned PatternSummary::incrementCount(unsigned s, BitField m, unsigned toAdd) {
+	if (s >= this->byParsScore.size())
+		this->byParsScore.resize(s + 1);
+	BitsToCount & mapper = this->byParsScore[s];
+	BitsToCount::iterator mIt = mapper.find(m);
+	if (mIt == mapper.end()) {
+		mapper[m] = toAdd;
+		return toAdd;
+	}
+	unsigned prev = mIt->second;
+	mIt->second = toAdd + prev;
+	return toAdd + prev;
+}
+
+ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, const MTInstance & instance) {
+	if (instance.GetCharModel().isMkvSymm) {
+		const unsigned maxNumSteps = rootProbInfo.getMaxParsScore();
+		std::vector<double> emptyRow(instance.GetCharModel().lastBitField + 1, 0.0);
+		this->probsByStepsThenObsStates.resize(maxNumSteps + 1, emptyRow);
+
+		//For constant patterns
+		const ProbForParsScore & constFPS = rootProbInfo.getByParsScore(0);
+		const std::vector<double> * pVec = constFPS.getProbsForDownPassAndObsMask(1,1);
+		assert(pVec);
+		double patClassProb = 0.0;
+		std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+		std::vector<double>::const_iterator pIt = pVec->begin();
+		for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+			assert(pIt != pVec->end());
+			patClassProb += (*wtIt) * (*pIt);
+		}
+		for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
+			scIt != GetPatData.singleStateCodes.end(); ++scIt) {
+			const BitField downPass = *scIt;
+			this->probsByStepsThenObsStates[0][downPass] = patClassProb;
+			}
+
+		//Other Patterns
+		for (unsigned i = 1; i <= maxNumSteps; ++i) {
+			const ProbForParsScore & fps = rootProbInfo.getByParsScore(i);
+			for (BitField downPass = 1; ; ++downPass) {
+				for (BitField obsStates = 1; ; ++obsStates) {
+					double patClassProb = 0.0;
+					std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+					const std::vector<double> * pVec = fps.getProbsForDownPassAndObsMask(downPass, obsStates);
+					if (pVec) {
+						std::vector<double>::const_iterator pIt = pVec->begin();
+						for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+							assert(pIt != pVec->end());
+							patClassProb += (*wtIt) * (*pIt);
+						}
+					}
+					this->probsByStepsThenObsStates[i][obsStates] += patClassProb;
+					if (obsStates == GetPatData.lastBitField)
+						break;
+				}
+				if (downPass == GetPatData.lastBitField)
+					break;
+			}
+		}
+	} else {
+		const unsigned maxNumSteps = rootProbInfo.getMaxParsScore();
+		std::vector<double> emptyRow(GetPatData.lastBitField + 1.0, 0.0);
+		this->probsByStepsThenObsStates.resize(maxNumSteps + 1, emptyRow);
+		const ProbForParsScore & constFPS = rootProbInfo.getByParsScore(0);
+		for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
+			scIt != GetPatData.singleStateCodes.end();
+			++scIt) {
+			const BitField downPass = *scIt;
+			const std::vector<double> * pVec = constFPS.getProbsForDownPassAndObsMask(downPass, downPass);
+			assert(pVec);
+			double patClassProb = 0.0;
+			std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+			std::vector<double>::const_iterator pIt = pVec->begin();
+			for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+				assert(pIt != pVec->end());
+				patClassProb += (*wtIt) * (*pIt);
+			}
+			this->probsByStepsThenObsStates[0][downPass] = patClassProb;
+			}
+			for (unsigned i = 1; i <= maxNumSteps; ++i) {
+				const ProbForParsScore & fps = rootProbInfo.getByParsScore(i);
+				for (BitField downPass = 1; ; ++downPass) {
+					for (BitField obsStates = 1; ; ++obsStates) {
+						double patClassProb = 0.0;
+						std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+						const std::vector<double> * pVec = fps.getProbsForDownPassAndObsMask(downPass, obsStates);
+						if (pVec) {
+							std::vector<double>::const_iterator pIt = pVec->begin();
+							for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+								assert(pIt != pVec->end());
+								patClassProb += (*wtIt) * (*pIt);
+							}
+						}
+						this->probsByStepsThenObsStates[i][obsStates] += patClassProb;
+						if (obsStates == GetPatData.lastBitField)
+							break;
+					}
+					if (downPass == GetPatData.lastBitField)
+						break;
+				}
+			}
+	}
+}
+
+
 // Traverse the tree (postorder) and calculate pattern class probabilities
-// differs from original code in using Arc objects to traverse tree rather than a vector
+//
 void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 {
     initInfo(instance);
@@ -684,7 +789,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
     bool needToDelRootProbInfo = false;
     ProbInfo tiprobinfo;
     NodeIDToProbInfo nodeIDToProbInfo;
-    
+
     Node * vRoot = instance.tree.GetRoot();
     vRoot = vRoot->leftChild->rightSib;
     PostorderForNodeIterator postTravIter = postorder(vRoot);
@@ -692,7 +797,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
     tiprobinfo.createForTip(instance);
     try {
       while (postTravArc.toNode) {
-      	const Node * nd = postTravArc.fromNode; 
+      	const Node * nd = postTravArc.fromNode;
         std::vector<Node *> children = nd->GetChildren();
         const unsigned numChildren = children.size();
         NodeID currNdID(nd, 0);
@@ -734,7 +839,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
           if (numChildren > 2) {
             if (nd != instance.tree.GetRoot() || numChildren > 3) {
               std::cout << "Parsimony scoring on non-binary trees is not supported\n";
-              throw; 
+              throw;
             }
             const Node * lastNd = children.at(2);
             NodeIDToProbInfo::const_iterator lastPIIt = nodeIDToProbInfo.find(NodeID(lastNd, 0));
@@ -773,6 +878,51 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
       delete rootpinfo;
 }
 
+// split into funcs for different uninformative patterns
+void classifyData(MTInstance & instance, const BitFieldMatrix & bmat, const int * pwPtr, PatternSummary *summ)
+{
+	Node * nd = instance.tree.GetRoot();
+	PostorderForNodeIterator poTrav = postorder(nd);
+	Arc arc = poTrav.get();
+	NodeIDToParsInfo nodeIDToParsInfo;
+	const ParsInfo * rootParsInfo = 0L;
+	assert(GetPatData.zeroVec.size() == bmat[0].size());
+	assert(arc.toNode);
+	while(arc.toNode) {
+		std::vector<Node *> children = arc.fromNode->GetChildren();
+		const unsigned numChildren = children.size();
+		NodeID currNdID(arc.fromNode, 0);
+		ParsInfo & currParsInfo = nodeIDToParsInfo[currNdID];
+		if (numChildren == 0) {
+			const unsigned taxInd = arc.fromNode->GetNumber();
+			currParsInfo.calculateForTip(bmat.at(taxInd), instance);
+		} else {
+			Node * leftNd = children[0];
+			Node * rightNd = children[1];
+			NodeIDToParsInfo::iterator leftPIIt = nodeIDToParsInfo.find(NodeID(leftNd, 0));
+			NodeIDToParsInfo::iterator rightPIIt = nodeIDToParsInfo.find(NodeID(rightNd, 0));
+			currParsInfo.calculateForInternal(leftPIIt->second, rightPIIt->second);
 
-
+			if (numChildren > 2) {
+				NodeID lastNdID(nd, 1);
+				ParsInfo & lastParsInfo = nodeIDToParsInfo[currNdID];
+				Node * lastNd = children.at(2);
+				NodeIDToParsInfo::iterator lastPIIt= nodeIDToParsInfo.find(NodeID(lastNd, 0));
+				lastParsInfo.calculateForInternal(currParsInfo, lastPIIt->second);
+				rootParsInfo = &currParsInfo;
+			}
+			else if (arc.toNode == nd)
+				rootParsInfo = &currParsInfo;
+		}
+	}
+	assert(rootParsInfo != 0L);
+	if (summ) {
+		summ->clear();
+		for (unsigned p = 0; p < rootParsInfo->size(); ++p) {
+			unsigned toAdd = (pwPtr != 0L ? (unsigned)pwPtr[p] : 1);
+			summ->incrementCount(rootParsInfo->score[p], rootParsInfo->allSeen[p], toAdd);
+		}
+	}
 }
+
+} // namespace

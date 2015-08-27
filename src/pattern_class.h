@@ -21,12 +21,15 @@ typedef void (* TiMatFunc)(double, TiMatVec);
 typedef unsigned char BitField;
 typedef std::vector<BitField> BitFieldRow;
 typedef std::vector<BitFieldRow> BitFieldMatrix;
+typedef std::map<BitField, unsigned> BitsToCount;
 typedef std::pair<const Node *, unsigned int> NodeID;
 typedef std::map<BitField, std::vector<double> > MaskToProbsByState;
 typedef std::map<BitField, MaskToProbsByState > MaskToMaskToProbsByState;
 
 class ProbInfo;
+class ParsInfo;
 typedef std::map<NodeID, ProbInfo *> NodeIDToProbInfo;
+typedef std::map<NodeID, ParsInfo> NodeIDToParsInfo;
 
 typedef std::pair<BitField, BitField> MaskPair;
 typedef std::vector<MaskPair> VecMaskPair;
@@ -79,7 +82,7 @@ class ExpectedPatternSummary {
       ExpectedPatternSummary(const ProbInfo &, const MTInstance &);
       void write(std::ostream, const MTInstance &) const;
   private:
-      std::vector<std::vector<double> > probsByStepsThenObsStates;
+      std::vector< std::vector<double> > probsByStepsThenObsStates;
 };
 
 class ProbInfo {
@@ -127,6 +130,19 @@ class ProbInfo {
       // data
       unsigned nLeavesBelow;
       std::vector<ProbForParsScore> byParsScore;
+};
+
+class PatternSummary {
+	public:
+		void clear() {
+			this->byParsScore.clear();
+		}
+		unsigned incrementCount(unsigned s, BitField m, unsigned toAdd);
+
+		void write(std::ostream &out, const MTInstance &) const;
+
+	private:
+		std::vector<BitsToCount> byParsScore;
 };
 
 } //namespace

@@ -55,6 +55,12 @@ class CharModel {
         const std::string & toSymbol(BitField sc) const {
 			    return this->stateCodesToSymbols.find(sc)->second;
 		    }
+        stateSetContainer::const_iterator stateSetBegin() const  {
+            return possObsStateSet.begin();
+        }
+        stateSetContainer::const_iterator stateSetEnd() const  {
+            return possObsStateSet.end();
+        }
 
         virtual void alterRateFreq(unsigned position, double value){
           this->rates[position] = value;
@@ -64,15 +70,16 @@ class CharModel {
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
-        
+
         virtual void optimizeParams(unsigned modelType){
-        		
+
         };
     protected:
         unsigned nStates;
         unsigned nRateCats;
         std::vector<double> rates;
         std::vector<double> rateProb;
+        stateSetContainer possObsStateSet;
 };
 
 class MkCharModel: public CharModel {
@@ -185,6 +192,17 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual ~MkVarNoMissingAscCharModel() {
         }
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+};
+
+// Character model for case with no missing data, and only parsimony-informative patterns
+class MkVarParsInfMissingModel: public MkCharModel {
+    public:
+        MkVarParsInfMissingModel(unsigned numStates, unsigned numRateCats)
+            :MkCharModel(numStates, numRateCats) {
+        }
+        virtual ~MkVarParsInfMissingModel() {
+        }
+        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
 };
 
 

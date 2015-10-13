@@ -4,6 +4,22 @@
 #include "mt_log.h"
 namespace mt {
 
+// Some Variables
+#define MAX_ITERS                               100
+#define MAX_REARRANGEMENTS                      100
+#define BZ_EPSILON                              1.e-5
+#define BRENT_VAR                               0.3819660
+#define GOLDEN_RAT                              1.618034
+#define BRAK_VAR1                               1.e-20
+#define BRAK_VAR2                               100.0
+#define MT_RATE_MIN                             0.0000001
+#define MT_RATE_MAX                             1000000.0
+#define MT_ALPHA_MIN                            0.2
+
+// Some macros
+#define MTREE_SIGN(a,b)                         ((b) > 0.0 ? fabs(a) : -fabs(a))
+#define MT_POINT_GAMMA(prob,alpha,beta)        PointChi2(prob,2.0*(alpha))/(2.0*(beta))
+
 typedef unsigned int char_state_t;
 class CharStateToPrimitiveInd {
     public:
@@ -46,9 +62,11 @@ class PartitionedMatrix {
         PartitionedMatrix(unsigned numTaxa,
                           const std::vector<unsigned> &numCharsPerPartition,
                           const std::vector<unsigned> &orig2compressed,
+                          const std::vector<unsigned> &numStatesPerPartition,
                           const std::vector<double> &patternWts)
             :nTaxa(numTaxa),
              nCharsVec(numCharsPerPartition),
+             nStatesVec(numStatesPerPartition),
              partitions(numCharsPerPartition.size()),
              origInd2CompressedInd(orig2compressed),
              patternWeights(patternWts) {
@@ -74,6 +92,7 @@ class PartitionedMatrix {
         std::vector<unsigned> nCharsVec;
         std::vector<CharMatrix> partitions;
         std::vector<unsigned> origInd2CompressedInd;
+        std::vector<unsigned> nStatesVec;
     public:
         const std::vector<double> patternWeights;
 };

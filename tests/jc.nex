@@ -1,12 +1,12 @@
 #NEXUS
 begin data;
 dimensions ntax=4 nchar=13;
-format datatype = dna ; 
+format datatype = morphological ; 
 matrix
-Taxon1 AAAAAAAATAAAA
-Taxon2 AAAAAACCGCCCA
-Taxon3 CCCCCCCCGCAAA
-Taxon4 NCCCCCAATACCA
+Taxon1 0000000111112223
+Taxon2 0000011111122223
+Taxon3 0001111112222233
+Taxon4 1111111001112234
 ;
 end;
 begin paup;

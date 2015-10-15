@@ -815,10 +815,15 @@ class NodeInfo {
         void setNumLeaves(int n) {
           numLeaves = n;
         }
+        
+        void setIsMissing(bool val) {
+          isMissing = val;
+        }
 
     private:
         std::vector<ProbForObsStateSet> probVec;
         int numLeaves;
+        boll isMissing;
 };
 
 int countBits(int x)
@@ -1066,7 +1071,7 @@ void calcUninformativePatterns(MTInstance & instance)
       stateSetContainer::const_iterator ssCit = GetPatData.stateSetBegin();
       for (; ssCit != GetPatData.stateSetEnd(); ssCit++) {
         const int & obsStSet = *ssCit;
-        int common = -1;
+        int common = -1;   // this is 111111... in bits
         int numObsSt = countBits(obsStSet);
 
         while(common>-2) {

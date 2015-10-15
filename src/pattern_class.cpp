@@ -21,7 +21,7 @@ namespace mt {
 //MACROS
 #define GetPatData      instance.GetCharModel()
 
-void initSettings(MTInstance &instance) {
+//void initSettings(MTInstance &instance) {
 
 // free nodeIDToProbInfo data structure for each node
  void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {

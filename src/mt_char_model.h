@@ -147,7 +147,7 @@ class MkCharModel: public CharModel {
         //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
           for(auto mi = 0U; mi < nParts; mi++) {
-            unsigned nsts = modelList[mi].getsts();
+            unsigned nsts = modelList[mi].getnsts();
             const double fns = double(nsts);
             const double fnsmo = fns - 1.0;
             const unsigned nsSq = nsts*nsts;
@@ -156,10 +156,10 @@ class MkCharModel: public CharModel {
                 const double e = std::exp(-fns*eb/fnsmo);
                 const double diffP = 1.0/fns - e/fns;
                 const double noDiffP = 1.0/fns +  fnsmo * e/fns;
-                for (auto fi = 0U; fi < nStates; ++fi) {
-                    for (auto ti = 0U; ti < nStates; ++ti) {
+                for (auto fi = 0U; fi < maxNStates; ++fi) {
+                    for (auto ti = 0U; ti < maxNStates; ++ti) {
                         const double p = (fi == ti ? noDiffP : diffP);
-                        probMat[mi*ri*nsSq + ri*nsSq + nStates*fi + ti] = p;
+                        probMat[mi*ri*nsSq + ri*nsSq + maxNStates*fi + ti] = p;
                     }
                 }
             }
@@ -176,8 +176,8 @@ class MkCharModel: public CharModel {
 //using the approximation for transition probabilities in equations 8,9,and 10
 class MkCovarCharModel: public MkCharModel {
   public:
-      MkCovarCharModel(unsigned numStates, unsigned numRateCats)
-          :MkCharModel(numStates, numRateCats),
+      MkCovarCharModel(unsigned numStates, unsigned numRateCats, unsigned numParts)
+          :MkCharModel(numStates, numRateCats, numParts),
           probMat(numStates*numStates*numRateCats*numRateCats, 0.0),
           rootStateFreq(numStates, 1.0/double(numStates)) {
           }

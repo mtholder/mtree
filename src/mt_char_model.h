@@ -48,10 +48,13 @@ class ModelParams{
 
 class CharModel {
     public:
-        CharModel(unsigned maxNumStates, unsigned numRateCats, unsigned ascBiasType, unsigned numparts)
+        CharModel(unsigned maxNumStates,
+                  unsigned numRateCats, 
+                  //unsigned ascBiasType,
+                  unsigned numparts)
             :maxNStates(maxNumStates),
             nRateCats(numRateCats),
-            ascType(ascBiasType),
+            //ascType(ascBiasType),
             rates(1, 1.0),
             rateProb(1, 1.0) {
         }
@@ -64,10 +67,10 @@ class CharModel {
             return nRateCats;
         }
         virtual unsigned GetNumStates() const {
-            return nStates;
+            return maxNStates;
         }
 
-        virtual const double GetRate(int pos) const {
+        virtual double GetRate(int pos) const {
             return rates[pos];
         }
         ModelParams & GetModelParams(int model) {
@@ -117,15 +120,14 @@ class CharModel {
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
         virtual void initModels(unsigned numParts, unsigned modelType);
         virtual void optimizeParams(unsigned modelType){
-
-        };
+        }
     protected:
         unsigned maxNStates;
         unsigned nRateCats;
         std::vector<double> rates;
         std::vector<double> rateProb;
         unsigned nParts;
-        unsigned ascType;
+        //unsigned ascType;
         std::vector<double> patternWeights;
         std::vector<ModelParams> modelList;
         stateSetContainer possObsStateSet;

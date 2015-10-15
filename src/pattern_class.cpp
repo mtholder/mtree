@@ -821,7 +821,9 @@ class NodeInfo {
         void setIsMissing(bool val) {
           isMissing = val;
         }
-
+        bool getIsMissing() const {
+            return isMissing;
+        }
     private:
         std::vector<ProbForObsStateSet> probVec;
         int numLeaves;
@@ -1061,8 +1063,8 @@ void calcUninformativePatterns(MTInstance & instance)
       NodeInfo * leftNdInfo = nodeToInfoMap[leftChild];
       Node * rightChild = children[1];
       NodeInfo * rightNdInfo = nodeToInfoMap[rightChild];
-      if(leftNdInfo->IsMissing() || rightNdInfo->IsMissing()) {
-        if((leftNdInfo->IsMissing() && rightNdInfo->IsMissing()) {
+      if(leftNdInfo->getIsMissing() || rightNdInfo->getIsMissing()) {
+        if(leftNdInfo->getIsMissing() && rightNdInfo->getIsMissing()) {
           currNdInfo->setIsMissing(true);
         } else {
           // add edge lengths and progress to next node

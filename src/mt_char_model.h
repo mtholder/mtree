@@ -12,7 +12,6 @@ namespace mt {
 
 class LeafCharacterVector;
 
- void ModelParams::createGammas(double alph, unsigned nsts);
 
 // stores alphas, gamma rates, numstates, and other params specfic to each partition
 // for numerical optimization
@@ -36,7 +35,7 @@ class ModelParams{
         std::vector<double> GetGammas(){
           return this->gammaRates;
         }
-        double getGammaRate(pos) {
+        double getGammaRate(std::size_t pos) {
           return this->gammaRates[pos];
         }
     private:

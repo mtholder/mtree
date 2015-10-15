@@ -5,6 +5,9 @@ namespace mt {
 
 class ArcIterator {
     public:
+        ArcIterator() 
+            : currNd(nullptr) {
+        }
         ArcIterator(Node *c) 
             : currNd(c) {
         }
@@ -18,7 +21,7 @@ class ArcIterator {
         Node * GetCurrNode() {
             return currNd;
         }
-        Node * currNd;
+        Node * currNd = nullptr;
 };
 
 class PostorderArcIterator:public ArcIterator {

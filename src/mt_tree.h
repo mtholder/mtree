@@ -230,25 +230,25 @@ class Arc {
         }
         const LeafCharacterVector * GetFromNdData(unsigned partIndex) {
             assert(IsFromLeaf());
-            return (const LeafCharacterVector *)fromNode->GetData(partIndex);
+            return static_cast<const LeafCharacterVector *>(fromNode->GetData(partIndex));
         }
         LeafWork * GetFromNdLeafWork(unsigned partIndex) {
             assert(IsFromLeaf());
-            return (LeafWork *)fromNode->GetWork(partIndex);
+            return static_cast<LeafWork *>(fromNode->GetWork(partIndex));
         }
         InternalNodeWork * GetFromNdIntWork(unsigned partIndex) {
-            return (InternalNodeWork *)fromNode->GetWork(partIndex);
+            return static_cast<InternalNodeWork *>(fromNode->GetWork(partIndex));
         }
         InternalNodeWork * GetToNdIntWork(unsigned partIndex) {
-            return (InternalNodeWork *)toNode->GetWork(partIndex);
+            return static_cast<InternalNodeWork *>(toNode->GetWork(partIndex));
         }
         double * GetFromNdCLA(unsigned partIndex, bool crossedEdge);
         double * GetToNdCLA(unsigned partIndex, bool crossedEdge);
         std::vector<const double *> GetPrevCLAs(unsigned partIndex);
-        unsigned GetLenCLA(unsigned partIndex) {
+        std::size_t GetLenCLA(unsigned partIndex) {
             return GetFromNdIntWork(partIndex)->GetLenCLA();
         }
-        unsigned GetNumChars(unsigned partIndex) {
+        std::size_t GetNumChars(unsigned partIndex) {
             return GetFromNdIntWork(partIndex)->nChars;
         }
         Node * fromNode;

@@ -54,7 +54,7 @@ class Node {
         unsigned GetNumber() const {
             return this->number;
         }
-        void AddChild(Node *c, double edgeLen) {
+        void AddChild(Node *c, double newEdgeLen) {
             assert(c);
             c->parent = this;
             Node *r = this->GetLastChild();
@@ -65,7 +65,7 @@ class Node {
             }
             assert(c->rightSib == nullptr);
             c->rightSib = nullptr;
-            c->SetEdgeLen(edgeLen);
+            c->SetEdgeLen(newEdgeLen);
         }
         Node * GetLastChild() {
             if (this->leftChild == nullptr) {
@@ -114,7 +114,7 @@ class Node {
 };
 class Tree {
     public:
-        unsigned GetNumLeaves() const {
+        std::size_t GetNumLeaves() const {
             return leaves.size();
         }
         void SetRoot(Node *r) {
@@ -171,7 +171,7 @@ class InternalNodeWork {
             //_DEBUG_VEC(claAtParFromNd);
             //_DEBUG_VEC(claAtParFromPar);
         }
-        unsigned GetLenCLA() const {
+        std::size_t GetLenCLA() const {
             return claAtNdFromNd.size();
         }
     std::vector<double> claAtNdFromNd;

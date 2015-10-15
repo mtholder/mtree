@@ -37,6 +37,8 @@ class MTInstance {
         void changeRate(int pos, double val) {
           this->charModelPtr->alterRateFreq(pos, val);
         }
+        double curLikelihood;
+
     private:
         MTInstance(const MTInstance &) = delete;
         MTInstance & operator=(const MTInstance &) = delete;
@@ -44,10 +46,11 @@ class MTInstance {
 
         MTInstance(unsigned numTaxa,
                    const std::vector<unsigned> &numCharsPerPartition,
+                   const std::vector<unsigned> &numStatesPerPartition,
                    const std::vector<unsigned> &orig2compressed,
                    const std::vector<double> &patternWts,
                    CharModel *cm)
-            :partMat(numTaxa, numCharsPerPartition, orig2compressed, patternWts),
+            :partMat(numTaxa, numCharsPerPartition, orig2compressed, numStatesPerPartition, patternWts),
             tree(2*numTaxa - 1, numTaxa),
             HasSearchConverged(false),
             charModelPtr(cm) {

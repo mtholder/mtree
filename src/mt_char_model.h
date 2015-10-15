@@ -6,15 +6,52 @@
 #include <utility>
 #include "ncl/nxsallocatematrix.h"
 #include "pattern_class.h"
+#include "mt_data.h"
 namespace mt {
 
 class LeafCharacterVector;
 
+ void ModelParams::createGammas(double alph, unsigned nsts);
+
+// stores alphas, gamma rates, numstates, and other params specfic to each partition
+// for numerical optimization
+class ModelParams{
+    public:
+        ModelParams(unsigned numStates, unsigned modelType)
+            :nStates(numStates),
+            model(modelType) {
+            }
+
+        void initializeModel(unsigned nsts, unsigned mdl) {
+          createGammas(0.5, nsts);
+        }
+        void createGammas(double a, int cats);
+        double GetAlpha() const {
+          return this->alpha;
+        }
+        unsigned getnsts() {
+          return this->nStates;
+        }
+        std::vector<double> GetGammas(){
+          return this->gammaRates;
+        }
+        double getGammaRate(pos) {
+          return this->gammaRates[pos];
+        }
+    private:
+        unsigned nStates;
+        unsigned model;
+        double alpha;
+        std::vector<double> gammaRates;
+};
+
+
 class CharModel {
     public:
-        CharModel(unsigned numStates, unsigned numRateCats)
-            :nStates(numStates),
+        CharModel(unsigned maxNumStates, unsigned numRateCats, unsigned ascBiasType, unsigned numparts)
+            :MaxNStates(maxNumStates),
             nRateCats(numRateCats),
+            ascType(ascBiasType),
             rates(1, 1.0),
             rateProb(1, 1.0) {
         }
@@ -29,9 +66,15 @@ class CharModel {
         virtual unsigned GetNumStates() const {
             return nStates;
         }
+
         virtual const double GetRate(int pos) const {
             return rates[pos];
         }
+        ModelParams & GetModelParams(int model) {
+            return modelList[model];
+        }
+        void createGammas(double a, int cats);
+
         // Members for PhyPatClassProb calculations
         bool isMkvSymm;
         ScopedDblThreeDMatrix firstMatVec;
@@ -65,28 +108,33 @@ class CharModel {
         virtual void alterRateFreq(unsigned position, double value){
           this->rates[position] = value;
         }
+
+
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
-
+        virtual void initModels(unsigned numParts, unsigned modelType);
         virtual void optimizeParams(unsigned modelType){
 
         };
     protected:
-        unsigned nStates;
+        unsigned maxNStates;
         unsigned nRateCats;
         std::vector<double> rates;
         std::vector<double> rateProb;
+        unsigned nParts;
+        unsigned ascType;
+        std::vector<double> patternWeights;
+        std::vector<ModelParams> modelList;
         stateSetContainer possObsStateSet;
 };
 
 class MkCharModel: public CharModel {
     public:
-        MkCharModel(unsigned numStates, unsigned numRateCats)
-            :CharModel(numStates, numRateCats),
-            probMat(numStates*numStates*numRateCats, 0.0),
+        MkCharModel(unsigned numStates, unsigned numRateCats, unsigned numParts)
+            :CharModel(numStates, numRateCats, numParts),
             rootStateFreq(numStates, 1.0/double(numStates)) {
         }
         virtual ~MkCharModel() {
@@ -96,22 +144,25 @@ class MkCharModel: public CharModel {
         }
         //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
-            const double fns = double(nStates);
+          for(auto mi = 0U; mi < nParts; mi++) {
+            unsigned nsts = modelList[mi].getsts();
+            const double fns = double(nsts);
             const double fnsmo = fns - 1.0;
-            const unsigned nsSq = nStates*nStates;
+            const unsigned nsSq = nsts*nsts;
             for (auto ri = 0U; ri < nRateCats; ++ri) {
-                const double eb = rates[ri]*edgeLen;
+                const double eb = modelList[mi].getGammaRate(ri)*edgeLen;
                 const double e = std::exp(-fns*eb/fnsmo);
                 const double diffP = 1.0/fns - e/fns;
                 const double noDiffP = 1.0/fns +  fnsmo * e/fns;
                 for (auto fi = 0U; fi < nStates; ++fi) {
                     for (auto ti = 0U; ti < nStates; ++ti) {
                         const double p = (fi == ti ? noDiffP : diffP);
-                        probMat[ri*nsSq + nStates*fi + ti] = p;
+                        probMat[mi*ri*nsSq + ri*nsSq + nStates*fi + ti] = p;
                     }
                 }
             }
-            return &(probMat[0]);
+          }
+          return &(probMat[0]);
         }
     private:
         std::vector<double> probMat;
@@ -192,6 +243,25 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual ~MkVarNoMissingAscCharModel() {
         }
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+};
+
+class MKVarMissingAscCharModel: public MkCharModel {  public:
+      MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+          :MkCharModel(numStates, numRateCats) {
+      }
+      virtual ~MkVarMissingAscCharModel() {
+      }
+      virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+};
+
+class MkVarParsInfNoMissingModel: public MkCharModel {
+    public:
+        MkVarParsInfNoMissingModel(unsigned numStates, unsigned numRateCats)
+            :MkCharModel(numStates, numRateCats) {
+        }
+        virtual ~MkVarParsInfNoMissingModel() {
+        }
+        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
 };
 
 // Character model for case with no missing data, and only parsimony-informative patterns

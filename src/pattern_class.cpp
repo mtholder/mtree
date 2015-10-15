@@ -1054,6 +1054,13 @@ void calcUninformativePatterns(MTInstance & instance)
       NodeInfo * leftNdInfo = nodeToInfoMap[leftChild];
       Node * rightChild = children[1];
       NodeInfo * rightNdInfo = nodeToInfoMap[rightChild];
+      if(leftNdInfo->IsMissing() || rightNdInfo->IsMissing()) {
+        if((leftNdInfo->IsMissing() && rightNdInfo->IsMissing()) {
+          currNdInfo->setIsMissing(true);
+        } else {
+          // add edge lengths and progress to next node
+        }
+      } else {}
       currNdInfo->setNumLeaves(leftNdInfo->getNumLeaves() + rightNdInfo->getNumLeaves());
 
       stateSetContainer::const_iterator ssCit = GetPatData.stateSetBegin();
@@ -1185,6 +1192,7 @@ void calcUninformativePatterns(MTInstance & instance)
           }
         }
       }
+      arc = poTrav.next();
     }
     // return currNdInfo
     //do something else

@@ -135,11 +135,7 @@ void NCL2MT::processTree(std::ostream *os,
     std::vector<unsigned> partLengths(1, firstPartLength);
     mt::CharModel * cm;
     unsigned numRateCats = 1;
-    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
-        cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
-    } else {
-        cm = new mt::MkCharModel(numStates, numRateCats);
-    }
+    cm = new mt::MkCharModel(numStates, numRateCats, md.GetAscBiasMode());
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;
     cm->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);

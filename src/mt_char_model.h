@@ -49,7 +49,7 @@ class ModelParams{
 class CharModel {
     public:
         CharModel(unsigned maxNumStates, unsigned numRateCats, unsigned ascBiasType, unsigned numparts)
-            :MaxNStates(maxNumStates),
+            :maxNStates(maxNumStates),
             nRateCats(numRateCats),
             ascType(ascBiasType),
             rates(1, 1.0),

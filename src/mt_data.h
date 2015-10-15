@@ -67,9 +67,9 @@ class PartitionedMatrix {
                           const std::vector<double> &patternWts)
             :nTaxa(numTaxa),
              nCharsVec(numCharsPerPartition),
-             nStatesVec(numStatesPerPartition),
              partitions(numCharsPerPartition.size()),
              origInd2CompressedInd(orig2compressed),
+             nStatesVec(numStatesPerPartition),
              patternWeights(patternWts) {
              for (auto i : partitions) {
                 i.resize(numTaxa);

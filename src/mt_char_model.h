@@ -49,9 +49,10 @@ class ModelParams{
 class CharModel {
     public:
         CharModel(unsigned maxNumStates,
-                  unsigned numRateCats, 
+                  unsigned numRateCats//, 
                   //unsigned ascBiasType,
-                  unsigned numparts)
+                  //unsigned numparts
+                  )
             :maxNStates(maxNumStates),
             nRateCats(numRateCats),
             //ascType(ascBiasType),
@@ -135,8 +136,10 @@ class CharModel {
 
 class MkCharModel: public CharModel {
     public:
-        MkCharModel(unsigned numStates, unsigned numRateCats, unsigned numParts)
-            :CharModel(numStates, numRateCats, numParts),
+        MkCharModel(unsigned numStates, unsigned numRateCats//, unsigned numParts
+          )
+            :CharModel(numStates, numRateCats//, numParts
+              ),
             rootStateFreq(numStates, 1.0/double(numStates)) {
         }
         virtual ~MkCharModel() {
@@ -176,8 +179,11 @@ class MkCharModel: public CharModel {
 //using the approximation for transition probabilities in equations 8,9,and 10
 class MkCovarCharModel: public MkCharModel {
   public:
-      MkCovarCharModel(unsigned numStates, unsigned numRateCats, unsigned numParts)
-          :MkCharModel(numStates, numRateCats, numParts),
+      MkCovarCharModel(unsigned numStates, unsigned numRateCats//, unsigned numParts
+        )
+          :MkCharModel(numStates,
+                       numRateCats//, numParts
+                       ),
           probMat(numStates*numStates*numRateCats*numRateCats, 0.0),
           rootStateFreq(numStates, 1.0/double(numStates)) {
           }
@@ -189,9 +195,9 @@ class MkCovarCharModel: public MkCharModel {
 
           virtual double * calcTransitionProb(double edgeLen) {
 
-            const double fns = double(nStates);
+            const double fns = double(maxNStates);
             const double fnsmo = fns - 1.0;
-            const unsigned nsSq = nStates*nStates;
+            const unsigned nsSq = maxNStates*maxNStates;
 
             for (auto ri = 0U; ri < nRateCats; ++ri) {
               for (auto rj = 0U; rj < nRateCats; ++rj) {
@@ -220,10 +226,10 @@ class MkCovarCharModel: public MkCharModel {
                   const double diffP = 1.0/fns - e/fns;
                   const double noDiffP = 1.0/fns +  fnsmo * e/fns;
 
-                for (auto fi = 0U; fi < nStates; ++fi) {
-                    for (auto ti = 0U; ti < nStates; ++ti) {
+                for (auto fi = 0U; fi < maxNStates; ++fi) {
+                    for (auto ti = 0U; ti < maxNStates; ++ti) {
                         const double p = (fi == ti ? noDiffP : diffP);
-                        probMat[ri*nRateCats*nsSq + rj*nsSq+ nStates*fi + ti] = p*probRateChange;
+                        probMat[ri*nRateCats*nsSq + rj*nsSq+ maxNStates*fi + ti] = p*probRateChange;
                       }
                     }
                 }
@@ -239,7 +245,10 @@ class MkCovarCharModel: public MkCharModel {
 
 class MkVarNoMissingAscCharModel: public MkCharModel {
     public:
-        MkVarNoMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+        MkVarNoMissingAscCharModel(unsigned numStates,
+                                   unsigned numRateCats//,
+                                   //unsigned numParts
+                                   )
             :MkCharModel(numStates, numRateCats) {
         }
         virtual ~MkVarNoMissingAscCharModel() {
@@ -247,7 +256,8 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
-class MKVarMissingAscCharModel: public MkCharModel {  public:
+class MkVarMissingAscCharModel: public MkCharModel {
+  public:
       MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
           :MkCharModel(numStates, numRateCats) {
       }

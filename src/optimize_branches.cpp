@@ -2,6 +2,7 @@
 
 #include "mt_tree.h"
 #include "mt_optimize_branches.h"
+#include "mt_instance.h"
 #include "mt_tree.h"
 #include "mt_data.h"
 
@@ -24,10 +25,10 @@ static bool allSmoothed (MTInstance &instance, int numBranches) {
 }
 }
 
-void optimizeAllBranchLengthsForAllPartitions(MTInstance &instance) {
+void optimizeAllBranchLengthsForAllPartitions(mt::MTInstance &instance) {
 
     const unsigned numPartBranchLengths = instance.partMat.GetNumPartitions();
-    instance.optSettings.partitionConverged.assign(numPartBranchLengths, 0);
+    instance.optSettings.partitionConverged.assign(numPartBranchLengths, false);
     unsigned maxLoops = instance.optSettings.maxIterBrLenSmoothing;
     while (--maxLoops >= 0) {
         instance.optSettings.partitionSmoothed.assign(numPartBranchLengths, 1);

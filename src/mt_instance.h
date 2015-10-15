@@ -54,8 +54,8 @@ class MTInstance {
                    CharModel *cm)
             :partMat(numTaxa, numCharsPerPartition, orig2compressed, numStatesPerPartition, patternWts),
             tree(2*numTaxa - 1, numTaxa),
-            HasSearchConverged(FALSE),
-            curvatOK(TRUE),
+            HasSearchConverged(false),
+            curvatOK(true),
             charModelPtr(cm) {
         }
 };

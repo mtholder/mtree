@@ -234,7 +234,7 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, std::vector<d
       for(pos = 0; pos < nModels; pos++)
       {
         assert(rateNumber != -1);
-        changeParam(instance, rateNumber, values[pos], paramType);
+        changeParam(instance, pos, rateNumber, values[pos], paramType);
         CharModel &chrmodel = instance.GetCharModel();
         results[pos] = ScoreTree(instance.partMat, instance.tree, chrmodel);
         break;
@@ -242,7 +242,8 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, std::vector<d
     case ALPHA_P:
       for(pos = 0; pos < nModels; pos++)
       {
-
+      	changeParam(instance, pos, rateNumber, values[pos], paramType);
+      	
       }
       break;
   }

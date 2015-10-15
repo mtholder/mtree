@@ -39,7 +39,7 @@ class Node {
              number(UINT_MAX),
              edgeLen(-1.0) {
         }
-        std::vector<Node *> GetChildren() {
+        std::vector<Node *> GetChildren() const {
             std::vector<Node *> c;
             Node * curr = leftChild;
             while (curr) {
@@ -80,7 +80,7 @@ class Node {
         void SetEdgeLen(double e) {
             this->edgeLen = e;
         }
-        double GetEdgeLen() {
+        double GetEdgeLen() const {
             return this->edgeLen;
         }
         bool IsLeaf() const {

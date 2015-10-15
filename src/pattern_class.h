@@ -21,17 +21,21 @@ typedef void (* TiMatFunc)(double, TiMatVec);
 typedef unsigned char BitField;
 typedef std::vector<BitField> BitFieldRow;
 typedef std::vector<BitFieldRow> BitFieldMatrix;
+typedef std::map<BitField, unsigned> BitsToCount;
 typedef std::pair<const Node *, unsigned int> NodeID;
 typedef std::map<BitField, std::vector<double> > MaskToProbsByState;
 typedef std::map<BitField, MaskToProbsByState > MaskToMaskToProbsByState;
 
 class ProbInfo;
+class ParsInfo;
 typedef std::map<NodeID, ProbInfo *> NodeIDToProbInfo;
+typedef std::map<NodeID, ParsInfo> NodeIDToParsInfo;
 
 typedef std::pair<BitField, BitField> MaskPair;
 typedef std::vector<MaskPair> VecMaskPair;
 typedef std::map<BitField, VecMaskPair> MaskToVecMaskPair;
 typedef std::vector<VecMaskPair> VMaskToVecMaskPair;
+typedef std::vector<int> stateSetContainer;
 
 const std::vector<double> * getProbsForStatesMask(const MaskToProbsByState *, const BitField sc);
 std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock, BitFieldMatrix & bfMat);
@@ -79,7 +83,7 @@ class ExpectedPatternSummary {
       ExpectedPatternSummary(const ProbInfo &, const MTInstance &);
       void write(std::ostream, const MTInstance &) const;
   private:
-      std::vector<std::vector<double> > probsByStepsThenObsStates;
+      std::vector< std::vector<double> > probsByStepsThenObsStates;
 };
 
 class ProbInfo {
@@ -129,5 +133,54 @@ class ProbInfo {
       std::vector<ProbForParsScore> byParsScore;
 };
 
+class ProbForObsStateSet{ //for each state want to set -1 to 1 and all else to 0 (will be either 1 or anything up to NumStates)
+    public:
+        ProbForObsStateSet(unsigned int numStates) {
+            std::vector<double> initialVal(numStates, 0.0);
+            noRepeatedState = initialVal;
+            probVec.assign(numStates, initialVal);
+        }
+
+        std::vector<double> & getProbForCommState(int commState) {
+            if(commState == -1)
+                return noRepeatedState;
+            return probVec.at(commState);
+        }
+        /*void writeDebug(std::ostream & o, const CommonInfo & blob) const {
+            o << "ProbForObsStateSet{\n  ";
+            o << "-1 ";
+            for (unsigned i = 0; i < noRepeatedState.size() ; ++i) {
+                o << noRepeatedState[i] << " ";
+            }
+            for (unsigned i = 0; i < probVec.size() ; ++i) {
+                o << "\n  " << i << ' ';
+                const probvec_t & pvi = probVec[i];
+                for (unsigned i = 0; i < pvi.size() ; ++i) {
+                    o << pvi[i] << " ";
+                }
+            }
+            o << "}\n";
+        } */
+
+    private:
+        typedef std::vector<double> probvec_t;
+        std::vector<probvec_t> probVec;
+        probvec_t noRepeatedState;
+};
+
+class PatternSummary {
+	public:
+		void clear() {
+			this->byParsScore.clear();
+		}
+		unsigned incrementCount(unsigned s, BitField m, unsigned toAdd);
+
+		void write(std::ostream &out, const MTInstance &) const;
+
+	private:
+		std::vector<BitsToCount> byParsScore;
+};
+
 } //namespace
 #endif
+>>>>>>> test

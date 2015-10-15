@@ -58,7 +58,7 @@ class CharModel {
         }
         virtual ~CharModel() {
         }
-        virtual const double * GetRateCatProb() const {
+        virtual const double * GetRateCatProb()const {
             return &(rateProb[0]);
         }
         virtual unsigned GetNumRates() const {
@@ -177,7 +177,7 @@ class MkCovarCharModel: public MkCharModel {
   public:
       MkCovarCharModel(unsigned numStates, unsigned numRateCats)
           :MkCharModel(numStates, numRateCats),
-          probMate(numStates*numStates*numRateCats*numRateCats, 0.0),
+          probMat(numStates*numStates*numRateCats*numRateCats, 0.0),
           rootStateFreq(numStates, 1.0/double(numStates)) {
           }
           virtual ~MkCovarCharModel() {
@@ -196,18 +196,18 @@ class MkCovarCharModel: public MkCharModel {
               for (auto rj = 0U; rj < nRateCats; ++rj) {
                 const double eb = rates[ri]*edgeLen;
                 const double eb1 = switchRate*edgeLen;
-
+                double var1, var2, var3, probRateChange;
                 if (ri == rj) {
-                  const double var1 = 2.0*(1.0 - rates[ri]);
-                  const double var2 = 1.0 + (double(numRateCats) - 2.0) - rates[ri];
-                  const double var3 = double(numRateCats);
-                  const double probRateChange = std::exp(-eb1) + (1.0 - std::exp(-eb1))/double(numRateCats);
+                  var1 = 2.0*(1.0 - rates[ri]);
+                  var2 = 1.0 + (double(nRateCats) - 2.0) - rates[ri];
+                  var3 = double(nRateCats);
+                  probRateChange = std::exp(-eb1) + (1.0 - std::exp(-eb1))/double(nRateCats);
 
                 } else {
-                  const double var1 = 2.0 - rates[ri] - rates[rj];
-                  const double var2 = 1.0 - rates[ri] - rates[rj];
-                  const double var3 = 0;
-                  const double probRateChange = (1.0 - std::exp(-eb1))/double(numRateCats);
+                    var1 = 2.0 - rates[ri] - rates[rj];
+                    var2 = 1.0 - rates[ri] - rates[rj];
+                    var3 = 0;
+                    probRateChange = (1.0 - std::exp(-eb1))/double(nRateCats);
                 }
 
                   const double numerator = (var1 + var2*eb)*std::exp(-eb) + eb - var1;
@@ -233,7 +233,7 @@ class MkCovarCharModel: public MkCharModel {
   private:
       std::vector<double> probMat;
       std::vector<double> rootStateFreq;
-      const double switchRate;
+      double switchRate;
 };
 
 class MkVarNoMissingAscCharModel: public MkCharModel {

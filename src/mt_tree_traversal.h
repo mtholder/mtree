@@ -3,9 +3,11 @@
 #include "mt_tree.h"
 namespace mt {
 
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm);
+
 class ArcIterator {
     public:
-        ArcIterator(Node *c) 
+        ArcIterator(Node *c)
             : currNd(c) {
         }
         virtual ~ArcIterator(){}
@@ -81,10 +83,12 @@ class PostorderArcIterator:public ArcIterator {
                 currNd = currNd->leftChild;
             }
         }
-    Node * avoid;
-    std::stack<Node *>ancStack;
+        Node * avoid;
+        std::stack<Node *>ancStack;
 
 };
+
+
 class PostorderForNodeIterator: public ArcIterator {
     public:
         PostorderForNodeIterator(Node * vr)

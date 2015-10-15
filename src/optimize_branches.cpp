@@ -1,5 +1,5 @@
 #include <vector>
-
+#if 0
 #include "mt_tree.h"
 #include "mt_optimize_branches.h"
 #include "mt_instance.h"
@@ -426,7 +426,7 @@ void optBrLen(MTInstance &instance, Arc edge, int maxiter, double *result)
     pr->partitionData[i]->executeModel = PLL_TRUE;
 }
 #endif
-
+#if 0
 /// topLevelMakenewz in PLL
 void newtRaph (MTInstance *instance, Arc edge, double *z0, int maxiter, double *result)
 {
@@ -626,3 +626,4 @@ void newtRaph (MTInstance *instance, Arc edge, double *z0, int maxiter, double *
 
 }// namespace
 #endif
+

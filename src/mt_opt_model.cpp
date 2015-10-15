@@ -781,3 +781,4 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
 }
 
 } //namespace mt
+

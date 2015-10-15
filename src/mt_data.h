@@ -38,6 +38,7 @@ class CharStateToPrimitiveInd {
     private:
         std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;
 };
+
 class LeafCharacterVector {
     public:
         LeafCharacterVector()

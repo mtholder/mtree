@@ -21,6 +21,8 @@ namespace mt {
 //MACROS
 #define GetPatData      instance.GetCharModel()
 
+void initSettings(MTInstance &instance) {
+
 // free nodeIDToProbInfo data structure for each node
  void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {
       Arc travArc = iter.get();
@@ -823,7 +825,7 @@ class NodeInfo {
     private:
         std::vector<ProbForObsStateSet> probVec;
         int numLeaves;
-        boll isMissing;
+        bool isMissing;
 };
 
 int countBits(int x)
@@ -1071,7 +1073,7 @@ void calcUninformativePatterns(MTInstance & instance)
       stateSetContainer::const_iterator ssCit = GetPatData.stateSetBegin();
       for (; ssCit != GetPatData.stateSetEnd(); ssCit++) {
         const int & obsStSet = *ssCit;
-        int common = -1;   // this is 111111... in bits
+        int common = -1;   // this is 11... in bits
         int numObsSt = countBits(obsStSet);
 
         while(common>-2) {

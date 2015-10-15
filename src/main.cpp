@@ -135,11 +135,13 @@ void NCL2MT::processTree(std::ostream *os,
     std::vector<unsigned> partLengths(1, firstPartLength);
     mt::CharModel * cm;
     unsigned numRateCats = 1;
-    cm = new mt::MkCharModel(numStates, numRateCats, md.GetAscBiasMode());
+    //TEMP - need logic here to instantiate the right type of model wrt AscBias
+    cm = new mt::MkCharModel(numStates, numRateCats);
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;
     cm->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);
-    mt::MTInstance mtInstance(numTaxa, partLengths, origToComp, patternWeights, cm);
+    std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
+    mt::MTInstance mtInstance(numTaxa, partLengths, numStatesPerPartition, origToComp, patternWeights, cm);
     mt::PartitionedMatrix & partMat = mtInstance.partMat;
     partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
     mt::Tree &tree = mtInstance.tree;

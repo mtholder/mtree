@@ -22,3 +22,4 @@ stamp-h1
 tests/Makefile
 tests/.test_output
 src/mtree
+src/*.o

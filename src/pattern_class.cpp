@@ -18,8 +18,6 @@
 
 namespace mt {
 
-//MACROS
-#define GetPatData      instance.GetCharModel()
 
 //void initSettings(MTInstance &instance) {
 
@@ -1030,34 +1028,34 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 // calculate probabilities of uninformative patterns
 void calcUninformativePatterns(MTInstance & instance)
 {
-	Node * nd = instance.tree.GetRoot();
-	PostorderForNodeIterator poTrav = postorder(nd);
-	Arc arc = poTrav.get();
+  Node * nd = instance.tree.GetRoot();
+ PostorderForNodeIterator poTrav = postorder(nd);
+  Arc arc = poTrav.get();
   std::map<Node *, NodeInfo *> nodeToInfoMap;
   unsigned numStates = GetPatData.GetNumStates();
   NodeInfo * currNdInfo = 0L;
-	assert(arc.toNode);
-	while(arc.toNode) {
+  assert(arc.toNode);
+  while(arc.toNode) {
     Node * currNd = arc.fromNode;
-		std::vector<Node *> children = currNd->GetChildren();
-		const unsigned numChildren = children.size();
-		currNdInfo = new NodeInfo(numStates);
+    std::vector<Node *> children = currNd->GetChildren();
+    const unsigned numChildren = children.size();
+    currNdInfo = new NodeInfo(numStates);
     NodeID currNdID(currNd, 0);
     nodeToInfoMap[currNd] = currNdInfo;
     if (numChildren == 0) {
-        for(int i = 0; i < numStates; i++) {
-          int ss=1 << i;
-          ProbForObsStateSet & p = currNdInfo->getForObsStateSet(ss);
-          std::vector<double> & v = p.getProbForCommState(-1);
-          v[i] = 1.0;
-          currNdInfo->setNumLeaves(1);
-        }
+      for(int i = 0; i < numStates; i++) {
+        int ss=1 << i;
+        ProbForObsStateSet & p = currNdInfo->getForObsStateSet(ss);
+        std::vector<double> & v = p.getProbForCommState(-1);
+        v[i] = 1.0;
+        currNdInfo->setNumLeaves(1);
+      }
     } else {
 
-      if (numChildren != 2) {
-        std::cerr << "Trees must be binary \n";
-        exit(1);
-      }
+    if (numChildren != 2) {
+      std::cerr << "Trees must be binary \n";
+      exit(1);
+    }
 
       Node * leftChild = children[0];
       NodeInfo * leftNdInfo = nodeToInfoMap[leftChild];

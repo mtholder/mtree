@@ -10,6 +10,7 @@
 #include "mt_instance.h"
 #include "mt_ini_options.h"
 #include "mt_char_model.h"
+#include "mt_tree.h"
 #include "search.h"
 #include "pattern_class.h"
 using namespace std;
@@ -136,7 +137,22 @@ void NCL2MT::processTree(std::ostream *os,
     mt::CharModel * cm;
     unsigned numRateCats = 1;
     //TEMP - need logic here to instantiate the right type of model wrt AscBias
-    cm = new mt::MkCharModel(numStates, numRateCats);
+    switch (md.GetAscBiasMode()) {
+      case mt::ModelDescription::NO_ASC_BIAS:
+        cm = new mt::MkCharModel(numStates, numRateCats);
+        break;
+      case mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS:
+      	cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
+      	break;
+      case mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS:
+      	cm = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
+      	break;
+      case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
+      	cm = new mt::MkVarParsInfNoMissingModel(numStates, numRateCats);
+      	break;
+      case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:	
+      	cm = new mt::MkVarParsInfMissingModel(numStates, numRateCats);
+    }
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;
     cm->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);

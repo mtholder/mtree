@@ -246,12 +246,12 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
-class MKVarMissingAscCharModel: public MkCharModel {  
+class MkVarMissingAscCharModel: public MkCharModel {  
     public:
-    	MKVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+    	MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
            :MkCharModel(numStates, numRateCats) {
       }
-      virtual ~MKVarMissingAscCharModel() {
+      virtual ~MkVarMissingAscCharModel() {
       }
       virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };

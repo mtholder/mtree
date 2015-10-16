@@ -87,21 +87,21 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     const double * tiprob = this->calcTransitionProb(edgeLen);
     const CharStateToPrimitiveInd * s2pi = data->cs2pi;
     const unsigned numStateCodes = s2pi->GetNumStateCodes();
-    const unsigned lenCLAWord = maxNStates*nRateCats;
+    const unsigned lenCLAWord = nStates*nRateCats;
     double * summedLoc = claElements;
-    const unsigned nssq = maxNStates * maxNStates;
+    const unsigned nssq = nStates * nStates;
     assign(0.0, summedLoc, lenCLAWord*numStateCodes);
     for (auto sci = 0U; sci < numStateCodes; ++sci) {
         for (auto toState : s2pi->GetStateCodes(sci)) {
             for (auto ri = 0U; ri < nRateCats; ++ri) {
-                for (auto fromState = 0U ; fromState < maxNStates; ++fromState) {
-                    summedLoc[ri*maxNStates + fromState] += tiprob[ri*nssq + fromState*maxNStates + toState];
+                for (auto fromState = 0U ; fromState < nStates; ++fromState) {
+                    summedLoc[ri*nStates + fromState] += tiprob[ri*nssq + fromState*nStates + toState];
                 }
             }
         }
         summedLoc += lenCLAWord;
     }
-    _DEBUG_CLA(claElements, nRateCats, maxNStates, numStateCodes);
+    _DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
     /* fill in the cla vector by copying sums */
     for (auto ci = 0U; ci < numChars; ++ci) {
         const char_state_t sc = data->charVec[ci];
@@ -112,16 +112,16 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
 
 void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) {
     const double * tiprob = this->calcTransitionProb(edgeLen);
-    const unsigned lenCLAWord = maxNStates*nRateCats;
-    const unsigned nssq = maxNStates * maxNStates;
+    const unsigned lenCLAWord = nStates*nRateCats;
+    const unsigned nssq = nStates * nStates;
     for (auto c = 0U ; c < numChars; ++c) {
         for (auto ri = 0U; ri < nRateCats; ++ri) {
-            for (auto fromState = 0U ; fromState < maxNStates; ++fromState) {
+            for (auto fromState = 0U ; fromState < nStates; ++fromState) {
                 double prob = 0.0;
-                for (auto toState = 0U ; toState < maxNStates; ++toState) {
-                    prob += tiprob[ri*nssq + fromState*maxNStates + toState]*beforeEdge[ri*maxNStates + toState];
+                for (auto toState = 0U ; toState < nStates; ++toState) {
+                    prob += tiprob[ri*nssq + fromState*nStates + toState]*beforeEdge[ri*nStates + toState];
                 }
-                afterEdge[ri*maxNStates + fromState] = prob;
+                afterEdge[ri*nStates + fromState] = prob;
             }
         }
         afterEdge += lenCLAWord;
@@ -132,7 +132,7 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
 double CharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          unsigned numChars) const {
-    const unsigned lenCLAWord = maxNStates*nRateCats;
+    const unsigned lenCLAWord = nStates*nRateCats;
     const double * rateCatProb = GetRateCatProb();
     const double * stateFreq = GetRootStateFreq();
     double lnL = 0.0;
@@ -140,8 +140,8 @@ double CharModel::sumLnL(const double *cla,
         double charL = 0.0;
         for (auto ri = 0U; ri < nRateCats; ++ri) {
             double rateL = 0.0;
-            for (auto fromState = 0U ; fromState < maxNStates; ++fromState) {
-                rateL += cla[ri*maxNStates + fromState]*stateFreq[fromState];
+            for (auto fromState = 0U ; fromState < nStates; ++fromState) {
+                rateL += cla[ri*nStates + fromState]*stateFreq[fromState];
             }
             charL += rateL*rateCatProb[ri];
             _DEBUG_VAL(charL);
@@ -157,12 +157,12 @@ double CharModel::sumLnL(const double *cla,
 double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          unsigned numChars) const {
-    unsigned numRealPatterns =  numChars - maxNStates;
+    unsigned numRealPatterns =  numChars - nStates;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
-    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - maxNStates, &fake, 1);
+    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
     double oneStateCorrectionL = exp(oneStateCorrectionLnL);
-    double correctionL = 1 - (maxNStates * oneStateCorrectionL);
+    double correctionL = 1 - (nStates * oneStateCorrectionL);
     double corrLnL = log(correctionL);
     double sw = 0.0;
     for (auto i = 0U; i < numRealPatterns; ++i) {

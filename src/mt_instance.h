@@ -36,9 +36,9 @@ class MTInstance {
             return *charModelPtr;
         }
 
-        void changeRate(int pos, double val) {
+        /*void changeRate(int pos, double val) {
           this->charModelPtr->alterRateFreq(pos, val);
-        }
+        }*/
         double curLikelihood;
 
     private:

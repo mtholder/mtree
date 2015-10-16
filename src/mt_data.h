@@ -17,8 +17,9 @@ namespace mt {
 #define MT_ALPHA_MIN                            0.2
 
 // Some macros
-#define MTREE_SIGN(a,b)                         ((b) > 0.0 ? fabs(a) : -fabs(a))
+#define MTREE_SIGN(a,b)                        ((b) > 0.0 ? fabs(a) : -fabs(a))
 #define MT_POINT_GAMMA(prob,alpha,beta)        PointChi2(prob,2.0*(alpha))/(2.0*(beta))
+#define GetPatData      		       instance.GetCharModel()
 
 typedef unsigned int char_state_t;
 class CharStateToPrimitiveInd {

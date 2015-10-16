@@ -12,7 +12,9 @@ namespace mt {
 
 class LeafCharacterVector;
 
+//void ModelParams::createGammas(double alph, unsigned nsts);
 
+/*
 // stores alphas, gamma rates, numstates, and other params specfic to each partition
 // for numerical optimization
 class ModelParams{
@@ -35,7 +37,7 @@ class ModelParams{
         std::vector<double> GetGammas(){
           return this->gammaRates;
         }
-        double getGammaRate(std::size_t pos) {
+        double getGammaRate(pos) {
           return this->gammaRates[pos];
         }
     private:
@@ -44,18 +46,13 @@ class ModelParams{
         double alpha;
         std::vector<double> gammaRates;
 };
-
+*/
 
 class CharModel {
     public:
-        CharModel(unsigned maxNumStates,
-                  unsigned numRateCats//, 
-                  //unsigned ascBiasType,
-                  //unsigned numparts
-                  )
-            :maxNStates(maxNumStates),
+        CharModel(unsigned numStates, unsigned numRateCats)
+            :nStates(numStates),
             nRateCats(numRateCats),
-            //ascType(ascBiasType),
             rates(1, 1.0),
             rateProb(1, 1.0) {
         }
@@ -68,16 +65,18 @@ class CharModel {
             return nRateCats;
         }
         virtual unsigned GetNumStates() const {
-            return maxNStates;
+            return nStates;
         }
-
-        virtual double GetRate(int pos) const {
+        virtual double GetAlpha() const {
+            return alpha;
+        }
+        virtual const double GetRate(int pos) const {
             return rates[pos];
         }
-        ModelParams & GetModelParams(int model) {
+        /*ModelParams & GetModelParams(int model) {
             return modelList[model];
-        }
-        void createGammas(double a, int cats);
+        }*/
+        virtual void createGammas(double a, int cats);
 
         // Members for PhyPatClassProb calculations
         bool isMkvSymm;
@@ -109,9 +108,9 @@ class CharModel {
             return possObsStateSet.end();
         }
 
-        virtual void alterRateFreq(unsigned position, double value){
+        /*virtual void alterRateFreq(unsigned position, double value){
           this->rates[position] = value;
-        }
+        }*/
 
 
         virtual const double * GetRootStateFreq() const = 0;
@@ -121,25 +120,23 @@ class CharModel {
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
         virtual void initModels(unsigned numParts, unsigned modelType);
         virtual void optimizeParams(unsigned modelType){
-        }
+
+        };
     protected:
-        unsigned maxNStates;
+        unsigned nStates;
         unsigned nRateCats;
         std::vector<double> rates;
         std::vector<double> rateProb;
-        unsigned nParts;
-        //unsigned ascType;
+        double alpha;
         std::vector<double> patternWeights;
-        std::vector<ModelParams> modelList;
+        //std::vector<ModelParams> modelList;
         stateSetContainer possObsStateSet;
 };
 
 class MkCharModel: public CharModel {
     public:
-        MkCharModel(unsigned numStates, unsigned numRateCats//, unsigned numParts
-          )
-            :CharModel(numStates, numRateCats//, numParts
-              ),
+        MkCharModel(unsigned numStates, unsigned numRateCats)
+            :CharModel(numStates, numRateCats),
             rootStateFreq(numStates, 1.0/double(numStates)) {
         }
         virtual ~MkCharModel() {
@@ -149,24 +146,22 @@ class MkCharModel: public CharModel {
         }
         //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
-          for(auto mi = 0U; mi < nParts; mi++) {
-            unsigned nsts = modelList[mi].getnsts();
+            unsigned nsts = this->GetNumStates();
             const double fns = double(nsts);
             const double fnsmo = fns - 1.0;
             const unsigned nsSq = nsts*nsts;
             for (auto ri = 0U; ri < nRateCats; ++ri) {
-                const double eb = modelList[mi].getGammaRate(ri)*edgeLen;
+                const double eb = this->GetRate(ri)*edgeLen;
                 const double e = std::exp(-fns*eb/fnsmo);
                 const double diffP = 1.0/fns - e/fns;
                 const double noDiffP = 1.0/fns +  fnsmo * e/fns;
-                for (auto fi = 0U; fi < maxNStates; ++fi) {
-                    for (auto ti = 0U; ti < maxNStates; ++ti) {
+                for (auto fi = 0U; fi < nsts; ++fi) {
+                    for (auto ti = 0U; ti < nsts; ++ti) {
                         const double p = (fi == ti ? noDiffP : diffP);
-                        probMat[mi*ri*nsSq + ri*nsSq + maxNStates*fi + ti] = p;
+                        probMat[ri*nsSq + nStates*fi + ti] = p;
                     }
                 }
             }
-          }
           return &(probMat[0]);
         }
     private:
@@ -179,11 +174,8 @@ class MkCharModel: public CharModel {
 //using the approximation for transition probabilities in equations 8,9,and 10
 class MkCovarCharModel: public MkCharModel {
   public:
-      MkCovarCharModel(unsigned numStates, unsigned numRateCats//, unsigned numParts
-        )
-          :MkCharModel(numStates,
-                       numRateCats//, numParts
-                       ),
+      MkCovarCharModel(unsigned numStates, unsigned numRateCats)
+          :MkCharModel(numStates, numRateCats),
           probMat(numStates*numStates*numRateCats*numRateCats, 0.0),
           rootStateFreq(numStates, 1.0/double(numStates)) {
           }
@@ -195,9 +187,10 @@ class MkCovarCharModel: public MkCharModel {
 
           virtual double * calcTransitionProb(double edgeLen) {
 
-            const double fns = double(maxNStates);
+            const double nsts = this->GetNumStates();
+            const double fns = double(nsts);
             const double fnsmo = fns - 1.0;
-            const unsigned nsSq = maxNStates*maxNStates;
+            const unsigned nsSq = nsts*nsts;
 
             for (auto ri = 0U; ri < nRateCats; ++ri) {
               for (auto rj = 0U; rj < nRateCats; ++rj) {
@@ -226,10 +219,10 @@ class MkCovarCharModel: public MkCharModel {
                   const double diffP = 1.0/fns - e/fns;
                   const double noDiffP = 1.0/fns +  fnsmo * e/fns;
 
-                for (auto fi = 0U; fi < maxNStates; ++fi) {
-                    for (auto ti = 0U; ti < maxNStates; ++ti) {
+                for (auto fi = 0U; fi < nStates; ++fi) {
+                    for (auto ti = 0U; ti < nStates; ++ti) {
                         const double p = (fi == ti ? noDiffP : diffP);
-                        probMat[ri*nRateCats*nsSq + rj*nsSq+ maxNStates*fi + ti] = p*probRateChange;
+                        probMat[ri*nRateCats*nsSq + rj*nsSq+ nStates*fi + ti] = p*probRateChange;
                       }
                     }
                 }
@@ -245,10 +238,7 @@ class MkCovarCharModel: public MkCharModel {
 
 class MkVarNoMissingAscCharModel: public MkCharModel {
     public:
-        MkVarNoMissingAscCharModel(unsigned numStates,
-                                   unsigned numRateCats//,
-                                   //unsigned numParts
-                                   )
+        MkVarNoMissingAscCharModel(unsigned numStates, unsigned numRateCats)
             :MkCharModel(numStates, numRateCats) {
         }
         virtual ~MkVarNoMissingAscCharModel() {
@@ -256,12 +246,12 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
-class MkVarMissingAscCharModel: public MkCharModel {
-  public:
-      MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
-          :MkCharModel(numStates, numRateCats) {
+class MKVarMissingAscCharModel: public MkCharModel {  
+    public:
+    	MKVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+           :MkCharModel(numStates, numRateCats) {
       }
-      virtual ~MkVarMissingAscCharModel() {
+      virtual ~MKVarMissingAscCharModel() {
       }
       virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };

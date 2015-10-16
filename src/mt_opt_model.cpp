@@ -40,7 +40,7 @@ double LnGamma(double alph){
     f = -log(f);
   }
   z = 1 / (a * a);
-  return f + (a-0.5)*log(x) - a + .918938533204673
+  return f + (a-0.5)*log(a) - a + .918938533204673
 	       + (((-.000595238095238*z+.000793650793651)*z-.002777777777778)*z
 	       +.083333333333333)/a;
 }
@@ -50,8 +50,8 @@ double LnGamma(double alph){
 // 19: 285-287 (AS32)
 double IncompleteGamma(double x, double alph, double lga){
   int i;
-  double p = alpha, g = lga, accurate = 1e-8, overflow = 1e30;
-  double factor, gin = 0, rn = 0, a = 0, b = 0, an = 0, dif = 0, term = 0, pn[6];
+  double p = alph, g = lga, accurate = 1e-8, overflow = 1e30, gin = 0, rn = 0; 
+  double a = 0, b = 0, an = 0, dif = 0, term = 0, pn[6], factor;
 
   if(x == 0)
     return 0;
@@ -83,7 +83,7 @@ double IncompleteGamma(double x, double alph, double lga){
  l35:
    for (i = 0; i < 4; i++) pn[i] = pn[i + 2];
    if (fabs(pn[4]) < overflow) goto l32;
-   for (i = 0; i < 4; i++) pn[i]/ = overflow;
+   for (i = 0; i < 4; i++) pn[i] /= overflow;
    goto l32;
  l42:
    gin = 1 - factor*gin;
@@ -114,7 +114,7 @@ double PointNormal(double prob){
 // note: uses goto + labels because imported from fortran code, alter for more readability
 double PointChi2(double prob, double df){
 
-  assert(prob < 0.999998 && prob > 0.000002 && v > 0);
+  assert(prob < 0.999998 && prob > 0.000002 && df > 0);
 
   double e = .5e-6,
          aa = .6931471805,
@@ -123,16 +123,16 @@ double PointChi2(double prob, double df){
          a = 0, q = 0, p1 = 0, p2 = 0, t = 0, x = 0, b = 0,
          s1, s2, s3, s4, s5, s6;
 
-  g = LnGamma(v/2);
-  xx = v/2;
+  g = LnGamma(df/2);
+  xx = df/2;
   c = xx - 1;
-  if(v >= -1.24*log(p)) goto l1;
+  if(df >= -1.24*log(p)) goto l1;
   ch = pow((p*xx*exp(g+xx*aa)), 1/xx);
   if (ch < e) return ch;
   goto l4;
 
 l1:
-  if (v > .32) goto l3;
+  if (df > .32) goto l3;
   ch = 0.4;
   a = log(1 - p);
 
@@ -147,9 +147,9 @@ l2:
 
 l3:
   x = PointNormal(p);
-  p1 = 0.222222/v;
-  ch = v*pow((x*sqrt(p1) + 1 - p1), 3.0);
-  if(ch > 2.2*v + 6)
+  p1 = 0.222222/df;
+  ch = df*pow((x*sqrt(p1) + 1 - p1), 3.0);
+  if(ch > 2.2*df + 6)
     ch = -2*(log(1 - p) - c*log(0.5*ch) + g);
 
 l4:
@@ -175,32 +175,33 @@ l4:
 
 // initialize general CharModel params
 // Iterate along modelParams and initialize a set of parameters for each partition
-void CharModel::initModels(PartitionedMatrix &partMat, unsigned modelType, std::vector<int> stateSetSizes) {
+/*void CharModel::initModels(PartitionedMatrix &partMat, unsigned modelType, std::vector<int> stateSetSizes) {
     for (int i = 0; i < partMat.GetNumPartitions(); i++) {
       ModelParams &modelParams(stateSetSizes[i], modelType);
       modelParams.initializeModel();
       this->modelList[i] = modelParams;
     }
 }
+*/
 
-void ModelParams::createGammas(double alph, int cats){
+void CharModel::createGammas(double alph, int cats){
   int i;
-  alpha = alph;
+  double alpha = alph;
   double factor = alpha / alpha * cats;
   double beta = alpha;
   std::vector<double> gammaProbs;
 
   assert(alpha >= MT_ALPHA_MIN);
 
-  lngal = LnGamma(alpha + 1);
-  for(i = 0; i < cat - 1; i++)
-    gammaProbs[i] = MT_POINT_GAMMA((i + 1.0)/cat, alpha, beta);
-  for(i = 0; i < cat - 1; i++)
+  double lngal = LnGamma(alpha + 1);
+  for(i = 0; i < cats - 1; i++)
+    gammaProbs[i] = MT_POINT_GAMMA((i + 1.0)/cats, alpha, beta);
+  for(i = 0; i < cats - 1; i++)
     gammaProbs[i] = IncompleteGamma(gammaProbs[i] * beta, alpha + 1, lngal);
-  gammaRates[0] = gammaProbs[0] * factor;
-  gammaRates[cat - 1] = (1 - gammaProbs[cat - 2]) * factor;
-  for(i = 1; i < cat - 1; i++)
-    gammaRates[i] = (gammaProbs[i] - gammaProbs[i - 1]) * factor;
+  rates[0] = gammaProbs[0] * factor;
+  rates[cats - 1] = (1 - gammaProbs[cats - 2]) * factor;
+  for(i = 1; i < cats - 1; i++)
+    rates[i] = (gammaProbs[i] - gammaProbs[i - 1]) * factor;
 
   return;
 }
@@ -215,7 +216,7 @@ static void changeParam(MTInstance &instance, int model, int position, double va
       //break;
 
     case ALPHA_P:
-      instance.GetCharModel().GetModelParams(model).createGammas(value, instance.GetCharModel().GetNumRates());
+      instance.GetCharModel().createGammas(value, instance.GetCharModel().GetNumRates());
       break;
   }
 
@@ -691,7 +692,6 @@ static void optParam(MTInstance &instance, int numberOfModels,
   CharModel &startModel = instance.GetCharModel();
 
   for(pos = 0; pos < numberOfModels; pos++) {
-    ModelParams &startParams = startModel.GetModelParams(pos);
     startLHs[pos] = ScoreTree(instance.partMat, instance.tree, startModel);
 
     switch (paramType)
@@ -701,7 +701,7 @@ static void optParam(MTInstance &instance, int numberOfModels,
         //break;
       case ALPHA_P:
       // function to return starting alpha parameter
-      startValues[pos] = startParams.GetAlpha();
+      startValues[pos] = GetPatData.GetAlpha();
         break;
     }
 
@@ -730,10 +730,10 @@ static void optParam(MTInstance &instance, int numberOfModels,
 
       if (startLHs[pos] > endLHs[pos])
         {
-          changeParam(instance, rateNumber, startValues[pos], paramType);
+          changeParam(instance, pos, rateNumber, startValues[pos], paramType);
         }
       else {
-          changeParam(instance, rateNumber, _x[pos], paramType);
+          changeParam(instance, pos, rateNumber, _x[pos], paramType);
         }
   }
 }
@@ -776,7 +776,7 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
     mtOptAlphas(instance, ratelist, modelEpsilon);
     instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
 
-  } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon)
+  } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon);
 
 }
 

@@ -118,7 +118,7 @@ class CharModel {
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
-        virtual void initModels(unsigned numParts, unsigned modelType);
+        //virtual void initModels(unsigned numParts, unsigned modelType);
         virtual void optimizeParams(unsigned modelType){
 
         };

@@ -256,23 +256,23 @@ class MkVarMissingAscCharModel: public MkCharModel {
       virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
-class MkVarParsInfNoMissingModel: public MkCharModel {
+class MkParsInfNoMissingModel: public MkCharModel {
     public:
-        MkVarParsInfNoMissingModel(unsigned numStates, unsigned numRateCats)
+        MkParsInfNoMissingModel(unsigned numStates, unsigned numRateCats)
             :MkCharModel(numStates, numRateCats) {
         }
-        virtual ~MkVarParsInfNoMissingModel() {
+        virtual ~MkParsInfNoMissingModel() {
         }
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
 };
 
 // Character model for case with no missing data, and only parsimony-informative patterns
-class MkVarParsInfMissingModel: public MkCharModel {
+class MkParsInfMissingModel: public MkCharModel {
     public:
-        MkVarParsInfMissingModel(unsigned numStates, unsigned numRateCats)
+        MkParsInfMissingModel(unsigned numStates, unsigned numRateCats)
             :MkCharModel(numStates, numRateCats) {
         }
-        virtual ~MkVarParsInfMissingModel() {
+        virtual ~MkParsInfMissingModel() {
         }
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
 };

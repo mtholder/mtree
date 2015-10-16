@@ -171,6 +171,64 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
     double totalCorrection = corrLnL*sw;
     return uncorrLnL - totalCorrection;
 }
+
+// Placeholder - same as no missing right now
+double MkVarMissingAscCharModel::sumLnL(const double *cla,
+                         const double * patternWeight,
+                         unsigned numChars) const {
+    unsigned numRealPatterns =  numChars - nStates;
+    double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
+    const double fake = 1.0;
+    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
+    double oneStateCorrectionL = exp(oneStateCorrectionLnL);
+    double correctionL = 1 - (nStates * oneStateCorrectionL);
+    double corrLnL = log(correctionL);
+    double sw = 0.0;
+    for (auto i = 0U; i < numRealPatterns; ++i) {
+        sw = patternWeight[i];
+    }
+    double totalCorrection = corrLnL*sw;
+    return uncorrLnL - totalCorrection;
+}
+
+// Placeholder
+double MkParsInfNoMissingModel::sumLnL(const double *cla,
+                         const double * patternWeight,
+                         unsigned numChars) const {
+    unsigned numRealPatterns =  numChars - nStates;
+    double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
+    const double fake = 1.0;
+    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
+    double oneStateCorrectionL = exp(oneStateCorrectionLnL);
+    double correctionL = 1 - (nStates * oneStateCorrectionL);
+    double corrLnL = log(correctionL);
+    double sw = 0.0;
+    for (auto i = 0U; i < numRealPatterns; ++i) {
+        sw = patternWeight[i];
+    }
+    double totalCorrection = corrLnL*sw;
+    return uncorrLnL - totalCorrection;
+}
+
+// Placeholder
+double MkParsInfMissingModel::sumLnL(const double *cla,
+                         const double * patternWeight,
+                         unsigned numChars) const {
+    unsigned numRealPatterns =  numChars - nStates;
+    double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
+    const double fake = 1.0;
+    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
+    double oneStateCorrectionL = exp(oneStateCorrectionLnL);
+    double correctionL = 1 - (nStates * oneStateCorrectionL);
+    double corrLnL = log(correctionL);
+    double sw = 0.0;
+    for (auto i = 0U; i < numRealPatterns; ++i) {
+        sw = patternWeight[i];
+    }
+    double totalCorrection = corrLnL*sw;
+    return uncorrLnL - totalCorrection;
+}
+
 } // namespace
 
 #include "mt_instance.h"

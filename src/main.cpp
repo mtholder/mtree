@@ -148,10 +148,10 @@ void NCL2MT::processTree(std::ostream *os,
       	cm = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
       	break;
       case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
-      	cm = new mt::MkVarParsInfNoMissingModel(numStates, numRateCats);
+      	cm = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
       	break;
       case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:	
-      	cm = new mt::MkVarParsInfMissingModel(numStates, numRateCats);
+      	cm = new mt::MkParsInfMissingModel(numStates, numRateCats);
     }
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;

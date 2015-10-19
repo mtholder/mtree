@@ -10,6 +10,9 @@ class ArcIterator {
         ArcIterator()
             : currNd(nullptr) {
         }
+        ArcIterator(const ArcIterator &other)
+            : currNd(other.currNd) {
+        }
         ArcIterator(Node *c)
             : currNd(c) {
         }

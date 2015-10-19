@@ -1,7 +1,7 @@
 #NEXUS
 begin data;
-dimensions ntax=4 nchar=13;
-format datatype = morphological ; 
+dimensions ntax=4 nchar=16;
+format datatype = standard symbols="01234" missing=? ; 
 matrix
 Taxon1 0000000111112223
 Taxon2 0000011111122223

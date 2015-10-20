@@ -21,7 +21,7 @@ mtree_SOURCES = \
 	likelihood.cpp \
 	optimize_branches.cpp \
 	main.cpp \
-	ini.c \
+	ini.cpp \
 	INIReader.cpp \
 	pattern_class.cpp \
 	parsimony.cpp \

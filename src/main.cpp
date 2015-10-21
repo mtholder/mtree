@@ -123,7 +123,7 @@ void NCL2MT::processTree(std::ostream *os,
     if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
         maxStateCode = numStates;
     }
-    unsigned numStateCodes = maxStateCode + 1;
+    unsigned numStateCodes = maxStateCode; //@MTH removed: + 1;
     mt::CharStateToPrimitiveInd cs2pi(numStateCodes);
     for (auto i = 0U; i < numStateCodes; ++i) {
         vector<mt::char_state_t> v;

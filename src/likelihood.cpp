@@ -34,7 +34,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
       double * claElements = lw->GetCLAElements();
       double * cla = c.GetFromNdCLA(model, true);
       cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
-       
+
       _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
     } else {
       vector<const double *> p = c.GetPrevCLAs(model);
@@ -42,7 +42,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
       pruneProductStep(p, beforeArc, c.GetLenCLA(model));
       double * afterArc = c.GetFromNdCLA(model, true);
       cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
-            
+
       _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
       _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
     }
@@ -55,16 +55,20 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
 
   _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
   _DEBUG_VEC(partMat.patternWeights);
-      
+
   return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
 }
 
 // Calculates Likelihood score for given tree and for all partitions
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, ModelVec models) {
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance) {
   double result = 0.0;
   unsigned numParts = partMat.GetNumPartitions();
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
-    result += ScoreTreeForPartition(partMat,tree,*(models[partIndex]),partIndex);
+    if(instance.dirtyFlags[partIndex]) {
+      result += ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
+    } else {
+      result += instance.likelihoods[partIndex];
+    }
   }
   return result;
 }
@@ -248,17 +252,17 @@ namespace mt {
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     action = SCORE_ACTION;
     if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
+        const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
-      double startL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
+      double startL = ScoreTree(instance.partMat, instance.tree, instance);
       *os << "Starting likelihood = " << startL << "\n";
       Node * p = instance.tree.GetLeaf(4)->parent->parent;
       mtreeTestSPR (instance, p, 2, startL);
-      double endL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
+      double endL = ScoreTree(instance.partMat, instance.tree, instance);
       *os << "Likelihood after subtree removed = " << endL << "\n";
     //  performSearch(instance, steps, instance.tree);
     }

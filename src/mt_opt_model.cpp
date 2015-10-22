@@ -50,7 +50,7 @@ double LnGamma(double alph){
 // 19: 285-287 (AS32)
 double IncompleteGamma(double x, double alph, double lga){
   int i;
-  double p = alph, g = lga, accurate = 1e-8, overflow = 1e30, gin = 0, rn = 0; 
+  double p = alph, g = lga, accurate = 1e-8, overflow = 1e30, gin = 0, rn = 0;
   double a = 0, b = 0, an = 0, dif = 0, term = 0, pn[6], factor;
 
   if(x == 0)
@@ -232,19 +232,19 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, std::vector<d
   switch (paramType)
   {
     case SUB_RATE:
-      for(pos = 0; pos < nModels; pos++)
+      /*for(pos = 0; pos < nModels; pos++)
       {
         assert(rateNumber != -1);
         changeParam(instance, pos, rateNumber, values[pos], paramType);
         CharModel &chrmodel = instance.GetCharModel(0);
         results[pos] = ScoreTreeForPartition(instance.partMat, instance.tree, chrmodel, 0);
         break;
-      }
+      }*/
     case ALPHA_P:
       for(pos = 0; pos < nModels; pos++)
       {
       	changeParam(instance, pos, rateNumber, values[pos], paramType);
-      	
+
       }
       break;
   }
@@ -781,4 +781,3 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
 }
 
 } //namespace mt
-

@@ -12,6 +12,8 @@ namespace mt {
 
 class LeafCharacterVector;
 
+// Using vector of CharModels (one for each partition) instead of ModelParams objects
+
 //void ModelParams::createGammas(double alph, unsigned nsts);
 
 /*
@@ -246,7 +248,7 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
 };
 
-class MkVarMissingAscCharModel: public MkCharModel {  
+class MkVarMissingAscCharModel: public MkCharModel {
     public:
     	MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
            :MkCharModel(numStates, numRateCats) {

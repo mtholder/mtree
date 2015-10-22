@@ -43,8 +43,8 @@ class MTInstance {
         }*/
         double curLikelihood;
         unsigned numPartitions;
-        std::vector<double> likelihoods;
-        std::vector<bool> dirtyFlags;
+        std::vector<double> likelihoods; // stores likelihoods for partitions
+        std::vector<bool> dirtyFlags;    // vector of bools to indicate whether partition likelihoods have recently changed (true if dirty)
 
     private:
         MTInstance(const MTInstance &) = delete;

@@ -16,6 +16,7 @@ config.h
 config.log
 config.status
 reconf.sh
+*~
 src/.deps
 src/Makefile
 stamp-h1
@@ -23,3 +24,5 @@ tests/Makefile
 tests/.test_output
 src/mtree
 src/*.o
+src/*~
+suffix

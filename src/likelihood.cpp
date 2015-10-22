@@ -16,48 +16,57 @@ void pruneProductStep(const vector<const double *> & v, double * dest, unsigned 
     }
 }
 
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm) {
-    Node * virtRoot = tree.GetRoot();
-    virtRoot = virtRoot->leftChild->rightSib;
-    //Set up a traversal
-    PostorderForNodeIterator pnit = postorder(virtRoot);
-    Arc c = pnit.get();
-    assert(c.toNode);
-    unsigned partIndex = 0;
-    unsigned numChars =  c.GetNumChars(partIndex);
-    while (c.toNode) {
-        _DEBUG_VAL(c.fromNode->number);
-        const double edgeLen = c.GetEdgeLen();
-        if (c.IsFromLeaf()) {
-            const LeafCharacterVector * data = c.GetFromNdData(partIndex);
-            LeafWork * lw = c.GetFromNdLeafWork(partIndex);
-            double * claElements = lw->GetCLAElements();
-            double * cla = c.GetFromNdCLA(partIndex, true);
-            cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
-
-            _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
-        } else {
-            vector<const double *> p = c.GetPrevCLAs(partIndex);
-            double * beforeArc = c.GetFromNdCLA(partIndex, false);
-            pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
-            double * afterArc = c.GetFromNdCLA(partIndex, true);
-            cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
-
-            _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-            _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-        }
-        c = pnit.next();
+// Calculate likelihood for one partition for a tree
+double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model) {
+  Node * virtRoot = tree.GetRoot();
+  virtRoot = virtRoot->leftChild->rightSib;
+  //Set up a traversal
+  PostorderForNodeIterator pnit = postorder(virtRoot);
+  Arc c = pnit.get();
+  assert(c.toNode);
+  unsigned numChars =  c.GetNumChars(model);
+  while (c.toNode) {
+    _DEBUG_VAL(c.fromNode->number);
+    const double edgeLen = c.GetEdgeLen();
+    if (c.IsFromLeaf()) {
+      const LeafCharacterVector * data = c.GetFromNdData(model);
+      LeafWork * lw = c.GetFromNdLeafWork(model);
+      double * claElements = lw->GetCLAElements();
+      double * cla = c.GetFromNdCLA(model, true);
+      cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
+       
+      _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
+    } else {
+      vector<const double *> p = c.GetPrevCLAs(model);
+      double * beforeArc = c.GetFromNdCLA(model, false);
+      pruneProductStep(p, beforeArc, c.GetLenCLA(model));
+      double * afterArc = c.GetFromNdCLA(model, true);
+      cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
+            
+      _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
     }
-    // create the cla for the virtual root
-    vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, partIndex);
-    double * beforeArc = c.GetFromNdCLA(partIndex, false); // not valid arc, but this should work
-    pruneProductStep(p, beforeArc, c.GetLenCLA(partIndex));
+      c = pnit.next();
+  }
+  // create the cla for the virtual root
+  vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, model);
+  double * beforeArc = c.GetFromNdCLA(model, false); // not valid arc, but this should work
+  pruneProductStep(p, beforeArc, c.GetLenCLA(model));
 
-    _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-    _DEBUG_VEC(partMat.patternWeights);
+  _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+  _DEBUG_VEC(partMat.patternWeights);
+      
+  return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
+}
 
-    // accumulate the cla into a lnL
-    return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
+// Calculates Likelihood score for given tree and for all partitions
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, ModelVec models) {
+  double result = 0.0;
+  unsigned numParts = partMat.GetNumPartitions();
+  for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
+    result += ScoreTreeForPartition(partMat,tree,*(models[partIndex]),partIndex);
+  }
+  return result;
 }
 
 
@@ -239,17 +248,17 @@ namespace mt {
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     action = SCORE_ACTION;
     if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+        const double lnL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
-      double startL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+      double startL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
       *os << "Starting likelihood = " << startL << "\n";
       Node * p = instance.tree.GetLeaf(4)->parent->parent;
       mtreeTestSPR (instance, p, 2, startL);
-      double endL = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+      double endL = ScoreTree(instance.partMat, instance.tree, instance.GetModelVec());
       *os << "Likelihood after subtree removed = " << endL << "\n";
     //  performSearch(instance, steps, instance.tree);
     }

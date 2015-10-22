@@ -14,11 +14,11 @@ namespace mt {
 
 // Set downpass state to taxon data, 
 void ParsInfo::calculateForTip(const BitFieldRow & data, MTInstance & instance) {
-	assert(instance.GetCharModel().zeroVec.size() >= data.size());
+	assert(instance.GetCharModel(0).zeroVec.size() >= data.size());
 	this->numPatterns = data.size();
 	this->downPass = &data[0];
 	this->allSeen = &data[0];
-	this->score = &instance.GetCharModel().zeroVec[0];
+	this->score = &instance.GetCharModel(0).zeroVec[0];
 }
 void ParsInfo::calculateForInternal(ParsInfo & leftData, ParsInfo & rightData) {
 	this->numPatterns = leftData.size();

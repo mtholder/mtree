@@ -32,31 +32,39 @@ class MTInstance {
         OptimizationSettings optSettings;
         bool HasSearchConverged;
         bool curvatOK;
-        CharModel & GetCharModel() const {
-            return *charModelPtr;
+        CharModel & GetCharModel(int i) const {
+          return *(models[i]);
         }
-
+        std::vector<CharModel*> GetModelVec() const {
+          return models;
+        }
         /*void changeRate(int pos, double val) {
           this->charModelPtr->alterRateFreq(pos, val);
         }*/
         double curLikelihood;
+        unsigned numPartitions;
+        std::vector<double> likelihoods;
+        std::vector<bool> dirtyFlags;
 
     private:
         MTInstance(const MTInstance &) = delete;
         MTInstance & operator=(const MTInstance &) = delete;
-        CharModel * charModelPtr;
+        std::vector<CharModel*> models;
 
         MTInstance(unsigned numTaxa,
                    const std::vector<unsigned> &numCharsPerPartition,
                    const std::vector<unsigned> &numStatesPerPartition,
                    const std::vector<unsigned> &orig2compressed,
                    const std::vector<double> &patternWts,
-                   CharModel *cm)
+                   std::vector<CharModel*> mods)
             :partMat(numTaxa, numCharsPerPartition, orig2compressed, numStatesPerPartition, patternWts),
             tree(2*numTaxa - 1, numTaxa),
             HasSearchConverged(false),
             curvatOK(true),
-            charModelPtr(cm) {
+            numPartitions(numCharsPerPartition.size()),
+            likelihoods(numCharsPerPartition.size(),0.0),
+            dirtyFlags(numCharsPerPartition.size(),false),
+            models(mods) {
         }
 };
 void doAnalysis(std::ostream * os,

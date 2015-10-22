@@ -216,7 +216,7 @@ static void changeParam(MTInstance &instance, int model, int position, double va
       //break;
 
     case ALPHA_P:
-      instance.GetCharModel().createGammas(value, instance.GetCharModel().GetNumRates());
+      instance.GetCharModel(0).createGammas(value, instance.GetCharModel(0).GetNumRates());
       break;
   }
 
@@ -236,8 +236,8 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, std::vector<d
       {
         assert(rateNumber != -1);
         changeParam(instance, pos, rateNumber, values[pos], paramType);
-        CharModel &chrmodel = instance.GetCharModel();
-        results[pos] = ScoreTree(instance.partMat, instance.tree, chrmodel);
+        CharModel &chrmodel = instance.GetCharModel(0);
+        results[pos] = ScoreTreeForPartition(instance.partMat, instance.tree, chrmodel, 0);
         break;
       }
     case ALPHA_P:
@@ -689,10 +689,10 @@ static void optParam(MTInstance &instance, int numberOfModels,
   std::vector<double> startRates, startWeights, startExps, startValues, startLHs,
          endLHs, _a, _b, _c, _fa, _fb, _fc, _param, _x;
 
-  CharModel &startModel = instance.GetCharModel();
+  CharModel &startModel = instance.GetCharModel(0);
 
   for(pos = 0; pos < numberOfModels; pos++) {
-    startLHs[pos] = ScoreTree(instance.partMat, instance.tree, startModel);
+    startLHs[pos] = ScoreTreeForPartition(instance.partMat, instance.tree, startModel, 0);
 
     switch (paramType)
     {
@@ -701,7 +701,7 @@ static void optParam(MTInstance &instance, int numberOfModels,
         //break;
       case ALPHA_P:
       // function to return starting alpha parameter
-      startValues[pos] = GetPatData.GetAlpha();
+      startValues[pos] = GetPatData(0).GetAlpha();
         break;
     }
 
@@ -774,7 +774,7 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
     currentLikelihood = instance.curLikelihood;
 
     mtOptAlphas(instance, ratelist, modelEpsilon);
-    instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+    instance.curLikelihood = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(0), 0);
 
   } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon);
 

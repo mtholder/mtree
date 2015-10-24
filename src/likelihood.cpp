@@ -7,7 +7,10 @@
 #include <algorithm>
 using namespace std;
 namespace mt {
-void pruneProductStep(const vector<const double *> & v, double * dest, unsigned n) {
+void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n);
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance);
+
+void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n) {
     for (auto i = 0U; i < n; ++i) {
         dest[i] = 1.0;
         for (auto c : v) {
@@ -24,7 +27,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   PostorderForNodeIterator pnit = postorder(virtRoot);
   Arc c = pnit.get();
   assert(c.toNode);
-  unsigned numChars =  c.GetNumChars(model);
+  std::size_t numChars =  c.GetNumChars(model);
   while (c.toNode) {
     _DEBUG_VAL(c.fromNode->number);
     const double edgeLen = c.GetEdgeLen();
@@ -62,7 +65,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
 // Calculates Likelihood score for given tree and for all partitions
 double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance) {
   double result = 0.0;
-  unsigned numParts = partMat.GetNumPartitions();
+  unsigned numParts = static_cast<unsigned>(partMat.GetNumPartitions());
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
     if(instance.dirtyFlags[partIndex]) {
       result += ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
@@ -94,7 +97,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
                              double *claElements,
                              double *cla,
                              double edgeLen,
-                             unsigned numChars) {
+                             std::size_t numChars) {
     /* fill the summed probabilities for each state code */
 
     const double * tiprob = this->calcTransitionProb(edgeLen);
@@ -116,14 +119,14 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     }
     _DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
     /* fill in the cla vector by copying sums */
-    for (auto ci = 0U; ci < numChars; ++ci) {
+    for (std::size_t ci = 0U; ci < numChars; ++ci) {
         const char_state_t sc = data->charVec[ci];
         const double * s = claElements + sc * lenCLAWord ;
         copy(s, s + lenCLAWord, cla + ci*lenCLAWord);
     }
 }
 
-void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, unsigned numChars) {
+void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterEdge, double edgeLen, std::size_t numChars) {
     const double * tiprob = this->calcTransitionProb(edgeLen);
     const unsigned lenCLAWord = nStates*nRateCats;
     const unsigned nssq = nStates * nStates;
@@ -144,7 +147,7 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
 
 double CharModel::sumLnL(const double *cla,
                          const double * patternWeight,
-                         unsigned numChars) const {
+                         std::size_t numChars) const {
     const unsigned lenCLAWord = nStates*nRateCats;
     const double * rateCatProb = GetRateCatProb();
     const double * stateFreq = GetRootStateFreq();
@@ -169,8 +172,8 @@ double CharModel::sumLnL(const double *cla,
 
 double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
-                         unsigned numChars) const {
-    unsigned numRealPatterns =  numChars - nStates;
+                         std::size_t numChars) const {
+    std::size_t numRealPatterns =  numChars - nStates;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
     double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
@@ -188,8 +191,8 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 // Placeholder - same as no missing right now
 double MkVarMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
-                         unsigned numChars) const {
-    unsigned numRealPatterns =  numChars - nStates;
+                         std::size_t numChars) const {
+    std::size_t numRealPatterns =  numChars - nStates;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
     double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
@@ -207,8 +210,8 @@ double MkVarMissingAscCharModel::sumLnL(const double *cla,
 // Placeholder
 double MkParsInfNoMissingModel::sumLnL(const double *cla,
                          const double * patternWeight,
-                         unsigned numChars) const {
-    unsigned numRealPatterns =  numChars - nStates;
+                         std::size_t numChars) const {
+    std::size_t numRealPatterns =  numChars - nStates;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
     double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
@@ -226,8 +229,8 @@ double MkParsInfNoMissingModel::sumLnL(const double *cla,
 // Placeholder
 double MkParsInfMissingModel::sumLnL(const double *cla,
                          const double * patternWeight,
-                         unsigned numChars) const {
-    unsigned numRealPatterns =  numChars - nStates;
+                         std::size_t numChars) const {
+    std::size_t numRealPatterns =  numChars - nStates;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
     double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);

@@ -116,10 +116,10 @@ class CharModel {
 
 
         virtual const double * GetRootStateFreq() const = 0;
-        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
-        virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, unsigned numChars);
+        virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars) const;
+        virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, std::size_t numChars);
         virtual double * calcTransitionProb(double edgeLen) = 0;
-        virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
+        virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, std::size_t numChars);
         //virtual void initModels(unsigned numParts, unsigned modelType);
         virtual void optimizeParams(unsigned /*modelType*/) {
         }
@@ -145,7 +145,7 @@ class MkCharModel: public CharModel {
         virtual const double * GetRootStateFreq() const {
             return &(rootStateFreq[0]);
         }
-        //virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+        //virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars ) const;
         virtual double * calcTransitionProb(double edgeLen) {
             unsigned nsts = this->GetNumStates();
             const double fns = double(nsts);
@@ -188,7 +188,7 @@ class MkCovarCharModel: public MkCharModel {
 
           virtual double * calcTransitionProb(double edgeLen) {
 
-            const double nsts = this->GetNumStates();
+            const unsigned nsts = this->GetNumStates();
             const double fns = double(nsts);
             const double fnsmo = fns - 1.0;
             const unsigned nsSq = nsts*nsts;
@@ -244,7 +244,7 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
         }
         virtual ~MkVarNoMissingAscCharModel() {
         }
-        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+        virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars ) const;
 };
 
 class MkVarMissingAscCharModel: public MkCharModel {
@@ -254,7 +254,7 @@ class MkVarMissingAscCharModel: public MkCharModel {
       }
       virtual ~MkVarMissingAscCharModel() {
       }
-      virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars ) const;
+      virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars ) const;
 };
 
 class MkParsInfNoMissingModel: public MkCharModel {
@@ -264,7 +264,7 @@ class MkParsInfNoMissingModel: public MkCharModel {
         }
         virtual ~MkParsInfNoMissingModel() {
         }
-        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
+        virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars) const;
 };
 
 // Character model for case with no missing data, and only parsimony-informative patterns
@@ -275,7 +275,7 @@ class MkParsInfMissingModel: public MkCharModel {
         }
         virtual ~MkParsInfMissingModel() {
         }
-        virtual double sumLnL(const double * cla, const double * patternWt, unsigned numChars) const;
+        virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars) const;
 };
 
 

@@ -36,8 +36,8 @@ class CharStateToPrimitiveInd {
         void SetStateCode(unsigned i, const std::vector<char_state_t> & v) {
             this->stateCodeToStateCodeVec[i] = v;
         }
-        std::size_t GetNumStateCodes() const {
-            return stateCodeToStateCodeVec.size();
+        unsigned GetNumStateCodes() const {
+            return static_cast<unsigned>(stateCodeToStateCodeVec.size());
         }
     private:
         std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;

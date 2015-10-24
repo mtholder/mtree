@@ -61,7 +61,7 @@ class MTInstance {
             tree(2*numTaxa - 1, numTaxa),
             HasSearchConverged(false),
             curvatOK(true),
-            numPartitions(numCharsPerPartition.size()),
+            numPartitions(static_cast<unsigned>(numCharsPerPartition.size())),
             likelihoods(numCharsPerPartition.size(),0.0),
             dirtyFlags(numCharsPerPartition.size(),false),
             models(mods) {

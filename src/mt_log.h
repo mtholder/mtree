@@ -29,7 +29,7 @@ inline void _debug_cla(const char * file,
                 const double *cla,
                 unsigned nRateCats,
                 unsigned nStates,
-                unsigned numChars) {
+                std::size_t numChars) {
     if (getenv("DEBUG_MT_TREE") == nullptr) {
         return;
     }

@@ -9,9 +9,10 @@
 //Currently does not use any branch length optimizations
 using namespace std;
 namespace mt {
+Node * removeSubTree(MTInstance &instance, Node * p);
 
-
-Node * removeSubTree(MTInstance &instance, Node * p) {
+Node * removeSubTree(MTInstance & ,//instance,
+                     Node * p) {
   cout << "removeSubTree called\n";
   assert (p);
   assert (p->parent);
@@ -47,13 +48,18 @@ Node * removeSubTree(MTInstance &instance, Node * p) {
 
     // Tries SPR moves for a subtree rooted at node p up to maxtrav nodes away.
     // Derived from pllTestSPR.
-void mtreeTestSPR (MTInstance &instance, Node * p, int maxtrav, double bestLnL) {
+void mtreeTestSPR (MTInstance &instance,
+                   Node * p,
+                   int , //maxtrav,
+                   double //bestLnL
+                   ) {
+  assert(false);
   if (1)/*(!IsLeaf(p))*/ {
-    double bl = p->edgeLen;
-    Node * n = p->parent;
-    Node * fromnode = p->parent->parent;
-    Node * subtree = removeSubTree(instance, p);
-    return;
+    //double bl = p->edgeLen;
+    //Node * n = p->parent;
+    //Node * fromnode = p->parent->parent;
+    //Node * subtree =
+                     removeSubTree(instance, p);
   }
 }
 

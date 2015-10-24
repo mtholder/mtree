@@ -14,10 +14,12 @@ namespace mt {
 #define SUB_RATE 0
 #define ALPHA_P 1
 
-// Model Type Values
-#define _MK_           0
-#define _MK_COVAR_     1
 
+double LnGamma(double alph);
+double IncompleteGamma(double x, double alph, double lga);
+double PointNormal(double prob);
+double PointChi2(double prob, double df);
+void optimizeModel(MTInstance &instance, double likelihoodEpsilon);
 
 // The following four functions(LnGamma, IncompleteGamma, PointNormal, and PointChi2)
 // come from Ziheng Yang's PAML
@@ -186,7 +188,7 @@ l4:
 
 void CharModel::createGammas(double alph, int cats){
   int i;
-  double alpha = alph;
+  alpha = alph;
   double factor = alpha / alpha * cats;
   double beta = alpha;
   std::vector<double> gammaProbs;
@@ -208,13 +210,15 @@ void CharModel::createGammas(double alph, int cats){
 
 // based on "changeModelParameters" - change param of type paramType to value at position
 // old value needs to be stored first!
-static void changeParam(MTInstance &instance, int model, int position, double value, int paramType) {
+static void changeParam(MTInstance &instance,
+                        int ,//model,
+                        int , //position, 
+                        double value, 
+                        int paramType) {
   switch (paramType){
-
     case SUB_RATE:
       //instance.changeRate(model, position, value);
       //break;
-
     case ALPHA_P:
       instance.GetCharModel(0).createGammas(value, instance.GetCharModel(0).GetNumRates());
       break;
@@ -224,8 +228,9 @@ static void changeParam(MTInstance &instance, int model, int position, double va
 
 // Evaluate change to a model in terms of likelihood
 // equivalent to evaluateChange in PLL
-static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double result,
-                           bool converged, int paramType, int model)
+static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double ,//result,
+                           bool ,//converged,
+                           int paramType, int model)
 {
   switch (paramType)
   {
@@ -255,9 +260,9 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
 
   //initialize variables
   bool allConverged = false;
-  int i, iter;
+  int iter;
   bool converged;
-  double e, d, a, b, x, w, v, fw, fv, fx, xm, tol1, tol2, fu, r, q, p, u, etemp;
+  double e, d, a, b, x, w, v, fw, fv, fx, xm, tol1, tol2, fu, r, q, p, u=0.0, etemp;
 
   //initialize Values + check
   converged = false;
@@ -372,8 +377,7 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
 static int mtBrakGeneric(MTInstance &instance, double param, double ax, double bx, double cx, double fa, double fb,
                         double fc, double lowerBound, double upperBound, int model, int rateNumber, int paramType)
 {
-  double ulim, r, q, fu, dum, temp, u;
-  int i;
+  double ulim, r, q, fu=0.0, dum, temp, u;
   int state, endState;
   bool converged = false;
 
@@ -603,8 +607,6 @@ static int mtBrakGeneric(MTInstance &instance, double param, double ax, double b
                  }
              }
     }
-
-   return(0);
 }
 
 // Generic function for optimizing a given parameter
@@ -616,8 +618,7 @@ static void optParam(MTInstance &instance, int numberOfModels,
 {
   int pos;
 
-  std::vector<double> startRates, startWeights, startExps,
-           _param, _x;
+  std::vector<double> startRates, startWeights, startExps;
 
   CharModel &startModel = instance.GetCharModel(pos);
 
@@ -693,7 +694,6 @@ static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon
 // "modOpt" in optimizeModel.c in PLL
 // for now only optimizes branch lengths, alpha params, and rates
 void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
-  int i = 0;
   double inputLikelihood, currentLikelihood, modelEpsilon;
 
   //std::vector<double> alphalist, ratelist; // get these from instance, where they have been initialized

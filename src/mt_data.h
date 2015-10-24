@@ -86,7 +86,7 @@ class PartitionedMatrix {
             return &(this->partitions[partIndex][leafIndex]);
         }
         void fillPartition(unsigned partIndex, const char_state_t ** mat, const CharStateToPrimitiveInd *cs2pi) {
-            CharMatrix & part = partitions[partIndex];
+            CharMatrix & part = partitions.at(partIndex);
             part.resize(nTaxa);
             for (auto i = 0U; i < nTaxa; ++i) {
                 part[i] = LeafCharacterVector(mat[i], nCharsVec[partIndex], cs2pi);

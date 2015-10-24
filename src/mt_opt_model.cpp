@@ -50,7 +50,7 @@ double LnGamma(double alph){
 // 19: 285-287 (AS32)
 double IncompleteGamma(double x, double alph, double lga){
   int i;
-  double p = alph, g = lga, accurate = 1e-8, overflow = 1e30, gin = 0, rn = 0; 
+  double p = alph, g = lga, accurate = 1e-8, overflow = 1e30, gin = 0, rn = 0;
   double a = 0, b = 0, an = 0, dif = 0, term = 0, pn[6], factor;
 
   if(x == 0)
@@ -216,7 +216,7 @@ static void changeParam(MTInstance &instance, int model, int position, double va
       //break;
 
     case ALPHA_P:
-      instance.GetCharModel().createGammas(value, instance.GetCharModel().GetNumRates());
+      instance.GetCharModel(0).createGammas(value, instance.GetCharModel(0).GetNumRates());
       break;
   }
 
@@ -224,455 +224,384 @@ static void changeParam(MTInstance &instance, int model, int position, double va
 
 // Evaluate change to a model in terms of likelihood
 // equivalent to evaluateChange in PLL
-static void mtEvaluateChange(MTInstance &instance, int rateNumber, std::vector<double> values, std::vector<double> results,
-                           bool converged, int paramType, int nModels)
+static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double result,
+                           bool converged, int paramType, int model)
 {
-  int pos;
-
   switch (paramType)
   {
     case SUB_RATE:
-      for(pos = 0; pos < nModels; pos++)
+      /*for(pos = 0; pos < nModels; pos++)
       {
         assert(rateNumber != -1);
         changeParam(instance, pos, rateNumber, values[pos], paramType);
-        CharModel &chrmodel = instance.GetCharModel();
-        results[pos] = ScoreTree(instance.partMat, instance.tree, chrmodel);
+        CharModel &chrmodel = instance.GetCharModel(0);
+        results[pos] = ScoreTreeForPartition(instance.partMat, instance.tree, chrmodel, 0);
         break;
-      }
+      }*/
     case ALPHA_P:
-      for(pos = 0; pos < nModels; pos++)
-      {
-      	changeParam(instance, pos, rateNumber, values[pos], paramType);
-      	
-      }
+    	changeParam(instance, model, rateNumber, value, paramType);
       break;
   }
+  instance.likelihoods[model] = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model),model);
+  instance.dirtyFlags[model] = true;
 }
 
 // Implementation of Brent's Method for One-Dimensional Parameter Optimization, based on brentGeneric in PLL
 
-static void mtBrentGeneric (MTInstance &instance, std::vector<double> &ax, std::vector<double> &bx, std::vector<double> &cx,
-                            std::vector<double> &fb, double tol, std::vector<double> &xmin, std::vector<double> &result,
-                            int paramType, int rateNumber, double lowerBound, double upperBound, int numberOfModels)
+static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double cx,double fb, double tol,
+                            double xmin, double result, int paramType, int rateNumber, double lowerBound,
+                            double upperBound, int model)
 {
 
   //initialize variables
   bool allConverged = false;
   int i, iter;
-  std::vector<bool> converged;
-  std::vector<double> e, d, a, b, x, w, v, fw, fv, fx, xm, tol1, tol2, fu, r, q, p, u, etemp;
+  bool converged;
+  double e, d, a, b, x, w, v, fw, fv, fx, xm, tol1, tol2, fu, r, q, p, u, etemp;
 
   //initialize Values + check
-  for(i = 0; i < numberOfModels; i++)
-    {
-      converged[i] = false;
+  converged = false;
 
-      e[i] = d[i] = 0.0;
+  e = d = 0.0;
 
-      a[i] = std::min(cx[i],ax[i]),
-      b[i] = std::max(cx[i],ax[i]),
-      x[i] = bx[i], w[i] = bx[i], v[i] = bx[i],
-      fw[i] = fb[i], fv[i] = fb[i], fx[i] = fb[i];
+  a = std::min(cx,ax),
+  b = std::max(cx,ax),
+  x = bx, w = bx, v = bx,
+  fw = fb, fv = fb, fx = fb;
 
-      assert(a[i] >= lowerBound && a[i] <= upperBound);
-      assert(b[i] >= lowerBound && b[i] <= upperBound);
-      assert(x[i] >= lowerBound && x[i] <= upperBound);
-      assert(v[i] >= lowerBound && v[i] <= upperBound);
-      assert(w[i] >= lowerBound && w[i] <= upperBound);
-    }
+  assert(a >= lowerBound && a <= upperBound);
+  assert(b >= lowerBound && b <= upperBound);
+  assert(x >= lowerBound && x <= upperBound);
+  assert(v >= lowerBound && v <= upperBound);
+  assert(w >= lowerBound && w <= upperBound);
 
   // core iteration
   for (iter = 0; iter < MAX_ITERS; iter++) {
-    allConverged = true;
 
-    for(i = 0; i < numberOfModels && allConverged; i++)
-      allConverged = allConverged && converged[i];
-
-    if (allConverged)
+    if (converged)
       return;
 
-    for(i = 0; i < numberOfModels; i++)
+    assert(a >= lowerBound && a <= upperBound);
+    assert(b >= lowerBound && b <= upperBound);
+    assert(x >= lowerBound && x <= upperBound);
+    assert(v >= lowerBound && v <= upperBound);
+    assert(w >= lowerBound && w <= upperBound);
+
+    xm = 0.5 * (a + b);
+    tol2 = 2.0 * (tol1 = tol * fabs(x) + BZ_EPSILON);
+
+    if (fabs(x - xm) <= (tol2 - 0.5 * (b - a)))
       {
-        if(!converged[i])
-        {
-          assert(a[i] >= lowerBound && a[i] <= upperBound);
-          assert(b[i] >= lowerBound && b[i] <= upperBound);
-          assert(x[i] >= lowerBound && x[i] <= upperBound);
-          assert(v[i] >= lowerBound && v[i] <= upperBound);
-          assert(w[i] >= lowerBound && w[i] <= upperBound);
-
-          xm[i] = 0.5 * (a[i] + b[i]);
-          tol2[i] = 2.0 * (tol1[i] = tol * fabs(x[i]) + BZ_EPSILON);
-
-          if (fabs(x[i] - xm[i]) <= (tol2[i] - 0.5 * (b[i] - a[i])))
-            {
-              result[i] = -fx[i];
-              xmin[i] = x[i];
-              converged[i] = true;
-            }
-          else
-            {
-              if (fabs(e[i]) > tol1[i])
-                {
-                  r[i] = (x[i] - w[i]) * (fx[i] - fv[i]);
-                  q[i] = (w[i] - v[i]) * (fx[i] - fw[i]);
-                  p[i] = (x[i] - v[i]) * q[i] - (x[i] - w[i]) * r[i];
-                  q[i] = 2.0 * (q[i] - r[i]);
-                  if (q[i] > 0.0)
-                    p[i] = -p[i];
-                  q[i] = fabs(q[i]);
-                  etemp[i] = e[i];
-                  e[i] = d[i];
-                  if((fabs(p[i]) >= fabs(0.5 * q[i] * etemp[i]))
-                  || (p[i] <= q[i] * (a[i]-x[i])) || (p[i] >= q[i] * (b[i] - x[i])))
-                    d[i] = BRENT_VAR * (e[i] = (x[i] >= xm[i] ? a[i] - x[i] : b[i] - x[i]));
-                  else
-                    {
-                      d[i] = p[i] / q[i];
-                      u[i] = x[i] + d[i];
-                      if (u[i] - a[i] < tol2[i] || b[i] - u[i] < tol2[i])
-                        d[i] = (xm[i] - x[i] > 0.0 ? fabs(tol1[i]) : -fabs(tol1[i]));
-
-                    }
-                }
-              else
-                {
-                  d[i] = BRENT_VAR * (e[i] = (x[i] >= xm[i] ? a[i] - x[i] : b[i] - x[i]));
-                }
-              u[i] = ((fabs(d[i]) >= tol1[i]) ? (x[i] + d[i]) : (x[i] + (tol1[i] > 0.0 ? fabs(d[i]) : -fabs(d[i]))));
-            }
-          if (!converged[i])
-            assert(u[i] >= lowerBound && u[i] <= upperBound);
-        }
-
-    }
-
-  mtEvaluateChange(instance, rateNumber, u, fu, allConverged, paramType, numberOfModels);
-
-  for(i = 0; i < numberOfModels; i++)
-  {
-    if(!converged[i])
-      {
-        if(fu[i] <= fx[i])
+        result = -fx;
+        xmin = x;
+        converged = true;
+      } else {
+        if (fabs(e) > tol1)
           {
-            if(u[i] >= x[i])
-              a[i] = x[i];
-            else
-              b[i] = x[i];
+            r = (x - w) * (fx - fv);
+            q = (w - v) * (fx - fw);
+            p = (x - v) * q - (x - w) * r;
+            q = 2.0 * (q - r);
+            if (q > 0.0)
+              p = -p;
+            q = fabs(q);
+            etemp = e;
+            e = d;
+            if((fabs(p) >= fabs(0.5 * q * etemp))
+            || (p <= q * (a-x)) || (p >= q * (b - x))) {
+              d = BRENT_VAR * (e = (x >= xm ? a - x : b - x));
+            } else {
+                d = p / q;
+                u = x + d;
+                if (u - a < tol2 || b - u < tol2)
+                  d = (xm - x > 0.0 ? fabs(tol1) : -fabs(tol1));
 
-          v[i] = w[i]; w[i] = x[i]; x[i] = u[i];
-          fv[i] = fw[i]; fw[i] = fx[i]; fx[i] = fu[i];
-
-          }
-        else
-          {
-            if (u[i] < x[i])
-              a[i] = u[i];
-            else
-              b[i] = u[i];
-
-            if (fu[i] <= fw[i] || w[i] == x[i])
-              {
-                v[i] = w[i];
-                w[i] = u[i];
-                fv[i] = fw[i];
-                fw[i] = fu[i];
               }
-            else
-              {
-                if(fu[i] <= fv[i] || v[i] == x[i] || v[i] == w[i])
-                  {
-                    v[i] = u[i];
-                    fv[i] = fu[i];
-                  }
-              }
-          }
-
-        assert(a[i] >= lowerBound && a[i] <= upperBound);
-        assert(b[i] >= lowerBound && b[i] <= upperBound);
-        assert(x[i] >= lowerBound && x[i] <= upperBound);
-        assert(v[i] >= lowerBound && v[i] <= upperBound);
-        assert(w[i] >= lowerBound && w[i] <= upperBound);
-        assert(u[i] >= lowerBound && u[i] <= upperBound);
+          } else {
+              d = BRENT_VAR * (e = (x >= xm ? a - x : b - x));
+            }
+        u = ((fabs(d) >= tol1) ? (x + d) : (x + (tol1 > 0.0 ? fabs(d) : -fabs(d))));
       }
+    if (!converged)
+      assert(u >= lowerBound && u <= upperBound);
     }
-  }
+
+
+  mtEvaluateChange(instance, rateNumber, u, fu, allConverged, paramType, model);
+
+
+  if(!converged) {
+     if(fu <= fx) {
+       if(u >= x)
+         a = x;
+       else
+         b = x;
+         v = w; w = x; x = u;
+         fv = fw; fw = fx; fx = fu;
+      } else {
+         if (u < x)
+           a = u;
+         else
+           b = u;
+
+         if (fu <= fw || w == x)
+           {
+             v = w;
+             w = u;
+             fv = fw;
+             fw = fu;
+           } else {
+             if(fu <= fv || v == x || v == w) {
+               v = u;
+               fv = fu;
+              }
+           }
+       }
+
+        assert(a >= lowerBound && a <= upperBound);
+        assert(b >= lowerBound && b <= upperBound);
+        assert(x >= lowerBound && x <= upperBound);
+        assert(v >= lowerBound && v <= upperBound);
+        assert(w >= lowerBound && w <= upperBound);
+        assert(u >= lowerBound && u <= upperBound);
+      }
 }
 
 // Bracketing Function for Brent's Algorithm
 // brakGeneric in PLL
-static int mtBrakGeneric(MTInstance &instance, std::vector<double> &param, std::vector<double> &ax, std::vector<double> &bx,
-                        std::vector<double>& cx, std::vector<double>& fa, std::vector<double>& fb, std::vector<double>& fc,
-                        double lowerBound, double upperBound, int numberOfModels, int rateNumber, int paramType)
+static int mtBrakGeneric(MTInstance &instance, double param, double ax, double bx, double cx, double fa, double fb,
+                        double fc, double lowerBound, double upperBound, int model, int rateNumber, int paramType)
 {
-  std::vector<double> ulim, r, q, fu, dum, temp, u;
+  double ulim, r, q, fu, dum, temp, u;
   int i;
-  std::vector<int> states, endStates;
-  std::vector<bool> converged;
-  bool allConverged = false;
+  int state, endState;
+  bool converged = false;
 
-  for(i = 0; i < numberOfModels; i++)
-    converged[i] = false;
+  state = 0;
+  endState = 0;
 
-  for(i = 0; i < numberOfModels; i++)
-    {
-      states[i] = 0;
-      endStates[i] = 0;
+  u = 0.0;
 
-      u[i] = 0.0;
+  param = ax;
 
-      param[i] = ax[i];
+  if(param > upperBound)
+    param = ax = upperBound;
 
-      if(param[i] > upperBound)
-        param[i] = ax[i] = upperBound;
+  if(param < lowerBound)
+    param = ax = lowerBound;
 
-      if(param[i] < lowerBound)
-        param[i] = ax[i] = lowerBound;
+  assert(param >= lowerBound && param <= upperBound);
 
-      assert(param[i] >= lowerBound && param[i] <= upperBound);
-    }
+  mtEvaluateChange(instance, rateNumber, param, fa, converged, paramType, model);
 
-      mtEvaluateChange(instance, rateNumber, param, fa, allConverged, paramType, numberOfModels);
+   param = bx;
+   if(param > upperBound)
+     param = bx = upperBound;
+   if(param < lowerBound)
+     param = bx = lowerBound;
 
-  for(i = 0; i < numberOfModels; i++)
-    {
-      param[i] = bx[i];
-      if(param[i] > upperBound)
-        param[i] = bx[i] = upperBound;
-      if(param[i] < lowerBound)
-        param[i] = bx[i] = lowerBound;
+   assert(param >= lowerBound && param <= upperBound);
 
-      assert(param[i] >= lowerBound && param[i] <= upperBound);
-    }
+   mtEvaluateChange(instance, rateNumber, param, fb, converged, paramType, model);
 
-      mtEvaluateChange(instance, rateNumber, param, fb, allConverged, paramType, numberOfModels);
+   if (fb > fa) {
+          dum = ax; ax = bx; bx = dum;
+          dum = fa; fa = fb; fb = dum;
+   }
 
-  for(i = 0; i < numberOfModels; i++)
-    {
-      if (fb[i] > fa[i])
-        {
-          dum[i] = ax[i]; ax[i] = bx[i]; bx[i] = dum[i];
-          dum[i] = fa[i]; fa[i] = fb[i]; fb[i] = dum[i];
-        }
+   cx = bx + GOLDEN_RAT * (bx - ax);
 
-      cx[i] = bx[i] + GOLDEN_RAT * (bx[i] - ax[i]);
+   param = cx;
 
-      param[i] = cx[i];
+   if(param > upperBound)
+     param = cx = upperBound;
+   if(param < lowerBound)
+     param = cx = lowerBound;
 
-      if(param[i] > upperBound)
-        param[i] = cx[i] = upperBound;
-      if(param[i] < lowerBound)
-        param[i] = cx[i] = lowerBound;
+   assert(param >= lowerBound && param <= upperBound);
 
-      assert(param[i] >= lowerBound && param[i] <= upperBound);
-    }
-
-
-      mtEvaluateChange(instance, rateNumber, param, fc, allConverged, paramType, numberOfModels);
+   mtEvaluateChange(instance, rateNumber, param, fc, converged, paramType, model);
 
    while(1)
      {
-       allConverged = true;
+         if(converged) {
 
-       for(i = 0; i < numberOfModels && allConverged; i++)
-         allConverged = allConverged && converged[i];
+           if(ax > upperBound)
+             ax = upperBound;
+           if(ax < lowerBound)
+             ax = lowerBound;
 
-         if(allConverged)
-          {
-            for(i = 0; i < numberOfModels; i++)
-              {
-                if(ax[i] > upperBound)
-                  ax[i] = upperBound;
-                if(ax[i] < lowerBound)
-                  ax[i] = lowerBound;
+           if(bx > upperBound)
+             bx = upperBound;
+           if(bx < lowerBound)
+             bx = lowerBound;
 
-                if(bx[i] > upperBound)
-                  bx[i] = upperBound;
-                if(bx[i] < lowerBound)
-                  bx[i] = lowerBound;
-
-                if(cx[i] > upperBound)
-                  cx[i] = upperBound;
-                if(cx[i] < lowerBound)
-                  cx[i] = lowerBound;
-              }
+           if(cx > upperBound)
+             cx = upperBound;
+           if(cx < lowerBound)
+             cx = lowerBound;
 
             return 0;
-
           }
 
-       for(i = 0; i < numberOfModels; i++)
-         {
-           if(!converged[i])
-             {
-               switch(states[i])
-                 {
-                 case 0:
-                   endStates[i] = 0;
-                   if(!(fb[i] > fc[i]))
-                     converged[i] = true;
-                   else
-                     {
+         if(!converged) {
+           switch(state)
+           {
+             case 0:
+               endState = 0;
+               if(!(fb > fc))
+                 converged = true;
+               else
+                {
 
-                       if(ax[i] > upperBound)
-                         ax[i] = upperBound;
-                       if(ax[i] < lowerBound)
-                         ax[i] = lowerBound;
-                       if(bx[i] > upperBound)
-                         bx[i] = upperBound;
-                       if(bx[i] < lowerBound)
-                         bx[i] = lowerBound;
-                       if(cx[i] > upperBound)
-                         cx[i] = upperBound;
-                       if(cx[i] < lowerBound)
-                         cx[i] = lowerBound;
+                  if(ax > upperBound)
+                    ax = upperBound;
+                  if(ax < lowerBound)
+                    ax = lowerBound;
+                  if(bx > upperBound)
+                    bx = upperBound;
+                  if(bx < lowerBound)
+                    bx = lowerBound;
+                  if(cx > upperBound)
+                    cx = upperBound;
+                  if(cx < lowerBound)
+                    cx = lowerBound;
 
-                       r[i]=(bx[i]-ax[i])*(fb[i]-fc[i]);
-                       q[i]=(bx[i]-cx[i])*(fb[i]-fa[i]);
-                       u[i]=(bx[i])-((bx[i]-cx[i])*q[i]-(bx[i]-ax[i])*r[i])/
-                         (2.0 * MTREE_SIGN(std::max(fabs(q[i]-r[i]),BRAK_VAR1),q[i]-r[i]));
+                  r=(bx-ax)*(fb-fc);
+                  q=(bx-cx)*(fb-fa);
+                  u=(bx)-((bx-cx)*q-(bx-ax)*r)/
+                    (2.0 * MTREE_SIGN(std::max(fabs(q-r),BRAK_VAR1),q-r));
 
-                       ulim[i]=(bx[i])+BRAK_VAR2*(cx[i]-bx[i]);
+                  ulim=(bx)+BRAK_VAR2*(cx-bx);
 
-                       if(u[i] > upperBound)
-                         u[i] = upperBound;
-                       if(u[i] < lowerBound)
-                         u[i] = lowerBound;
-                       if(ulim[i] > upperBound)
-                         ulim[i] = upperBound;
-                       if(ulim[i] < lowerBound)
-                         ulim[i] = lowerBound;
+                  if(u > upperBound)
+                    u = upperBound;
+                  if(u < lowerBound)
+                    u = lowerBound;
+                  if(ulim > upperBound)
+                    ulim = upperBound;
+                  if(ulim < lowerBound)
+                    ulim = lowerBound;
 
-                       if ((bx[i]-u[i])*(u[i]-cx[i]) > 0.0)
-                         {
-                           param[i] = u[i];
-                           if(param[i] > upperBound)
-                             param[i] = u[i] = upperBound;
-                           if(param[i] < lowerBound)
-                             param[i] = u[i] = lowerBound;
-                           endStates[i] = 1;
-                         }
-                       else
-                         {
-                           if ((cx[i]-u[i])*(u[i]-ulim[i]) > 0.0)
-                             {
-                               param[i] = u[i];
-                               if(param[i] > upperBound)
-                                 param[i] = u[i] = upperBound;
-                               if(param[i] < lowerBound)
-                                 param[i] = u[i] = lowerBound;
-                               endStates[i] = 2;
-                             }
-                           else
-                             {
-                               if ((u[i]-ulim[i])*(ulim[i]-cx[i]) >= 0.0)
-                                 {
-                                   u[i] = ulim[i];
-                                   param[i] = u[i];
-                                   if(param[i] > upperBound)
-                                     param[i] = u[i] = ulim[i] = upperBound;
-                                   if(param[i] < lowerBound)
-                                     param[i] = u[i] = ulim[i] = lowerBound;
-                                   endStates[i] = 0;
-                                 }
-                               else
-                                 {
-                                   u[i]=(cx[i])+GOLDEN_RAT*(cx[i]-bx[i]);
-                                   param[i] = u[i];
-                                   endStates[i] = 0;
-                                   if(param[i] > upperBound)
-                                     param[i] = u[i] = upperBound;
-                                   if(param[i] < lowerBound)
-                                     param[i] = u[i] = lowerBound;
-                                 }
-                             }
-                         }
+                  if ((bx-u)*(u-cx) > 0.0)
+                  {
+                    param = u;
+                    if(param > upperBound)
+                      param = u = upperBound;
+                    if(param < lowerBound)
+                      param = u = lowerBound;
+                    endState = 1;
+                  } else {
+                    if ((cx-u)*(u-ulim) > 0.0)
+                    {
+                      param = u;
+                      if(param > upperBound)
+                        param = u = upperBound;
+                      if(param < lowerBound)
+                        param = u = lowerBound;
+                      endState = 2;
+                    } else {
+                      if ((u-ulim)*(ulim-cx) >= 0.0)
+                      {
+                        u = ulim;
+                        param = u;
+                        if(param > upperBound)
+                          param = u = ulim = upperBound;
+                        if(param < lowerBound)
+                          param = u = ulim = lowerBound;
+                        endState = 0;
+                       } else {
+                         u=(cx)+GOLDEN_RAT*(cx-bx);
+                         param = u;
+                         endState = 0;
+                         if(param > upperBound)
+                           param = u = upperBound;
+                         if(param < lowerBound)
+                           param = u = lowerBound;
+                        }
+                        }
+                        }
                      }
                    break;
                  case 1:
-                   endStates[i] = 0;
+                   endState = 0;
                    break;
                  case 2:
-                   endStates[i] = 3;
+                   endState = 3;
                    break;
                  default:
                    assert(0);
                  }
-               assert(param[i] >= lowerBound && param[i] <= upperBound);
+               assert(param >= lowerBound && param <= upperBound);
              }
-         }
 
-          mtEvaluateChange(instance, rateNumber, param, temp, allConverged, paramType, numberOfModels);
+          mtEvaluateChange(instance, rateNumber, param, temp, converged, paramType, model);
 
-       for(i = 0; i < numberOfModels; i++)
-         {
-           if(!converged[i])
+           if(!converged)
              {
-               switch(endStates[i])
+               switch(endState)
                  {
                  case 0:
-                   fu[i] = temp[i];
-                   ax[i] = bx[i]; bx[i] = cx[i]; cx[i] = u[i];
-                   fa[i] = fb[i]; fb[i] = fc[i]; fc[i] = fu[i];
-                   states[i] = 0;
+                   fu = temp;
+                   ax = bx; bx = cx; cx = u;
+                   fa = fb; fb = fc; fc = fu;
+                   state = 0;
                    break;
                  case 1:
-                   fu[i] = temp[i];
-                   if (fu[i] < fc[i])
+                   fu = temp;
+                   if (fu < fc)
                      {
-                       ax[i] = (bx[i]);
-                       bx[i] = u[i];
-                       fa[i] = (fb[i]);
-                       fb[i] = fu[i];
-                       converged[i] = true;
+                       ax = (bx);
+                       bx = u;
+                       fa = (fb);
+                       fb = fu;
+                       converged = true;
                      }
                    else
                      {
-                       if (fu[i] > fb[i])
+                       if (fu > fb)
                          {
-                           assert(u[i] >= lowerBound && u[i] <= upperBound);
-                           cx[i] = u[i];
-                           fc[i] = fu[i];
-                           converged[i] = true;
+                           assert(u >= lowerBound && u <= upperBound);
+                           cx = u;
+                           fc = fu;
+                           converged = true;
                          }
                        else
                          {
-                           u[i] = (cx[i])+GOLDEN_RAT*(cx[i]-bx[i]);
-                           param[i] = u[i];
-                           if(param[i] > upperBound)
-                              param[i] = u[i] = upperBound;
-                           if(param[i] < lowerBound)
-                              param[i] = u[i] = lowerBound;
-                           states[i] = 1;
+                           u = (cx)+GOLDEN_RAT*(cx-bx);
+                           param = u;
+                           if(param > upperBound)
+                              param = u = upperBound;
+                           if(param < lowerBound)
+                              param = u = lowerBound;
+                           state = 1;
                          }
                      }
                    break;
                  case 2:
-                   fu[i] = temp[i];
-                   if (fu[i] < fc[i])
+                   fu = temp;
+                   if (fu < fc)
                      {
-                       bx[i] = cx[i]; cx[i] = u[i]; u[i] = cx[i] + GOLDEN_RAT*(cx[i]-bx[i]);
-                       states[i] = 2;
+                       bx = cx; cx = u; u = cx + GOLDEN_RAT*(cx-bx);
+                       state = 2;
                      }
                    else
                      {
-                       states[i] = 0;
-                       ax[i] = bx[i]; bx[i] = cx[i]; cx[i] = u[i];
-                       fa[i] = fb[i]; fb[i] = fc[i]; fc[i] = fu[i];
+                       state = 0;
+                       ax = bx; bx = cx; cx = u;
+                       fa = fb; fb = fc; fc = fu;
                      }
                    break;
                  case 3:
-                   fb[i] = fc[i]; fc[i] = fu[i]; fu[i] = temp[i];
-                   ax[i] = bx[i]; bx[i] = cx[i]; cx[i] = u[i];
-                   fa[i] = fb[i]; fb[i] = fc[i]; fc[i] = fu[i];
-                   states[i] = 0;
+                   fb = fc; fc = fu; fu = temp;
+                   ax = bx; bx = cx; cx = u;
+                   fa = fb; fb = fc; fc = fu;
+                   state = 0;
                    break;
                  default:
                    assert(0);
                  }
              }
-         }
     }
 
    return(0);
@@ -680,60 +609,62 @@ static int mtBrakGeneric(MTInstance &instance, std::vector<double> &param, std::
 
 // Generic function for optimizing a given parameter
 // from optParamGeneric in PLL
+// loop over parameters occurs here - specific to parameter in nested functions
 static void optParam(MTInstance &instance, int numberOfModels,
                      int rateNumber, double lowerBound, double upperBound, int paramType,
                      double modelEpsilon)
 {
   int pos;
 
-  std::vector<double> startRates, startWeights, startExps, startValues, startLHs,
-         endLHs, _a, _b, _c, _fa, _fb, _fc, _param, _x;
+  std::vector<double> startRates, startWeights, startExps,
+           _param, _x;
 
-  CharModel &startModel = instance.GetCharModel();
+  CharModel &startModel = instance.GetCharModel(pos);
 
   for(pos = 0; pos < numberOfModels; pos++) {
-    startLHs[pos] = ScoreTree(instance.partMat, instance.tree, startModel);
-
+    double startLH = ScoreTreeForPartition(instance.partMat, instance.tree, startModel, pos);
+    double startValue = 0.0;
     switch (paramType)
     {
       case SUB_RATE:
         //startValues[pos] = startModel.GetRate(rateNumber);
         //break;
       case ALPHA_P:
-      // function to return starting alpha parameter
-      startValues[pos] = GetPatData.GetAlpha();
+        // function to return starting alpha parameter
+        startValue = GetPatData(pos).GetAlpha();
         break;
     }
 
-    _a[pos] = startValues[pos] + 0.1;
-    _b[pos] = startValues[pos] - 0.1;
+    double _a = startValue + 0.1;
+    double _b = startValue - 0.1;
 
-    if (_a[pos] < lowerBound)
-      _a[pos] = lowerBound;
-      if (_a[pos] > upperBound)
-      _a[pos] = upperBound;
-      if (_b[pos] < lowerBound)
-      _b[pos] = lowerBound;
-      if (_b[pos] > upperBound)
-      _b[pos] = upperBound;
+    if (_a < lowerBound)
+      _a = lowerBound;
+      if (_a > upperBound)
+      _a = upperBound;
+      if (_b < lowerBound)
+      _b = lowerBound;
+      if (_b > upperBound)
+      _b = upperBound;
 
-
+      double _c, _fa, _fb, _fc, _param, _x, endLH;
       mtBrakGeneric(instance, _param, _a, _b, _c, _fa, _fb, _fc, lowerBound, upperBound,
-                  numberOfModels, rateNumber, paramType);
+                    pos, rateNumber, paramType);
 
-      assert(_a[pos] >= lowerBound && _a[pos] <= upperBound);
-      assert(_b[pos] >= lowerBound && _b[pos] <= upperBound);
-      assert(_c[pos] >= lowerBound && _c[pos] <= upperBound);
+      assert(_a >= lowerBound && _a <= upperBound);
+      assert(_b >= lowerBound && _b <= upperBound);
+      assert(_c >= lowerBound && _c <= upperBound);
 
-      mtBrentGeneric(instance, _a, _b, _c, _fb, modelEpsilon, _x, endLHs, paramType,
-                 rateNumber, lowerBound, upperBound, numberOfModels);
+      mtBrentGeneric(instance, _a, _b, _c, _fb, modelEpsilon, _x, endLH, paramType,
+                     rateNumber, lowerBound, upperBound, pos);
 
-      if (startLHs[pos] > endLHs[pos])
+      if (startLH > endLH)
         {
-          changeParam(instance, pos, rateNumber, startValues[pos], paramType);
+          changeParam(instance, pos, rateNumber, startValue, paramType);
+
         }
       else {
-          changeParam(instance, pos, rateNumber, _x[pos], paramType);
+          changeParam(instance, pos, rateNumber, _x, paramType);
         }
   }
 }
@@ -753,9 +684,9 @@ static void mtOptRates(MTInstance &instance, std::vector<double> ratelist, doubl
 }
 */
 
-static void mtOptAlphas(MTInstance &instance, std::vector<double> alphaList, double modelEpsilon)
+static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon)
 {
-
+  optParam(instance, numModels, 0, 0.01, 0.99, ALPHA_P, modelEpsilon);
 }
 
 // iterative procedure for optimizing all model parameters for all partitions
@@ -765,7 +696,7 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
   int i = 0;
   double inputLikelihood, currentLikelihood, modelEpsilon;
 
-  std::vector<double> alphalist, ratelist; // get these from instance, where they have been initialized
+  //std::vector<double> alphalist, ratelist; // get these from instance, where they have been initialized
 
   modelEpsilon = 0.0001;    // hard-coded value for now
 
@@ -773,12 +704,11 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
   do {
     currentLikelihood = instance.curLikelihood;
 
-    mtOptAlphas(instance, ratelist, modelEpsilon);
-    instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance.GetCharModel());
+    mtOptAlphas(instance, instance.numPartitions, modelEpsilon);
+    instance.curLikelihood = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(0), 0);
 
   } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon);
 
 }
 
 } //namespace mt
-

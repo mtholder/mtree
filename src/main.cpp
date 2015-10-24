@@ -123,7 +123,7 @@ void NCL2MT::processTree(std::ostream *os,
     if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
         maxStateCode = numStates;
     }
-    unsigned numStateCodes = maxStateCode; //@MTH removed: + 1;
+    unsigned numStateCodes = maxStateCode;
     mt::CharStateToPrimitiveInd cs2pi(numStateCodes);
     for (auto i = 0U; i < numStateCodes; ++i) {
         vector<mt::char_state_t> v;
@@ -132,34 +132,41 @@ void NCL2MT::processTree(std::ostream *os,
         }
         cs2pi.SetStateCode(i, v);
     }
-
+    // TEMP Following needs to be changed to write partitions properly
+    std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
+    unsigned numParts = 3; // TEMP - read from nexus file/ncl object
     std::vector<unsigned> partLengths(1, firstPartLength);
-    mt::CharModel * cm;
-    unsigned numRateCats = 1;
-    //TEMP - need logic here to instantiate the right type of model wrt AscBias
-    switch (md.GetAscBiasMode()) {
-      case mt::ModelDescription::NO_ASC_BIAS:
-        cm = new mt::MkCharModel(numStates, numRateCats);
-        break;
-      case mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS:
-      	cm = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
-      	break;
-      case mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS:
-      	cm = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
-      	break;
-      case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
-      	cm = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
-      	break;
-      case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:	
-      	cm = new mt::MkParsInfMissingModel(numStates, numRateCats);
+    
+    std::vector<mt::CharModel*> models; // initialize list of models, one for each partition
+    unsigned numRateCats = 4; // TEMP: change to customizable value in INI
+    for(auto i = 0U; i < numParts; i++) {
+      switch (md.GetAscBiasMode()) {
+        case mt::ModelDescription::NO_ASC_BIAS:
+          models[i] = new mt::MkCharModel(numStates, numRateCats);
+          break;
+        case mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS:
+       	  models[i] = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
+      	  break;
+        case mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS:
+      	  models[i] = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
+      	  break;
+        case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
+      	  models[i] = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
+      	  break;
+        case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:	
+      	  models[i] = new mt::MkParsInfMissingModel(numStates, numRateCats);
+      }
     }
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;
-    cm->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);
-    std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
-    mt::MTInstance mtInstance(numTaxa, partLengths, numStatesPerPartition, origToComp, patternWeights, cm);
+    for(auto i = 0U; i < numParts; i++) {
+      models[i]->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);
+    }
+    mt::MTInstance mtInstance(numTaxa, partLengths, numStatesPerPartition, origToComp, patternWeights, models);
     mt::PartitionedMatrix & partMat = mtInstance.partMat;
-    partMat.fillPartition(0, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
+    for(auto i = 0U; i < numParts; i++) {
+      partMat.fillPartition(i, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
+    }
     mt::Tree &tree = mtInstance.tree;
     std::map<const NxsSimpleNode *, unsigned> ncl2nodeNumber;
     std::vector<const NxsSimpleNode *> pre = nxsTree.GetPreorderTraversal();
@@ -203,10 +210,10 @@ void NCL2MT::processTree(std::ostream *os,
     try {
         doAnalysis(os, mtInstance, action);
     } catch (...) {
-        delete cm;
+        for(auto i = 0U; i < numParts; i++) delete models[i];
         throw;
     }
-    delete cm;
+    for(auto i = 0U; i < numParts; i++) delete models[i];;
 }
 
 } // namespace mt

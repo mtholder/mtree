@@ -1,9 +1,11 @@
 #if !defined(__TREE_TRAVERSAL_H__)
 #define __TREE_TRAVERSAL_H__
 #include "mt_tree.h"
+#include "mt_data.h"
 namespace mt {
 
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, CharModel &cm);
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, ModelVec models);
+double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model);
 
 class ArcIterator {
     public:

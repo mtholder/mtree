@@ -40,14 +40,14 @@ void ProbInfo::createForTip(const MTInstance & instance) {
 	this->byParsScore.resize(1);
 	ProbForParsScore & forZeroSteps = this->byParsScore[0];
 	unsigned stateIndex = 0;
-	for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
-		 	scIt != GetPatData.singleStateCodes.end();
+	for (std::vector<BitField>::const_iterator scIt = GetPatData(0).singleStateCodes.begin();
+		 	scIt != GetPatData(0).singleStateCodes.end();
 		 	++scIt, ++stateIndex) {
 		const BitField sc = *scIt;
 		std::vector<double> & pVec = forZeroSteps.byDownPass[sc][sc];
-		pVec.assign(GetPatData.GetNumRates()*GetPatData.GetNumStates(), 0.0);
-		for (unsigned r = 0; r < GetPatData.GetNumRates(); ++r)
-			pVec[GetPatData.GetNumStates()*r + stateIndex] = 1.0;
+		pVec.assign(GetPatData(0).GetNumRates()*GetPatData(0).GetNumStates(), 0.0);
+		for (unsigned r = 0; r < GetPatData(0).GetNumRates(); ++r)
+			pVec[GetPatData(0).GetNumStates()*r + stateIndex] = 1.0;
 	}
 	this->nLeavesBelow = 1;
 }
@@ -62,16 +62,16 @@ void ProbInfo::addToAncProbVecSymmetric(std::vector<double> & pVec,
 		return;
 	unsigned rOffset = 0;
 	// ignore loop over rates blob.nRates = 1
-	for (unsigned r = 0; r < GetPatData.GetNumRates(); ++r) {
+	for (unsigned r = 0; r < GetPatData(0).GetNumRates(); ++r) {
 		// this code looks up the correct transition prob matrix
 		const double ** leftPMat = leftPMatVec[r];
 		const double ** rightPMat = rightPMatVec[r];
 
 
-		for (unsigned ancState = 0; ancState < GetPatData.GetNumStates(); ++ancState) {
+		for (unsigned ancState = 0; ancState < GetPatData(0).GetNumStates(); ++ancState) {
 			double leftProb = 0.0;
 			double rightProb = 0.0;
-			for (unsigned desState = 0; desState < GetPatData.GetNumStates(); ++desState) {
+			for (unsigned desState = 0; desState < GetPatData(0).GetNumStates(); ++desState) {
 
 				const double leftTiProb = leftPMat[ancState][desState];
 				const double leftAccumProb = (*leftProbs)[rOffset + desState];
@@ -86,7 +86,7 @@ void ProbInfo::addToAncProbVecSymmetric(std::vector<double> & pVec,
 			}
 			pVec[rOffset + ancState] += leftProb*rightProb;
 		}
-		rOffset += GetPatData.GetNumStates();
+		rOffset += GetPatData(0).GetNumStates();
 	}
 }
 */
@@ -99,16 +99,16 @@ void ProbInfo::addToAncProbVec(std::vector<double> & pVec,
 		return;
 	unsigned rOffset = 0;
 	// ignore loop over rates blob.nRates = 1
-	for (unsigned r = 0; r < GetPatData.GetNumRates(); ++r) {
+	for (unsigned r = 0; r < GetPatData(0).GetNumRates(); ++r) {
 		// this code looks up the correct transition prob matrix
 		const double ** leftPMat = leftPMatVec[r];
 		const double ** rightPMat = rightPMatVec[r];
 
 
-		for (unsigned ancState = 0; ancState < GetPatData.GetNumStates(); ++ancState) {
+		for (unsigned ancState = 0; ancState < GetPatData(0).GetNumStates(); ++ancState) {
 			double leftProb = 0.0;
 			double rightProb = 0.0;
-			for (unsigned desState = 0; desState < GetPatData.GetNumStates(); ++desState) {
+			for (unsigned desState = 0; desState < GetPatData(0).GetNumStates(); ++desState) {
 				const double leftTiProb = leftPMat[ancState][desState];
 				const double leftAccumProb = (*leftProbs)[rOffset + desState];
 				leftProb += leftTiProb*leftAccumProb;
@@ -121,7 +121,7 @@ void ProbInfo::addToAncProbVec(std::vector<double> & pVec,
 			}
 			pVec[rOffset + ancState] += leftProb*rightProb;
 		}
-		rOffset += GetPatData.GetNumStates();
+		rOffset += GetPatData(0).GetNumStates();
 	}
 }
 
@@ -184,46 +184,46 @@ std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
 
 /*
 void initInfo(MTInstance &instance) {
-	GetPatData.isMkvSymm = false;
-	GetPatData.pVecLen = GetPatData.GetNumStates()*GetPatData.GetNumRates();
-	GetPatData.categStateProb.assign(GetPatData.pVecLen, 1.0/((double)GetPatData.pVecLen));
-	GetPatData.singleStateCodes.clear();
-	GetPatData.multiStateCodes.clear();
-	GetPatData.stateCodesToSymbols.clear();
-	unsigned lbfU = (1 << GetPatData.GetNumStates()) - 1;
-	GetPatData.stateCodeToNumStates.assign(lbfU + 1, 0);
-	GetPatData.lastBitField = BitField(lbfU);
+	GetPatData(0).isMkvSymm = false;
+	GetPatData(0).pVecLen = GetPatData(0).GetNumStates()*GetPatData(0).GetNumRates();
+	GetPatData(0).categStateProb.assign(GetPatData(0).pVecLen, 1.0/((double)GetPatData(0).pVecLen));
+	GetPatData(0).singleStateCodes.clear();
+	GetPatData(0).multiStateCodes.clear();
+	GetPatData(0).stateCodesToSymbols.clear();
+	unsigned lbfU = (1 << GetPatData(0).GetNumStates()) - 1;
+	GetPatData(0).stateCodeToNumStates.assign(lbfU + 1, 0);
+	GetPatData(0).lastBitField = BitField(lbfU);
 	BitField sc = 1;
 	for (;; sc++) {
 		const std::set<BitField> sbf = toElements(sc);
 		if (sbf.size() == 1) {
-			unsigned stInd = GetPatData.singleStateCodes.size();
-			GetPatData.singleStateCodes.push_back(sc);
-			GetPatData.stateIndexToStateCode.push_back(sc);
-			assert(GetPatData.stateIndexToStateCode[stInd] == sc);
-			GetPatData.stateCodesToSymbols[sc] = GetPatData.alphabet[stInd]; // FIX THIS
-			GetPatData.stateCodeToNumStates.at(sc) = 1;
+			unsigned stInd = GetPatData(0).singleStateCodes.size();
+			GetPatData(0).singleStateCodes.push_back(sc);
+			GetPatData(0).stateIndexToStateCode.push_back(sc);
+			assert(GetPatData(0).stateIndexToStateCode[stInd] == sc);
+			GetPatData(0).stateCodesToSymbols[sc] = GetPatData(0).alphabet[stInd]; // FIX THIS
+			GetPatData(0).stateCodeToNumStates.at(sc) = 1;
 		} else {
-			GetPatData.multiStateCodes.push_back(sc);
+			GetPatData(0).multiStateCodes.push_back(sc);
 			std::string sym;
 			for (std::set<BitField>::const_iterator sbfIt = sbf.begin(); sbfIt != sbf.end(); ++sbfIt)
-				sym.append(GetPatData.stateCodesToSymbols[*sbfIt]);
-			GetPatData.stateCodeToNumStates.at(sc) = sbf.size();
-			GetPatData.stateCodesToSymbols[sc] = sym;
+				sym.append(GetPatData(0).stateCodesToSymbols[*sbfIt]);
+			GetPatData(0).stateCodeToNumStates.at(sc) = sbf.size();
+			GetPatData(0).stateCodesToSymbols[sc] = sym;
 		}
 
-		if (sc == GetPatData.lastBitField)
+		if (sc == GetPatData(0).lastBitField)
 			break;
 
 	}
-	GetPatData.pairsForUnionForEachDownPass.clear();
-	GetPatData.pairsForUnionForEachDownPass.resize(GetPatData.lastBitField + 1);
-	GetPatData.pairsForIntersectionForEachDownPass.clear();
-	GetPatData.pairsForIntersectionForEachDownPass.resize(GetPatData.lastBitField + 1);
+	GetPatData(0).pairsForUnionForEachDownPass.clear();
+	GetPatData(0).pairsForUnionForEachDownPass.resize(GetPatData(0).lastBitField + 1);
+	GetPatData(0).pairsForIntersectionForEachDownPass.clear();
+	GetPatData(0).pairsForIntersectionForEachDownPass.resize(GetPatData(0).lastBitField + 1);
 
 	for (sc = 1;; sc++) {
-		if (GetPatData.stateCodeToNumStates[sc] > 1) {
-			VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
+		if (GetPatData(0).stateCodeToNumStates[sc] > 1) {
+			VecMaskPair & forUnions = GetPatData(0).pairsForUnionForEachDownPass[sc];
 			for (BitField leftSC = 1; leftSC < sc; ++leftSC) {
 				if ((leftSC | sc) != sc)
 					continue;
@@ -232,39 +232,39 @@ void initInfo(MTInstance &instance) {
 				forUnions.push_back(MaskPair(leftSC, rightSC));
 			}
 		}
-		VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[sc];
-		for (BitField leftSC = 1; leftSC <= GetPatData.lastBitField ; ++leftSC) {
-			for (BitField rightSC = 1; rightSC <= GetPatData.lastBitField ; ++rightSC) {
+		VecMaskPair & forIntersections = GetPatData(0).pairsForIntersectionForEachDownPass[sc];
+		for (BitField leftSC = 1; leftSC <= GetPatData(0).lastBitField ; ++leftSC) {
+			for (BitField rightSC = 1; rightSC <= GetPatData(0).lastBitField ; ++rightSC) {
 				if ((leftSC & rightSC) != sc)
 					continue;
 				forIntersections.push_back(MaskPair(leftSC, rightSC));
 			}
 		}
 
-		if (sc == GetPatData.lastBitField)
+		if (sc == GetPatData(0).lastBitField)
 			break;
 
 	}
-        GetPatData.statesSupersets.clear();
-	GetPatData.statesSupersets.resize(GetPatData.lastBitField + 1);
+        GetPatData(0).statesSupersets.clear();
+	GetPatData(0).statesSupersets.resize(GetPatData(0).lastBitField + 1);
 	for (sc = 1;;++sc) {
-		BitFieldRow & ssRow = GetPatData.statesSupersets[sc];
+		BitFieldRow & ssRow = GetPatData(0).statesSupersets[sc];
 		for (BitField ss = sc;; ++ss) {
 			if ((ss & sc) == sc)
 				ssRow.push_back(ss);
-			if (ss == GetPatData.lastBitField)
+			if (ss == GetPatData(0).lastBitField)
 				break;
 		}
 
-		if (sc == GetPatData.lastBitField)
+		if (sc == GetPatData(0).lastBitField)
 			break;
 
 	}
 
 	for (sc = 1;; sc++) {
-		const VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[sc];
-		const VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[sc];
-		if (sc == GetPatData.lastBitField)
+		const VecMaskPair & forUnions = GetPatData(0).pairsForUnionForEachDownPass[sc];
+		const VecMaskPair & forIntersections = GetPatData(0).pairsForIntersectionForEachDownPass[sc];
+		if (sc == GetPatData(0).lastBitField)
 			break;
 	}
 }
@@ -289,7 +289,7 @@ bool ProbInfo::allCalcsForAllPairs(
 	for (VecMaskPair::const_iterator fuIt = pairVec.begin(); fuIt != pairVec.end(); ++fuIt) {
 		const BitField leftDown = fuIt->first;
 		const BitField rightDown = fuIt->second;
-		std::cerr << "from line: " << __LINE__<< ": "; std::cerr << "leftDown = " << GetPatData.toSymbol(leftDown) << " rightDown = " << GetPatData.toSymbol(rightDown) << '\n';
+		std::cerr << "from line: " << __LINE__<< ": "; std::cerr << "leftDown = " << GetPatData(0).toSymbol(leftDown) << " rightDown = " << GetPatData(0).toSymbol(rightDown) << '\n';
 		assert(leftDown > 0);
 		assert(rightDown > 0);
 		if (doingIntersection) {
@@ -298,8 +298,8 @@ bool ProbInfo::allCalcsForAllPairs(
 		else {
 			assert((leftDown & rightDown) == 0);
 		}
-		const unsigned leftMinAccum = GetPatData.getnstates(leftDown) - 1;
-		const unsigned rightMinAccum = GetPatData.getnstates(rightDown) - 1;
+		const unsigned leftMinAccum = GetPatData(0).getnstates(leftDown) - 1;
+		const unsigned rightMinAccum = GetPatData(0).getnstates(rightDown) - 1;
 		if (leftMinAccum + rightMinAccum > accumScore) {
 			std::cerr << "from line: " << __LINE__<< ": minScore exceed required score\n";
 			continue;
@@ -332,17 +332,17 @@ bool ProbInfo::allCalcsForAllPairs(
 				std::cerr << "from line: " << __LINE__<< ": right child empty row. Skipping...\n";
 				continue;
 			}
-			const BitFieldRow & leftSSRow = GetPatData.statesSupersets[leftDown];
+			const BitFieldRow & leftSSRow = GetPatData(0).statesSupersets[leftDown];
 			// order (2^k)
 			for (BitFieldRow::const_iterator lasIt = leftSSRow.begin(); lasIt != leftSSRow.end(); ++lasIt) {
 				const BitField leftAllStates = *lasIt;
-					std::cerr << "from line: " << __LINE__<< ":	 leftAllStates="  << GetPatData.toSymbol(leftAllStates) << '\n';
+					std::cerr << "from line: " << __LINE__<< ":	 leftAllStates="  << GetPatData(0).toSymbol(leftAllStates) << '\n';
 				const std::vector<double> * leftProbs = getProbsForStatesMask(leftM2PBS, leftAllStates);
 				if (leftProbs == 0L) {
 					std::cerr << "from line: " << __LINE__<< ": left child empty bin. Skipping...\n";
 					continue;
 				}
-				const BitFieldRow & rightSSRow = GetPatData.statesSupersets[rightDown];
+				const BitFieldRow & rightSSRow = GetPatData(0).statesSupersets[rightDown];
 				// order (2^k)
 				for (BitFieldRow::const_iterator rasIt = rightSSRow.begin(); rasIt != rightSSRow.end(); ++rasIt) {
 					const BitField rightAllStates = *rasIt;
@@ -357,7 +357,7 @@ bool ProbInfo::allCalcsForAllPairs(
 					std::vector<double> * ancVec = getMutableProbsForStatesMask(&forCurrScoreDownPass, ancAllField);
 					if (ancVec == 0L) {
 						ancVec = &(forCurrScoreDownPass[ancAllField]);
-						ancVec->assign(GetPatData.GetNumRates()*GetPatData.GetNumStates(), 0.0);
+						ancVec->assign(GetPatData(0).GetNumRates()*GetPatData(0).GetNumStates(), 0.0);
 					}
 					probsAdded = true;
 //					std::cerr << __LINE__ << " adding:";
@@ -376,17 +376,17 @@ bool ProbInfo::allCalcsForAllPairs(
 void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, const ProbInfo & rightPI, double rightEdgeLen,
                                   TiMatFunc fn, const MTInstance & instance)
 {
-  fn(leftEdgeLen, GetPatData.firstMatVec.GetAlias());
-  const double *** leftPMatVec = const_cast<const double ***>(GetPatData.firstMatVec.GetAlias());
-  fn(rightEdgeLen, GetPatData.secMatVec.GetAlias());
-  const double *** rightPMatVec = const_cast<const double ***>(GetPatData.secMatVec.GetAlias());
+  fn(leftEdgeLen, GetPatData(0).firstMatVec.GetAlias());
+  const double *** leftPMatVec = const_cast<const double ***>(GetPatData(0).firstMatVec.GetAlias());
+  fn(rightEdgeLen, GetPatData(0).secMatVec.GetAlias());
+  const double *** rightPMatVec = const_cast<const double ***>(GetPatData(0).secMatVec.GetAlias());
 
   const unsigned int leftMaxP = leftPI.getMaxParsScore();
   const unsigned int rightMaxP = rightPI.getMaxParsScore();
   const unsigned int maxparscore = 1 + leftMaxP + rightMaxP;
 
-  unsigned int nRat = GetPatData.GetNumRates();
-  unsigned int nStat = GetPatData.GetNumStates();
+  unsigned int nRat = GetPatData(0).GetNumRates();
+  unsigned int nStat = GetPatData(0).GetNumStates();
 
   this->byParsScore.clear();
   this->byParsScore.resize(maxparscore + 1);
@@ -542,14 +542,14 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
 		bool scObserved = false;
 		ProbForParsScore & forCurrScore = this->byParsScore[currscore];
 		for (BitField downPass = 1; ; ++downPass) {
-			const unsigned numStatesInMask = GetPatData.getnstates(downPass);
+			const unsigned numStatesInMask = GetPatData(0).getnstates(downPass);
 			if (numStatesInMask - 1 <= currscore) { // we cannot demand 3 states seen, but only 1 parsimony change... (all the probs will be zero, so we can skip them)
 
 				MaskToProbsByState & forCurrScoreDownPass = forCurrScore.byDownPass[downPass];
 
-				if (GetPatData.getnstates(downPass) > 1) {
-					std::cerr << "from line: " << __LINE__<< ": downPass = " << (int)downPass << " " << GetPatData.toSymbol(downPass) << " UNIONS:\n";
-					const VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[downPass];
+				if (GetPatData(0).getnstates(downPass) > 1) {
+					std::cerr << "from line: " << __LINE__<< ": downPass = " << (int)downPass << " " << GetPatData(0).toSymbol(downPass) << " UNIONS:\n";
+					const VecMaskPair & forUnions = GetPatData(0).pairsForUnionForEachDownPass[downPass];
 					scObserved = this->allCalcsForAllPairs(forCurrScoreDownPass,
 											  forUnions,
 											  leftPI,
@@ -561,8 +561,8 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
 											  instance) || scObserved;
 				}
 				if (leftMaxP + rightMaxP >= currscore) {
-					std::cerr << "from line: " << __LINE__<< ": downPass = " << GetPatData.toSymbol(downPass) << " INTERSECTIONS:\n";
-					const VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[downPass];
+					std::cerr << "from line: " << __LINE__<< ": downPass = " << GetPatData(0).toSymbol(downPass) << " INTERSECTIONS:\n";
+					const VecMaskPair & forIntersections = GetPatData(0).pairsForIntersectionForEachDownPass[downPass];
 					scObserved = this->allCalcsForAllPairs(forCurrScoreDownPass,
 											  forIntersections,
 											  leftPI,
@@ -574,9 +574,9 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
 											  instance) || scObserved;
 				}
 			}
-			if (downPass == GetPatData.lastBitField)
+			if (downPass == GetPatData(0).lastBitField)
 				break;
-			assert(downPass < GetPatData.lastBitField);
+			assert(downPass < GetPatData(0).lastBitField);
 		}
 		if (scObserved)
 			obsmaxparscore = currscore;
@@ -593,16 +593,16 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
 					               const ProbInfo & rightPI, double rightEdgeLen,
 					               TiMatFunc fn, const MTInstance & instance) {
 
-  fn(leftEdgeLen, GetPatData.firstMatVec.GetAlias());
-  const double *** leftPMatVec = const_cast<const double ***>(GetPatData.firstMatVec.GetAlias());
-  fn(rightEdgeLen, GetPatData.secMatVec.GetAlias());
-  const double *** rightPMatVec = const_cast<const double ***>(GetPatData.secMatVec.GetAlias());
+  fn(leftEdgeLen, GetPatData(0).firstMatVec.GetAlias());
+  const double *** leftPMatVec = const_cast<const double ***>(GetPatData(0).firstMatVec.GetAlias());
+  fn(rightEdgeLen, GetPatData(0).secMatVec.GetAlias());
+  const double *** rightPMatVec = const_cast<const double ***>(GetPatData(0).secMatVec.GetAlias());
 
   const unsigned int leftMaxP = leftPI.getMaxParsScore();
   const unsigned rightMaxP = rightPI.getMaxParsScore();
   const unsigned maxParsScore = 1 + leftMaxP + rightMaxP;
-  unsigned int nRat = GetPatData.GetNumRates();
-  unsigned int nStat = GetPatData.GetNumStates();
+  unsigned int nRat = GetPatData(0).GetNumRates();
+  unsigned int nStat = GetPatData(0).GetNumStates();
 
   this->byParsScore.clear();
   this->byParsScore.resize(maxParsScore + 1); // add one to account zero
@@ -615,8 +615,8 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
     ProbForParsScore & forZeroSteps = this->byParsScore[0];
 
     unsigned stateIndex = 0;
-    for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
-         scIt != GetPatData.singleStateCodes.end();
+    for (std::vector<BitField>::const_iterator scIt = GetPatData(0).singleStateCodes.begin();
+         scIt != GetPatData(0).singleStateCodes.end();
          ++scIt, ++stateIndex) {
       const BitField sc = *scIt;
       const std::vector<double> * leftProbs = leftFPS.getProbsForDownPassAndObsMask(sc, sc);
@@ -637,14 +637,14 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
     bool scObserved = false;
     ProbForParsScore & forCurrScore = this->byParsScore[currScore];
     for (BitField downPass = 1; ; ++downPass) {
-      const unsigned numStatesInMask = GetPatData.getnstates(downPass);
+      const unsigned numStatesInMask = GetPatData(0).getnstates(downPass);
       if (numStatesInMask - 1 <= currScore) { // we cannot demand 3 states seen, but only 1 parsimony change... (all the probs will be zero, so we can skip them)
 
         MaskToProbsByState & forCurrScoreDownPass = forCurrScore.byDownPass[downPass];
 
-        if (GetPatData.getnstates(downPass) > 1) {
-          std::cerr << "from line: " << __LINE__<< ": downPass = " << (int)downPass << " " << GetPatData.toSymbol(downPass) << " UNIONS:\n";
-          const VecMaskPair & forUnions = GetPatData.pairsForUnionForEachDownPass[downPass];
+        if (GetPatData(0).getnstates(downPass) > 1) {
+          std::cerr << "from line: " << __LINE__<< ": downPass = " << (int)downPass << " " << GetPatData(0).toSymbol(downPass) << " UNIONS:\n";
+          const VecMaskPair & forUnions = GetPatData(0).pairsForUnionForEachDownPass[downPass];
           scObserved = this->allCalcsForAllPairs(forCurrScoreDownPass,
                          											  forUnions,
                          											  leftPI,
@@ -656,8 +656,8 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
                          											  instance) || scObserved;
         }
         if (leftMaxP + rightMaxP >= currScore) {
-          std::cerr << "from line: " << __LINE__<< ": downPass = " << GetPatData.toSymbol(downPass) << " INTERSECTIONS:\n";
-          const VecMaskPair & forIntersections = GetPatData.pairsForIntersectionForEachDownPass[downPass];
+          std::cerr << "from line: " << __LINE__<< ": downPass = " << GetPatData(0).toSymbol(downPass) << " INTERSECTIONS:\n";
+          const VecMaskPair & forIntersections = GetPatData(0).pairsForIntersectionForEachDownPass[downPass];
           scObserved = this->allCalcsForAllPairs(forCurrScoreDownPass,
                          											  forIntersections,
                          											  leftPI,
@@ -669,9 +669,9 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
                          											  instance) || scObserved;
         }
       }
-      if (downPass == GetPatData.lastBitField)
+      if (downPass == GetPatData(0).lastBitField)
         break;
-      assert(downPass < GetPatData.lastBitField);
+      assert(downPass < GetPatData(0).lastBitField);
     }
     if (scObserved)
       obsMaxParsScore = currScore;
@@ -711,14 +711,14 @@ ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, co
 		const std::vector<double> * pVec = constFPS.getProbsForDownPassAndObsMask(1,1);
 		assert(pVec);
 		double patClassProb = 0.0;
-		std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+		std::vector<double>::const_iterator wtIt = GetPatData(0).categStateProb.begin();
 		std::vector<double>::const_iterator pIt = pVec->begin();
-		for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+		for (; wtIt != GetPatData(0).categStateProb.end(); ++wtIt, ++pIt) {
 			assert(pIt != pVec->end());
 			patClassProb += (*wtIt) * (*pIt);
 		}
-		for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
-			scIt != GetPatData.singleStateCodes.end(); ++scIt) {
+		for (std::vector<BitField>::const_iterator scIt = GetPatData(0).singleStateCodes.begin();
+			scIt != GetPatData(0).singleStateCodes.end(); ++scIt) {
 			const BitField downPass = *scIt;
 			this->probsByStepsThenObsStates[0][downPass] = patClassProb;
 			}
@@ -729,38 +729,38 @@ ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, co
 			for (BitField downPass = 1; ; ++downPass) {
 				for (BitField obsStates = 1; ; ++obsStates) {
 					double patClassProb = 0.0;
-					std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+					std::vector<double>::const_iterator wtIt = GetPatData(0).categStateProb.begin();
 					const std::vector<double> * pVec = fps.getProbsForDownPassAndObsMask(downPass, obsStates);
 					if (pVec) {
 						std::vector<double>::const_iterator pIt = pVec->begin();
-						for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+						for (; wtIt != GetPatData(0).categStateProb.end(); ++wtIt, ++pIt) {
 							assert(pIt != pVec->end());
 							patClassProb += (*wtIt) * (*pIt);
 						}
 					}
 					this->probsByStepsThenObsStates[i][obsStates] += patClassProb;
-					if (obsStates == GetPatData.lastBitField)
+					if (obsStates == GetPatData(0).lastBitField)
 						break;
 				}
-				if (downPass == GetPatData.lastBitField)
+				if (downPass == GetPatData(0).lastBitField)
 					break;
 			}
 		}
 	} else {
 		const unsigned maxNumSteps = rootProbInfo.getMaxParsScore();
-		std::vector<double> emptyRow(GetPatData.lastBitField + 1.0, 0.0);
+		std::vector<double> emptyRow(GetPatData(0).lastBitField + 1.0, 0.0);
 		this->probsByStepsThenObsStates.resize(maxNumSteps + 1, emptyRow);
 		const ProbForParsScore & constFPS = rootProbInfo.getByParsScore(0);
-		for (std::vector<BitField>::const_iterator scIt = GetPatData.singleStateCodes.begin();
-			scIt != GetPatData.singleStateCodes.end();
+		for (std::vector<BitField>::const_iterator scIt = GetPatData(0).singleStateCodes.begin();
+			scIt != GetPatData(0).singleStateCodes.end();
 			++scIt) {
 			const BitField downPass = *scIt;
 			const std::vector<double> * pVec = constFPS.getProbsForDownPassAndObsMask(downPass, downPass);
 			assert(pVec);
 			double patClassProb = 0.0;
-			std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+			std::vector<double>::const_iterator wtIt = GetPatData(0).categStateProb.begin();
 			std::vector<double>::const_iterator pIt = pVec->begin();
-			for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+			for (; wtIt != GetPatData(0).categStateProb.end(); ++wtIt, ++pIt) {
 				assert(pIt != pVec->end());
 				patClassProb += (*wtIt) * (*pIt);
 			}
@@ -771,20 +771,20 @@ ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, co
 				for (BitField downPass = 1; ; ++downPass) {
 					for (BitField obsStates = 1; ; ++obsStates) {
 						double patClassProb = 0.0;
-						std::vector<double>::const_iterator wtIt = GetPatData.categStateProb.begin();
+						std::vector<double>::const_iterator wtIt = GetPatData(0).categStateProb.begin();
 						const std::vector<double> * pVec = fps.getProbsForDownPassAndObsMask(downPass, obsStates);
 						if (pVec) {
 							std::vector<double>::const_iterator pIt = pVec->begin();
-							for (; wtIt != GetPatData.categStateProb.end(); ++wtIt, ++pIt) {
+							for (; wtIt != GetPatData(0).categStateProb.end(); ++wtIt, ++pIt) {
 								assert(pIt != pVec->end());
 								patClassProb += (*wtIt) * (*pIt);
 							}
 						}
 						this->probsByStepsThenObsStates[i][obsStates] += patClassProb;
-						if (obsStates == GetPatData.lastBitField)
+						if (obsStates == GetPatData(0).lastBitField)
 							break;
 					}
-					if (downPass == GetPatData.lastBitField)
+					if (downPass == GetPatData(0).lastBitField)
 						break;
 				}
 			}
@@ -903,8 +903,8 @@ int getNextCommStSet(const int obsStSet, int i) {
 }
 
 double pclassCalcTransitionProb(int ancIndex, int i, double edgeLen, MTInstance & instance){
-  double * tiVec = GetPatData.calcTransitionProb(edgeLen);
-  int nStates = GetPatData.GetNumStates();
+  double * tiVec = GetPatData(0).calcTransitionProb(edgeLen);
+  int nStates = GetPatData(0).GetNumStates();
   return tiVec[ancIndex*nStates + i];
 }
 
@@ -912,7 +912,7 @@ double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex,
   double p = 0.0;
   ProbForObsStateSet & childProbSet = subtreeInfo->getForObsStateSet(obsBits);
   std::vector<double> & childProb = childProbSet.getProbForCommState(commonStates);
-  for(int i = 0; i < GetPatData.GetNumStates(); i++)  {
+  for(int i = 0; i < GetPatData(0).GetNumStates(); i++)  {
     double transProb = pclassCalcTransitionProb(ancIndex, i, edgeLen, instance);
     double partialLike = childProb[i];
     double x = transProb * partialLike;
@@ -968,7 +968,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
           ProbInfo * rightPI = rightPIIt->second;
           assert(rightPI != 0L);
           ProbInfo lt, rt;
-          if (GetPatData.isMkvSymm) {
+          if (GetPatData(0).isMkvSymm) {
             currProbInfo->calculateSymmetric(*leftPI, leftNd->GetEdgeLen(), *rightPI, rightNd->GetEdgeLen(), fn, instance);
           }
           else {
@@ -994,7 +994,7 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
             assert(lastPI);
             rootpinfo = new ProbInfo();
             needToDelRootProbInfo = true;
-            if (GetPatData.isMkvSymm) {
+            if (GetPatData(0).isMkvSymm) {
               rootpinfo->calculateSymmetric(*currProbInfo, 0.0, *lastPI, lastNd->GetEdgeLen(), fn, instance);
             }
             else {
@@ -1029,10 +1029,10 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 void calcUninformativePatterns(MTInstance & instance)
 {
   Node * nd = instance.tree.GetRoot();
- PostorderForNodeIterator poTrav = postorder(nd);
+  PostorderForNodeIterator poTrav = postorder(nd);
   Arc arc = poTrav.get();
   std::map<Node *, NodeInfo *> nodeToInfoMap;
-  unsigned numStates = GetPatData.GetNumStates();
+  unsigned numStates = GetPatData(0).GetNumStates();
   NodeInfo * currNdInfo = 0L;
   assert(arc.toNode);
   while(arc.toNode) {
@@ -1070,8 +1070,8 @@ void calcUninformativePatterns(MTInstance & instance)
       } else {}
       currNdInfo->setNumLeaves(leftNdInfo->getNumLeaves() + rightNdInfo->getNumLeaves());
 
-      stateSetContainer::const_iterator ssCit = GetPatData.stateSetBegin();
-      for (; ssCit != GetPatData.stateSetEnd(); ssCit++) {
+      stateSetContainer::const_iterator ssCit = GetPatData(0).stateSetBegin();
+      for (; ssCit != GetPatData(0).stateSetEnd(); ssCit++) {
         const int & obsStSet = *ssCit;
         int common = -1;   // this is 11... in bits
         int numObsSt = countBits(obsStSet);

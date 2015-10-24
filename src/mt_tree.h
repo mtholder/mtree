@@ -157,7 +157,7 @@ class CharModel;
 
 class InternalNodeWork {
     public:
-        InternalNodeWork(unsigned numChars, unsigned numStates, unsigned numRates)
+        InternalNodeWork(std::size_t numChars, unsigned numStates, unsigned numRates)
             :claAtNdFromNd(numStates*numRates*numChars),
              claAtNdFromPar(numStates*numRates*numChars),
              claAtParFromNd(numStates*numRates*numChars),
@@ -178,12 +178,12 @@ class InternalNodeWork {
     std::vector<double> claAtNdFromPar;
     std::vector<double> claAtParFromNd;
     std::vector<double> claAtParFromPar;
-    const unsigned nChars;
+    const std::size_t nChars;
 };
 
 class LeafWork: public InternalNodeWork {
     public:
-        LeafWork(unsigned numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates)
+        LeafWork(std::size_t numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates)
             :InternalNodeWork(numChars, numStates, numRates),
             summed(numStateCodes*numStates*numRates){
                 _DEBUG_VAL(numStateCodes);

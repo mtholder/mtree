@@ -48,7 +48,7 @@ class LeafCharacterVector {
         LeafCharacterVector()
             :cs2pi(nullptr) {
         }
-        LeafCharacterVector(const char_state_t *inp, unsigned len, const CharStateToPrimitiveInd * stateToPrimStates)
+        LeafCharacterVector(const char_state_t *inp, std::size_t len, const CharStateToPrimitiveInd * stateToPrimStates)
             :charVec(len),
             cs2pi(stateToPrimStates) {
             for (auto i = 0U; i < len; ++i) {
@@ -65,8 +65,8 @@ typedef std::vector<LeafCharacterVector> CharMatrix;
 class PartitionedMatrix {
     public:
         PartitionedMatrix(unsigned numTaxa,
-                          const std::vector<unsigned> &numCharsPerPartition,
-                          const std::vector<unsigned> &orig2compressed,
+                          const std::vector<std::size_t> &numCharsPerPartition,
+                          const std::vector<std::size_t> &orig2compressed,
                           const std::vector<unsigned> &numStatesPerPartition,
                           const std::vector<double> &patternWts)
             :nTaxa(numTaxa),
@@ -94,9 +94,9 @@ class PartitionedMatrix {
         }
     private:
         unsigned nTaxa;
-        std::vector<unsigned> nCharsVec;
+        std::vector<std::size_t> nCharsVec;
         std::vector<CharMatrix> partitions;
-        std::vector<unsigned> origInd2CompressedInd;
+        std::vector<std::size_t> origInd2CompressedInd;
         std::vector<unsigned> nStatesVec;
     public:
         const std::vector<double> patternWeights;

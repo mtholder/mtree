@@ -14,6 +14,11 @@
 #include "search.h"
 #include "pattern_class.h"
 using namespace std;
+
+extern bool gQuietMode;
+extern long gStrictLevel;
+extern bool gValidateInternals;
+
 namespace mt {
     class NCL2MT {
         public:
@@ -32,12 +37,24 @@ namespace mt {
                                                    std::ostream & err);
     };
 }
+
 bool preDataINICheck(INIReader & iniReader, std::ostream & err);
+int processFilepath(
+    const char * filename, // name of the file to be read
+    std::ostream * os, // output stream to use (NULL for no output). Not that cerr is used to report errors.
+    MultiFormatReader::DataFormatType fmt, // enum indicating the file format to expect.
+    INIReader & iniReader);
+int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, INIReader & iniReader);
+int readFilepathAsNEXUS(const char *filename, MultiFormatReader::DataFormatType fmt, INIReader & iniReader);
+int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFormatType fmt, INIReader & iniReader);
+void printHelp(std::ostream & out);
+int do_main(int argc, char *argv[]);
+
 
 bool gQuietMode = false;
 long gStrictLevel = 2;
 bool gValidateInternals = true;
-
+bool iniSettingsAreLegal(INIReader & iniReader, const mt::INIValueChecker & ivc, std::ostream &err);
 
 int processContent(PublicNexusReader & nexusReader,
                    const char *,
@@ -63,16 +80,16 @@ bool preDataINICheck(INIReader & iniReader, std::ostream & err) {
 }
 /* end mtree INI checking */
 namespace mt {
-ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & mInstance,
+ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & , //mInstance,
                                                ::INIReader & iniReader,
                                                std::ostream & err) {
     INIValueChecker ivc;
     std::string value = iniReader.Get("action", "action", "LScore");
     ProcessActionsEnum action = ivc.parseActionAction(value);
-
     err.flush();
     return action;
 }
+
 void NCL2MT::processTree(std::ostream *os,
             unsigned numTaxa,
             const NxsCharactersBlock * charsBlock,
@@ -84,12 +101,12 @@ void NCL2MT::processTree(std::ostream *os,
             const ModelDescription & md,
             ::INIReader & iniReader) {
     assert(dataMapper != nullptr);
-    const unsigned numRealChars = patternWeights.size();
-    unsigned firstPartLength = patternWeights.size();
+    const std::size_t numRealChars = patternWeights.size();
+    std::size_t firstPartLength = patternWeights.size();
     const unsigned numStates = dataMapper->GetNumStates();
-    vector<unsigned> origToComp;
+    vector<std::size_t> origToComp;
     for (auto otc : origToCompressed) {
-        origToComp.push_back((unsigned) otc);
+        origToComp.push_back((std::size_t) otc);
     }
     vector<mt::char_state_t> bogusChar;
     if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
@@ -105,7 +122,7 @@ void NCL2MT::processTree(std::ostream *os,
         for (auto j = 0U; j < numRealChars; ++j) {
             NxsCDiscreteStateSet r = compressedMatrix[i][j];
             if (r < 0) {
-                r = numStates;
+                r = static_cast<NxsCDiscreteStateSet>(numStates);
             }
             if (r > maxStateCode) {
                 maxStateCode = r;
@@ -121,7 +138,7 @@ void NCL2MT::processTree(std::ostream *os,
         rowPtrs[i] = &(rawMatrix[i][0]);
     }
     if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
-        maxStateCode = numStates;
+        maxStateCode = static_cast<NxsCDiscreteStateSet>(numStates);
     }
     unsigned numStateCodes = maxStateCode;
     mt::CharStateToPrimitiveInd cs2pi(numStateCodes);
@@ -135,7 +152,7 @@ void NCL2MT::processTree(std::ostream *os,
     // TEMP Following needs to be changed to write partitions properly
     std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
     unsigned numParts = 3; // TEMP - read from nexus file/ncl object
-    std::vector<unsigned> partLengths(1, firstPartLength);
+    std::vector<std::size_t> partLengths(1, firstPartLength);
     
     std::vector<mt::CharModel*> models; // initialize list of models, one for each partition
     unsigned numRateCats = 4; // TEMP: change to customizable value in INI
@@ -388,7 +405,7 @@ int readFilesListedIsFile(const char *masterFilepath, MultiFormatReader::DataFor
     }
     return 0;
 }
-
+extern const char * gExeName;
 const char * gExeName = "mtree";
 void printHelp(std::ostream & out) {
     out << "mtree takes reads a NEXUS file.\n";
@@ -417,7 +434,7 @@ int do_main(int argc, char *argv[]) {
     INIReader * iniReader = nullptr;
     for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];
-        const unsigned slen = strlen(filepath);
+        const std::size_t slen = strlen(filepath);
         if (slen < 2 || filepath[0] != '-') {
             continue;
         }
@@ -473,7 +490,7 @@ int do_main(int argc, char *argv[]) {
     bool readfile = false;
     for (int i = 1; i < argc; ++i) {
         const char * filepath = argv[i];
-        const unsigned slen = strlen(filepath);
+        const std::size_t slen = strlen(filepath);
         if (slen < 1)
             continue;
         if (strlen(filepath) > 2 && filepath[0] == '-' && filepath[1] == 'l') {

@@ -52,9 +52,9 @@ class MTInstance {
         std::vector<CharModel*> models;
 
         MTInstance(unsigned numTaxa,
-                   const std::vector<unsigned> &numCharsPerPartition,
+                   const std::vector<std::size_t> &numCharsPerPartition,
                    const std::vector<unsigned> &numStatesPerPartition,
-                   const std::vector<unsigned> &orig2compressed,
+                   const std::vector<std::size_t> &orig2compressed,
                    const std::vector<double> &patternWts,
                    std::vector<CharModel*> mods)
             :partMat(numTaxa, numCharsPerPartition, orig2compressed, numStatesPerPartition, patternWts),

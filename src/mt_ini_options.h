@@ -11,8 +11,8 @@ struct CaseIMapComp {
     bool operator()(const std::string & lhs, const std::string & rhs) const {
         const auto m = std::min(lhs.length(), rhs.length());
         for (auto i = 0U; i < m; ++i) {
-            const char lc = std::tolower(lhs[i]);
-            const char rc = std::tolower(rhs[i]);
+            const int lc = std::tolower(lhs[i]);
+            const int rc = std::tolower(rhs[i]);
             if (lc == rc) {
                 continue;
             }

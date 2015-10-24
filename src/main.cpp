@@ -154,7 +154,7 @@ void NCL2MT::processTree(std::ostream *os,
     unsigned numParts = 3; // TEMP - read from nexus file/ncl object
     std::vector<std::size_t> partLengths(1, firstPartLength);
     
-    std::vector<mt::CharModel*> models; // initialize list of models, one for each partition
+    std::vector<mt::CharModel*> models(numParts, nullptr); // initialize list of models, one for each partition
     unsigned numRateCats = 4; // TEMP: change to customizable value in INI
     for(auto i = 0U; i < numParts; i++) {
       switch (md.GetAscBiasMode()) {

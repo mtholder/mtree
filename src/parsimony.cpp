@@ -11,6 +11,7 @@
 namespace mt {
 // Functions for parsimony calcs used in likelihood search and pattern class calcs
 // Using Fitch's algorithm
+unsigned int calcParsScore(MTInstance & instance);
 
 // Set downpass state to taxon data, 
 void ParsInfo::calculateForTip(const BitFieldRow & data, MTInstance & instance) {
@@ -31,13 +32,13 @@ void ParsInfo::calculateForInternal(ParsInfo & leftData, ParsInfo & rightData) {
     this->score = &this->scoreOwned[0];
     const BitField * leftDown = leftData.downPass;
     const BitField * leftAll = leftData.allSeen;
-    const unsigned * leftScore = leftData.score;
+    const std::size_t * leftScore = leftData.score;
     const BitField * rightDown = rightData.downPass;
     const BitField * rightAll = rightData.allSeen;
-    const unsigned * rightScore = rightData.score;
+    const std::size_t * rightScore = rightData.score;
     for (unsigned i = 0; i < numPatterns; ++i, ++leftDown, ++leftAll, ++leftScore, ++rightDown, ++rightAll, ++rightScore) {
         const BitField lrIntersection = (*leftDown) & (*rightDown);
-        const unsigned accumulScore = *leftScore + *rightScore;
+        const std::size_t accumulScore = *leftScore + *rightScore;
         this->allSeenOwned[i] = (*leftAll) | (*rightAll);
         if (lrIntersection == BitField(0)) {
             const BitField lrUnion = (*leftDown) | (*rightDown);
@@ -59,9 +60,6 @@ void ParsInfo::write(std::ostream & o) const {
     }
     o << "totalScore = " << totalScore << '\n';
 }
-
-
-
 
 // Return parsimony score of tree
 unsigned int calcParsScore(MTInstance & instance) {

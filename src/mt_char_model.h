@@ -86,7 +86,7 @@ class CharModel {
         ScopedDblThreeDMatrix secMatVec;
         unsigned pVecLen;
         std::string alphabet;
-        std::vector<unsigned> zeroVec;
+        std::vector<std::size_t> zeroVec;
         BitField lastBitField;
         std::vector<double> categStateProb;
         std::vector<BitField> singleStateCodes;

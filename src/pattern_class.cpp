@@ -17,7 +17,7 @@
 // taken from uninformative_case.cpp
 
 namespace mt {
-
+ void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo);
 
 //void initSettings(MTInstance &instance) {
 
@@ -28,7 +28,7 @@ namespace mt {
       {
         const Node * nd = travArc.fromNode;
         std::vector<Node *> children = nd->GetChildren();
-        const unsigned numChildren = children.size();
+        const auto numChildren = children.size();
         NodeID currNdID(nd, 0);
         if (numChildren > 0)
           delete nodeIDToProbInfo[currNdID];
@@ -155,7 +155,7 @@ std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
     }
     assert(usedMappers.size() == 1);
     const NxsDiscreteDatatypeMapper & mapper = **usedMappers.begin();
-    NxsCharactersBlock::DataTypesEnum inDatatype = mapper.GetDatatype();
+    //NxsCharactersBlock::DataTypesEnum inDatatype = mapper.GetDatatype();
     const unsigned nStates =  mapper.GetNumStates();
     //assert(nStates <= MAX_NUM_STATES);
     for (NxsDiscreteStateCell i = 0; i < (NxsDiscreteStateCell)nStates; ++i)
@@ -163,7 +163,7 @@ std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
     const std::string fundamentalSymbols = mapper.GetSymbols();
     assert(fundamentalSymbols.length() == nStates);
     const unsigned nTaxa = charsBlock.GetNTax();
-    const unsigned includedNChar = toInclude->size();
+    const auto includedNChar = toInclude->size();
     bfMat.resize(nTaxa);
     for (unsigned i = 0; i < nTaxa; ++i) {
         BitFieldRow & bfRow = bfMat[i];
@@ -828,6 +828,17 @@ class NodeInfo {
         bool isMissing;
 };
 
+int countBits(int x);
+int convertIndexToBit(int ind);
+int convertBitToIndex(int i);
+std::vector<int> subsetsContainingGivenState(int fullSet, int givenState);
+std::vector<int> subsetsOfGivenSize(int obsStSet, int numBits);
+int getNextCommStSet(const int obsStSet, int i);
+double pclassCalcTransitionProb(int ancIndex, int i, double edgeLen, MTInstance & instance);
+double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex, int obsBits, int commonStates, double edgeLen, MTInstance &instance);
+double calcProbOfSubtreeForObsStSetNoRepeated(NodeInfo * subtreeInfo, int ancIndex, int obsBits, double edgeLen, MTInstance &instance);
+void calcUninformativePatterns(MTInstance & instance);
+
 int countBits(int x)
 {
     int num = 0;
@@ -912,7 +923,7 @@ double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex,
   double p = 0.0;
   ProbForObsStateSet & childProbSet = subtreeInfo->getForObsStateSet(obsBits);
   std::vector<double> & childProb = childProbSet.getProbForCommState(commonStates);
-  for(int i = 0; i < GetPatData(0).GetNumStates(); i++)  {
+  for(auto i = 0U; i < GetPatData(0).GetNumStates(); i++)  {
     double transProb = pclassCalcTransitionProb(ancIndex, i, edgeLen, instance);
     double partialLike = childProb[i];
     double x = transProb * partialLike;
@@ -1024,7 +1035,6 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
       delete rootpinfo;
 }
 */
-
 // calculate probabilities of uninformative patterns
 void calcUninformativePatterns(MTInstance & instance)
 {
@@ -1038,12 +1048,12 @@ void calcUninformativePatterns(MTInstance & instance)
   while(arc.toNode) {
     Node * currNd = arc.fromNode;
     std::vector<Node *> children = currNd->GetChildren();
-    const unsigned numChildren = children.size();
+    const auto numChildren = children.size();
     currNdInfo = new NodeInfo(numStates);
     NodeID currNdID(currNd, 0);
     nodeToInfoMap[currNd] = currNdInfo;
     if (numChildren == 0) {
-      for(int i = 0; i < numStates; i++) {
+      for(auto i = 0U; i < numStates; i++) {
         int ss=1 << i;
         ProbForObsStateSet & p = currNdInfo->getForObsStateSet(ss);
         std::vector<double> & v = p.getProbForCommState(-1);
@@ -1082,11 +1092,11 @@ void calcUninformativePatterns(MTInstance & instance)
 
           if(common == -1) {
             if (currNdInfo->getNumLeaves() == numObsSt) {
-              for (int anc = 0; anc < numStates; anc++) {
+              for (auto anc = 0U; anc < numStates; anc++) {
                 std::cerr << "ObsStSet " << obsStSet << '\n';
                 currNdProbVec[anc] = 0.0;
                 std::vector<int> leftObsStSets = subsetsOfGivenSize(obsStSet, leftNdInfo->getNumLeaves());
-                for (int j = 0; j < leftObsStSets.size(); j++) {
+                for (auto j = 0U; j < leftObsStSets.size(); j++) {
                   int leftObsStSet = leftObsStSets[j];
                   int rightObsStSet = obsStSet - leftObsStSet;
 
@@ -1112,7 +1122,7 @@ void calcUninformativePatterns(MTInstance & instance)
             } else {
 
               int commonBits = convertIndexToBit(common);
-              for (int anc = 0; anc < numStates; anc++) {
+              for (auto anc = 0U; anc < numStates; anc++) {
 
                 currNdProbVec[anc] = 0.0;
                 int leftCommSt, rightCommSt;
@@ -1120,7 +1130,7 @@ void calcUninformativePatterns(MTInstance & instance)
                 rightCommSt = common;
                 std::vector<int> obsStSetsWithComm = subsetsContainingGivenState(obsStSet, commonBits);
 
-                for(int j=0; j < obsStSetsWithComm.size(); j++) {
+                for(auto j=0U; j < obsStSetsWithComm.size(); j++) {
                   int leftObsStSet = obsStSetsWithComm[j];
                   int rightObsStSet = obsStSet - leftObsStSet + commonBits;
 
@@ -1136,7 +1146,7 @@ void calcUninformativePatterns(MTInstance & instance)
                 leftCommSt = -1;
                 rightCommSt = common;
                 //add probability when only right common, left not repeated
-                for(int j = 0; j < obsStSetsWithComm.size(); j++) {
+                for(auto j = 0U; j < obsStSetsWithComm.size(); j++) {
                   int rightObsStSet = obsStSetsWithComm[j];
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;
@@ -1159,7 +1169,7 @@ void calcUninformativePatterns(MTInstance & instance)
                 leftCommSt = common;
                 rightCommSt = -1;
                 //add probability when only left common
-                for(int j = 0; j < obsStSetsWithComm.size(); j++) {
+                for(auto j = 0U; j < obsStSetsWithComm.size(); j++) {
                   int rightObsStSet = obsStSetsWithComm[j];
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;
@@ -1182,7 +1192,7 @@ void calcUninformativePatterns(MTInstance & instance)
                 leftCommSt = -1;
                 rightCommSt = -1;
                 //add probability when neither common
-                for(int j = 0; j < obsStSetsWithComm.size(); j++) {
+                for(auto j = 0U; j < obsStSetsWithComm.size(); j++) {
                   int rightObsStSet = obsStSetsWithComm[j];
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;

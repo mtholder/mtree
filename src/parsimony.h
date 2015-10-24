@@ -19,25 +19,21 @@ class ParsInfo {
             score(0),
             numPatterns(0) {
             }
-        unsigned size() const {
+        std::size_t size() const {
             return numPatterns;
         }
-
         void calculateForTip(const BitFieldRow & data, MTInstance & instance);
         void calculateForInternal(ParsInfo & leftData, ParsInfo & rightData);
-
         void write(std::ostream & o) const;
-
-
         const BitField * downPass; // alias
         const BitField * allSeen; // alias
-        const unsigned * score; // alias
+        const std::size_t * score; // alias
 
     private:
-        unsigned numPatterns;
+        std::size_t numPatterns;
         BitFieldRow downPassOwned;
         BitFieldRow allSeenOwned;
-        std::vector<unsigned> scoreOwned;
+        std::vector<std::size_t> scoreOwned;
 
 };
 

@@ -145,16 +145,16 @@ void NCL2MT::processTree(std::ostream *os,
           models[i] = new mt::MkCharModel(numStates, numRateCats);
           break;
         case mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS:
-       	  models[i] = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
-      	  break;
+          models[i] = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
+          break;
         case mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS:
-      	  models[i] = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
-      	  break;
+          models[i] = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
+          break;
         case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
-      	  models[i] = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
-      	  break;
-        case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:	
-      	  models[i] = new mt::MkParsInfMissingModel(numStates, numRateCats);
+          models[i] = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
+          break;
+        case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:  
+          models[i] = new mt::MkParsInfMissingModel(numStates, numRateCats);
       }
     }
     unsigned numNodes = 2 * numTaxa - 1;

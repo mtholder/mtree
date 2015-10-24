@@ -19,7 +19,7 @@ namespace mt {
 // Some macros
 #define MTREE_SIGN(a,b)                        ((b) > 0.0 ? fabs(a) : -fabs(a))
 #define MT_POINT_GAMMA(prob,alpha,beta)        PointChi2(prob,2.0*(alpha))/(2.0*(beta))
-#define GetPatData(ind)      		       instance.GetCharModel(ind)
+#define GetPatData(ind) instance.GetCharModel(ind)
 
 typedef unsigned int char_state_t;
 class CharModel;
@@ -36,7 +36,7 @@ class CharStateToPrimitiveInd {
         void SetStateCode(unsigned i, const std::vector<char_state_t> & v) {
             this->stateCodeToStateCodeVec[i] = v;
         }
-        unsigned GetNumStateCodes() const {
+        std::size_t GetNumStateCodes() const {
             return stateCodeToStateCodeVec.size();
         }
     private:
@@ -79,7 +79,7 @@ class PartitionedMatrix {
                 i.resize(numTaxa);
              }
         }
-        unsigned GetNumPartitions() const {
+        std::size_t GetNumPartitions() const {
             return this->partitions.size();
         }
         const LeafCharacterVector * GetLeafCharacters(unsigned partIndex, unsigned leafIndex) const {

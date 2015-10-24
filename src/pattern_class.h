@@ -90,20 +90,20 @@ class ProbInfo {
   public:
       void createForTip(const MTInstance &);
       void calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen,
-			    const ProbInfo & rightPI, double rightEdgeLen,
-			    TiMatFunc fn, const MTInstance &);
+          const ProbInfo & rightPI, double rightEdgeLen,
+          TiMatFunc fn, const MTInstance &);
       void calculate(const ProbInfo & leftPI, double leftEdgeLen,
-					const ProbInfo & rightPI, double rightEdgeLen,
-					TiMatFunc fn, const MTInstance &);
-      unsigned getMaxParsScore() const {
-		    assert(!this->byParsScore.empty());
-		    return this->byParsScore.size() - 1;
+          const ProbInfo & rightPI, double rightEdgeLen,
+          TiMatFunc fn, const MTInstance &);
+      std::size_t getMaxParsScore() const {
+        assert(!this->byParsScore.empty());
+        return this->byParsScore.size() - 1;
       }
       const ProbForParsScore & getByParsScore(unsigned score) const {
-		    return this->byParsScore.at(score);
+        return this->byParsScore.at(score);
       }
       unsigned getNLeavesBelow() const {
-		    return nLeavesBelow;
+        return nLeavesBelow;
       }
   protected:
       void addToAncProbVec(
@@ -169,16 +169,16 @@ class ProbForObsStateSet{ //for each state want to set -1 to 1 and all else to 0
 };
 
 class PatternSummary {
-	public:
-		void clear() {
-			this->byParsScore.clear();
-		}
-		unsigned incrementCount(unsigned s, BitField m, unsigned toAdd);
+  public:
+    void clear() {
+      this->byParsScore.clear();
+    }
+    unsigned incrementCount(unsigned s, BitField m, unsigned toAdd);
 
-		void write(std::ostream &out, const MTInstance &) const;
+    void write(std::ostream &out, const MTInstance &) const;
 
-	private:
-		std::vector<BitsToCount> byParsScore;
+  private:
+    std::vector<BitsToCount> byParsScore;
 };
 
 } //namespace

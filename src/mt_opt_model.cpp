@@ -41,8 +41,8 @@ double LnGamma(double alph){
   }
   z = 1 / (a * a);
   return f + (a-0.5)*log(a) - a + .918938533204673
-	       + (((-.000595238095238*z+.000793650793651)*z-.002777777777778)*z
-	       +.083333333333333)/a;
+         + (((-.000595238095238*z+.000793650793651)*z-.002777777777778)*z
+         +.083333333333333)/a;
 }
 
 // Incomplete gamma ratio, x = upper limit of integration
@@ -239,7 +239,7 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value,
         break;
       }*/
     case ALPHA_P:
-    	changeParam(instance, model, rateNumber, value, paramType);
+      changeParam(instance, model, rateNumber, value, paramType);
       break;
   }
   instance.likelihoods[model] = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model),model);

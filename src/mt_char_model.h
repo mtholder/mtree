@@ -72,7 +72,7 @@ class CharModel {
         virtual double GetAlpha() const {
             return alpha;
         }
-        virtual const double GetRate(int pos) const {
+        virtual double GetRate(int pos) const {
             return rates[pos];
         }
         /*ModelParams & GetModelParams(int model) {
@@ -101,8 +101,8 @@ class CharModel {
           return stateCodeToNumStates[mask];
         }
         const std::string & toSymbol(BitField sc) const {
-			    return this->stateCodesToSymbols.find(sc)->second;
-		    }
+                return this->stateCodesToSymbols.find(sc)->second;
+            }
         stateSetContainer::const_iterator stateSetBegin() const  {
             return possObsStateSet.begin();
         }
@@ -121,9 +121,8 @@ class CharModel {
         virtual double * calcTransitionProb(double edgeLen) = 0;
         virtual void conditionOnSingleEdge(const double *beforeEdge, double * afterEdge, double edgeLen, unsigned numChars);
         //virtual void initModels(unsigned numParts, unsigned modelType);
-        virtual void optimizeParams(unsigned modelType){
-
-        };
+        virtual void optimizeParams(unsigned /*modelType*/) {
+        }
     protected:
         unsigned nStates;
         unsigned nRateCats;
@@ -250,7 +249,7 @@ class MkVarNoMissingAscCharModel: public MkCharModel {
 
 class MkVarMissingAscCharModel: public MkCharModel {
     public:
-    	MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
+        MkVarMissingAscCharModel(unsigned numStates, unsigned numRateCats)
            :MkCharModel(numStates, numRateCats) {
       }
       virtual ~MkVarMissingAscCharModel() {

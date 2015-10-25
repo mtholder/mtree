@@ -261,6 +261,7 @@ int processContent(PublicNexusReader & nexusReader,
         return 3;
     }
     const  NxsCharactersBlock * charBlock = nexusReader.GetCharactersBlock(taxaBlock, 0);
+    assert(charBlock);
     std::vector<const NxsDiscreteDatatypeMapper *> mappers = charBlock->GetAllDatatypeMappers();
     if (mappers.size() != 1) {
         std::cerr << "Expecting an unmixed characters block, but found a matrix with datatype = mixed or a datatype with augmented symbols\n";
@@ -286,6 +287,13 @@ int processContent(PublicNexusReader & nexusReader,
         for (auto i : patternCounts) {
             patternWeights.push_back(double(i));
         }
+    }
+    NxsUnsignedSet charsToInclude;
+    const int MAX_NUM_STATES = 10; // TEMP. TODO, should be runtime var!
+    for (int i = 2; i < MAX_NUM_STATES; ++i) {
+        auto x = NxsString::GetEscapedInt(i);
+        x += " STATE CHARS";
+        *os << charBlock->GetIndexSet(x, &charsToInclude) << " chars in \"" << x << "\"\n";
     }
     _DEBUG_VEC(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();

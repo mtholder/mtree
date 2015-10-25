@@ -29,6 +29,7 @@ namespace mt {
                 const NxsCDiscreteStateSet ** compressedMatrix,
                 const vector<double> & patternWeights,
                 const vector<int> &origToCompressed,
+                const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
                 const NxsSimpleTree & tree,
                 const ModelDescription & md,
                 ::INIReader & iniReader);
@@ -97,6 +98,7 @@ void NCL2MT::processTree(std::ostream *os,
             const NxsCDiscreteStateSet ** compressedMatrix,
             const vector<double> & patternWeights,
             const vector<int> &origToCompressed,
+            const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
             const NxsSimpleTree & nxsTree,
             const ModelDescription & md,
             ::INIReader & iniReader) {
@@ -151,28 +153,32 @@ void NCL2MT::processTree(std::ostream *os,
     }
     // TEMP Following needs to be changed to write partitions properly
     std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
-    unsigned numParts = 3; // TEMP - read from nexus file/ncl object
+    const std::size_t numParts = numStates2PatternIndexSet.size();
     std::vector<std::size_t> partLengths(1, firstPartLength);
-    
     std::vector<mt::CharModel*> models(numParts, nullptr); // initialize list of models, one for each partition
     unsigned numRateCats = 4; // TEMP: change to customizable value in INI
-    for(auto i = 0U; i < numParts; i++) {
-      switch (md.GetAscBiasMode()) {
-        case mt::ModelDescription::NO_ASC_BIAS:
-          models[i] = new mt::MkCharModel(numStates, numRateCats);
-          break;
-        case mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS:
-          models[i] = new mt::MkVarNoMissingAscCharModel(numStates, numRateCats);
-          break;
-        case mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS:
-          models[i] = new mt::MkVarMissingAscCharModel(numStates, numRateCats);
-          break;
-        case mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS:
-          models[i] = new mt::MkParsInfNoMissingModel(numStates, numRateCats);
-          break;
-        case mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS:  
-          models[i] = new mt::MkParsInfMissingModel(numStates, numRateCats);
-      }
+    std::size_t partIndex = 0;
+    const auto abm = md.GetAscBiasMode();
+    for (auto ns2pi: numStates2PatternIndexSet) {
+        const unsigned currPartNumStates = ns2pi.first;
+        assert(currPartNumStates <= numStates);
+        mt::CharModel *m = nullptr;
+        if (abm == mt::ModelDescription::NO_ASC_BIAS) {
+            m = new mt::MkCharModel(currPartNumStates, numRateCats);
+        } else if (abm == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+            m = new mt::MkVarNoMissingAscCharModel(currPartNumStates, numRateCats);
+        } else if (abm == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
+            m = new mt::MkVarMissingAscCharModel(currPartNumStates, numRateCats);
+        } else if (abm == mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS) {
+            m = new mt::MkParsInfNoMissingModel(currPartNumStates, numRateCats);
+        } else if (abm == mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS) {
+            m = new mt::MkParsInfMissingModel(currPartNumStates, numRateCats);
+        } else {
+            assert(false);
+            std::cerr << "Unrecognoized ASC BIAS MODE\n";
+            std::exit(1);
+        }
+        models[partIndex++] = m;
     }
     unsigned numNodes = 2 * numTaxa - 1;
     BitFieldMatrix bMat;
@@ -322,6 +328,7 @@ int processContent(PublicNexusReader & nexusReader,
                            (const NxsCDiscreteStateSet **) matrixAlias,
                            patternWeights,
                            originalIndexToCompressed,
+                           numStates2CharSet,
                            nst,
                            md,
                            iniReader);

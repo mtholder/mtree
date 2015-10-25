@@ -101,7 +101,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     /* fill the summed probabilities for each state code */
 
     const double * tiprob = this->calcTransitionProb(edgeLen);
-    const CharStateToPrimitiveInd * s2pi = data->cs2pi;
+    const CharStateToPrimitiveInd * s2pi = data->GetCharStateToPrimitiveInd();
     const unsigned numStateCodes = s2pi->GetNumStateCodes();
     const unsigned lenCLAWord = nStates*nRateCats;
     double * summedLoc = claElements;
@@ -120,7 +120,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
     _DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
     /* fill in the cla vector by copying sums */
     for (std::size_t ci = 0U; ci < numChars; ++ci) {
-        const char_state_t sc = data->charVec[ci];
+        const char_state_t sc = data->GetCharVec()[ci];
         const double * s = claElements + sc * lenCLAWord ;
         copy(s, s + lenCLAWord, cla + ci*lenCLAWord);
     }

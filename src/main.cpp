@@ -127,13 +127,13 @@ void NCL2MT::processTree(std::ostream *os,
             rawMatrix[i].reserve(currPartLen);
             for (auto j: patInds) {
                 NxsCDiscreteStateSet r = compressedMatrix[i][j];
-                if (r < 0) {
+                if (r < 0 || r > static_cast<NxsCDiscreteStateSet>(numStates)) {
                     r = static_cast<NxsCDiscreteStateSet>(numStates);
                 }
                 if (r > maxStateCode) {
                     maxStateCode = r;
                 }
-                rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
+                rawMatrix[i].push_back((mt::char_state_t) r);
             }
             for (auto k : bogusChar) {
                 rawMatrix[i].push_back(k);
@@ -144,14 +144,19 @@ void NCL2MT::processTree(std::ostream *os,
         }
         unsigned numStateCodes = maxStateCode;
         auto & cs2pi = numStates2Cs2Pi[numStates];
-        cs2pi.resize(numStateCodes);
+        cs2pi.resize(numStateCodes + 1);
+        std::set<mt::char_state_t> allFundStateCodes;
         for (auto i = 0U; i < numStateCodes; ++i) {
             vector<mt::char_state_t> v;
             for (auto xs : dataMapper->GetStateSetForCode(i)) {
-                v.push_back(static_cast<mt::char_state_t>(xs));
+                auto fsc = static_cast<mt::char_state_t>(xs);
+                v.push_back(fsc);
+                allFundStateCodes.insert(fsc);
             }
             cs2pi.SetStateCode(i, v);
         }
+        vector<mt::char_state_t> allFundStateCodesVec(allFundStateCodes.begin(), allFundStateCodes.end());
+        cs2pi.SetStateCode(numStateCodes, allFundStateCodesVec);
     }
     mt::MTInstance mtInstance(rawPartMatrix,
                               numStates2Cs2Pi,

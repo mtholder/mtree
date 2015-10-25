@@ -13,7 +13,7 @@ namespace mt {
 
 Node * removeSubTree(MTInstance &instance, Node * p) {
   cout << "removeSubTree called\n";
-  cout << p->parent->parent, "\n";
+  cout << p->parent->parent << "\n";
     if (1) /*(!p.IsLeaf())*/ {
       // assert(IsInTree(instance, p));
       if (p->parent == p->parent->parent->leftChild) {

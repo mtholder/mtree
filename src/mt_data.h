@@ -1,6 +1,8 @@
 #if !defined(__MT_DATA_H__)
 #define __MT_DATA_H__
 #include <vector>
+#include <map>
+#include <set>
 #include "mt_log.h"
 namespace mt {
 
@@ -27,8 +29,16 @@ typedef std::vector<CharModel*> ModelVec;
 
 class CharStateToPrimitiveInd {
     public:
+        CharStateToPrimitiveInd() {
+        }
         CharStateToPrimitiveInd(unsigned numStateCodes)
             :stateCodeToStateCodeVec(numStateCodes) {
+        }
+        void resize(const std::size_t z) {
+            stateCodeToStateCodeVec.resize(z);
+        }
+        std::size_t size() const {
+            return stateCodeToStateCodeVec.size();
         }
         const std::vector<char_state_t> & GetStateCodes(unsigned i) const {
             return stateCodeToStateCodeVec[i];
@@ -37,7 +47,7 @@ class CharStateToPrimitiveInd {
             this->stateCodeToStateCodeVec[i] = v;
         }
         unsigned GetNumStateCodes() const {
-            return static_cast<unsigned>(stateCodeToStateCodeVec.size());
+            return static_cast<unsigned>(this->size());
         }
     private:
         std::vector<std::vector<char_state_t> > stateCodeToStateCodeVec;
@@ -65,19 +75,25 @@ typedef std::vector<LeafCharacterVector> CharMatrix;
 class PartitionedMatrix {
     public:
         PartitionedMatrix(unsigned numTaxa,
-                          const std::vector<std::size_t> &numCharsPerPartition,
+                          const std::vector<double> &patternWts,
                           const std::vector<std::size_t> &orig2compressed,
-                          const std::vector<unsigned> &numStatesPerPartition,
-                          const std::vector<double> &patternWts)
+                          const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet
+                          )
             :nTaxa(numTaxa),
-             nCharsVec(numCharsPerPartition),
-             partitions(numCharsPerPartition.size()),
+             nCharsVec(numStates2PatternIndexSet.size()),
+             partitions(numStates2PatternIndexSet.size()),
              origInd2CompressedInd(orig2compressed),
-             nStatesVec(numStatesPerPartition),
+             nStatesVec(numStates2PatternIndexSet.size()),
              patternWeights(patternWts) {
-             for (auto i : partitions) {
-                i.resize(numTaxa);
-             }
+            std::size_t partIndex = 0;
+            for (auto i : numStates2PatternIndexSet) {
+                nCharsVec[partIndex] = i.second.size();
+                nStatesVec[partIndex] = i.first;
+                ++partIndex;
+            }
+            for (auto j : partitions) {
+                j.resize(numTaxa);
+            }
         }
         std::size_t GetNumPartitions() const {
             return this->partitions.size();
@@ -85,11 +101,14 @@ class PartitionedMatrix {
         const LeafCharacterVector * GetLeafCharacters(unsigned partIndex, unsigned leafIndex) const {
             return &(this->partitions[partIndex][leafIndex]);
         }
-        void fillPartition(unsigned partIndex, const char_state_t ** mat, const CharStateToPrimitiveInd *cs2pi) {
+        void fillPartition(unsigned partIndex,
+                           const std::vector< std::vector<mt::char_state_t> > & mat,
+                           const CharStateToPrimitiveInd *cs2pi) {
             CharMatrix & part = partitions.at(partIndex);
             part.resize(nTaxa);
             for (auto i = 0U; i < nTaxa; ++i) {
-                part[i] = LeafCharacterVector(mat[i], nCharsVec[partIndex], cs2pi);
+                const auto & row = mat[i];
+                part[i] = LeafCharacterVector(&(row[0]), nCharsVec[partIndex], cs2pi);
             }
         }
     private:

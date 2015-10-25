@@ -93,7 +93,7 @@ ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & , //mInstance,
 
 void NCL2MT::processTree(std::ostream *os,
             unsigned numTaxa,
-            const NxsCharactersBlock * charsBlock,
+            const NxsCharactersBlock * , //charsBlock,
             const NxsDiscreteDatatypeMapper * dataMapper,
             const NxsCDiscreteStateSet ** compressedMatrix,
             const vector<double> & patternWeights,
@@ -103,140 +103,65 @@ void NCL2MT::processTree(std::ostream *os,
             const ModelDescription & md,
             ::INIReader & iniReader) {
     assert(dataMapper != nullptr);
-    const std::size_t numRealChars = patternWeights.size();
-    std::size_t firstPartLength = patternWeights.size();
-    const unsigned numStates = dataMapper->GetNumStates();
     vector<std::size_t> origToComp;
     for (auto otc : origToCompressed) {
         origToComp.push_back((std::size_t) otc);
     }
-    vector<mt::char_state_t> bogusChar;
-    if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
-        firstPartLength += numStates;
-        for (auto i = 0U; i < numStates; ++i) {
-            bogusChar.push_back(i);
-        }
-    }
-    vector<vector<mt::char_state_t> > rawMatrix(numTaxa);
-    NxsCDiscreteStateSet maxStateCode = 0;
-    for (auto i = 0U; i < numTaxa; ++i) {
-        rawMatrix[i].reserve(firstPartLength);
-        for (auto j = 0U; j < numRealChars; ++j) {
-            NxsCDiscreteStateSet r = compressedMatrix[i][j];
-            if (r < 0) {
-                r = static_cast<NxsCDiscreteStateSet>(numStates);
+    std::map<unsigned, vector< vector<mt::char_state_t> > > rawPartMatrix;
+    std::map<unsigned, mt::CharStateToPrimitiveInd > numStates2Cs2Pi;
+    for (auto ns2pis : numStates2PatternIndexSet) {
+        const unsigned numStates = ns2pis.first;
+        const auto & patInds = ns2pis.second;
+        vector< vector<mt::char_state_t> > & rawMatrix = rawPartMatrix[numStates];
+        rawMatrix.resize(numTaxa);
+        vector<mt::char_state_t> bogusChar;
+        std::size_t currPartLen = patInds.size();
+        if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+            currPartLen += numStates;
+            for (auto i = 0U; i < numStates; ++i) {
+                bogusChar.push_back(i);
             }
-            if (r > maxStateCode) {
-                maxStateCode = r;
+        }
+        NxsCDiscreteStateSet maxStateCode = 0;
+        for (auto i = 0U; i < numTaxa; ++i) {
+            rawMatrix[i].reserve(currPartLen);
+            for (auto j: patInds) {
+                NxsCDiscreteStateSet r = compressedMatrix[i][j];
+                if (r < 0) {
+                    r = static_cast<NxsCDiscreteStateSet>(numStates);
+                }
+                if (r > maxStateCode) {
+                    maxStateCode = r;
+                }
+                rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
             }
-            rawMatrix[i].push_back((mt::char_state_t) compressedMatrix[i][j]);
+            for (auto k : bogusChar) {
+                rawMatrix[i].push_back(k);
+            }
         }
-        for (auto k : bogusChar) {
-            rawMatrix[i].push_back(k);
+        if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
+            maxStateCode = static_cast<NxsCDiscreteStateSet>(numStates);
         }
-    }
-    vector<mt::char_state_t *> rowPtrs(numTaxa);
-    for (auto i = 0U; i < numTaxa; ++i) {
-        rowPtrs[i] = &(rawMatrix[i][0]);
-    }
-    if (maxStateCode < (NxsCDiscreteStateSet) numStates) {
-        maxStateCode = static_cast<NxsCDiscreteStateSet>(numStates);
-    }
-    unsigned numStateCodes = maxStateCode;
-    mt::CharStateToPrimitiveInd cs2pi(numStateCodes);
-    for (auto i = 0U; i < numStateCodes; ++i) {
-        vector<mt::char_state_t> v;
-        for (auto xs : dataMapper->GetStateSetForCode(i)) {
-            v.push_back(static_cast<mt::char_state_t>(xs));
-        }
-        cs2pi.SetStateCode(i, v);
-    }
-    // TEMP Following needs to be changed to write partitions properly
-    std::vector<unsigned> numStatesPerPartition{1, numStates}; // ! needs to be filled TEMP 
-    const std::size_t numParts = numStates2PatternIndexSet.size();
-    std::vector<std::size_t> partLengths(1, firstPartLength);
-    std::vector<mt::CharModel*> models(numParts, nullptr); // initialize list of models, one for each partition
-    unsigned numRateCats = 4; // TEMP: change to customizable value in INI
-    std::size_t partIndex = 0;
-    const auto abm = md.GetAscBiasMode();
-    for (auto ns2pi: numStates2PatternIndexSet) {
-        const unsigned currPartNumStates = ns2pi.first;
-        assert(currPartNumStates <= numStates);
-        mt::CharModel *m = nullptr;
-        if (abm == mt::ModelDescription::NO_ASC_BIAS) {
-            m = new mt::MkCharModel(currPartNumStates, numRateCats);
-        } else if (abm == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
-            m = new mt::MkVarNoMissingAscCharModel(currPartNumStates, numRateCats);
-        } else if (abm == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
-            m = new mt::MkVarMissingAscCharModel(currPartNumStates, numRateCats);
-        } else if (abm == mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS) {
-            m = new mt::MkParsInfNoMissingModel(currPartNumStates, numRateCats);
-        } else if (abm == mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS) {
-            m = new mt::MkParsInfMissingModel(currPartNumStates, numRateCats);
-        } else {
-            assert(false);
-            std::cerr << "Unrecognoized ASC BIAS MODE\n";
-            std::exit(1);
-        }
-        models[partIndex++] = m;
-    }
-    unsigned numNodes = 2 * numTaxa - 1;
-    BitFieldMatrix bMat;
-    for(auto i = 0U; i < numParts; i++) {
-      models[i]->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);
-    }
-    mt::MTInstance mtInstance(numTaxa, partLengths, numStatesPerPartition, origToComp, patternWeights, models);
-    mt::PartitionedMatrix & partMat = mtInstance.partMat;
-    for(auto i = 0U; i < numParts; i++) {
-      partMat.fillPartition(i, const_cast<const mt::char_state_t**>(&(rowPtrs[0])), &cs2pi);
-    }
-    mt::Tree &tree = mtInstance.tree;
-    std::map<const NxsSimpleNode *, unsigned> ncl2nodeNumber;
-    std::vector<const NxsSimpleNode *> pre = nxsTree.GetPreorderTraversal();
-    unsigned internalIndex = numTaxa;
-    for (std::vector<const NxsSimpleNode *>::iterator ndIt = pre.begin(); ndIt != pre.end(); ++ndIt) {
-        const NxsSimpleNode *nd = *ndIt;
-        //std::cout << "address = " << (long) nd << " is leaf = " << nd->IsTip() << " index = " << nd->GetTaxonIndex() << " parent address = " << (long) nd->GetEdgeToParent().GetParent() << std::endl;
-        unsigned num;
-        if (nd->IsTip()) {
-            num = nd->GetTaxonIndex();
-        } else {
-            num = internalIndex++;
-        }
-        mt::Node * treeNode = tree.GetNode(num);
-        const NxsSimpleNode * par = nd->GetEdgeToParent().GetParent();
-        if (par == nullptr) {
-            tree.SetRoot(treeNode);
-        } else {
-            assert (ncl2nodeNumber.find(par) != ncl2nodeNumber.end());
-            unsigned parNodeNumber = ncl2nodeNumber[par];
-            mt::Node * parNode = tree.GetNode(parNodeNumber);
-            parNode->AddChild(treeNode, nd->GetEdgeToParent().GetDblEdgeLen());
-        }
-        ncl2nodeNumber[nd] = num;
-    }
-    for (auto li = 0U; li < numTaxa; ++li) {
-        mt::Node * leaf = tree.GetLeaf(li);
-        assert(leaf);
-        for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
-            leaf->SetData(j, (void *) partMat.GetLeafCharacters(j, li));
-            leaf->SetWork(j, (void *) new mt::LeafWork(firstPartLength, numStateCodes, numStates, numRateCats));
+        unsigned numStateCodes = maxStateCode;
+        auto & cs2pi = numStates2Cs2Pi[numStates];
+        cs2pi.resize(numStateCodes);
+        for (auto i = 0U; i < numStateCodes; ++i) {
+            vector<mt::char_state_t> v;
+            for (auto xs : dataMapper->GetStateSetForCode(i)) {
+                v.push_back(static_cast<mt::char_state_t>(xs));
+            }
+            cs2pi.SetStateCode(i, v);
         }
     }
-    for (auto li = numTaxa; li < numNodes; ++ li) {
-        mt::Node * nd = tree.GetNode(li);
-        for (auto j = 0U; j < partMat.GetNumPartitions(); ++j) {
-            nd->SetWork(j, (void *) new mt::InternalNodeWork(firstPartLength, numStates, numRateCats));
-        }
-    }
+    mt::MTInstance mtInstance(rawPartMatrix,
+                              numStates2Cs2Pi,
+                              patternWeights,
+                              origToComp,
+                              numStates2PatternIndexSet,
+                              nxsTree,
+                              md);
     mt::ProcessActionsEnum action = configureBasedOnINI(mtInstance, iniReader, std::cerr);
-    try {
-        doAnalysis(os, mtInstance, action);
-    } catch (...) {
-        for(auto i = 0U; i < numParts; i++) delete models[i];
-        throw;
-    }
-    for(auto i = 0U; i < numParts; i++) delete models[i];;
+    doAnalysis(os, mtInstance, action);
 }
 
 } // namespace mt

@@ -25,6 +25,7 @@ mtree_SOURCES = \
 	INIReader.cpp \
 	pattern_class.cpp \
 	parsimony.cpp \
+	mt_instance.cpp \
 	mt_opt_model.cpp \
 	search.cpp
 

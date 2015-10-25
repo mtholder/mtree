@@ -288,12 +288,23 @@ int processContent(PublicNexusReader & nexusReader,
             patternWeights.push_back(double(i));
         }
     }
-    NxsUnsignedSet charsToInclude;
     const int MAX_NUM_STATES = 10; // TEMP. TODO, should be runtime var!
+    std::map<unsigned, std::set<unsigned> > numStates2CharSet;
     for (int i = 2; i < MAX_NUM_STATES; ++i) {
+        NxsUnsignedSet charIndexSet;
         auto x = NxsString::GetEscapedInt(i);
         x += " STATE CHARS";
-        *os << charBlock->GetIndexSet(x, &charsToInclude) << " chars in \"" << x << "\"\n";
+        const auto nc = charBlock->GetIndexSet(x, &charIndexSet);
+        if (nc > 0) {
+            std::set<unsigned> patIndexSet;
+            for (auto ci : charIndexSet) {
+                auto pi = originalIndexToCompressed.at(ci);
+                assert(pi >= 0);
+                patIndexSet.insert(static_cast<unsigned>(pi));
+            }
+            std::cerr << nc << " chars and " << patIndexSet.size() << " patterns in \"" << x << "\"\n";
+            numStates2CharSet[static_cast<unsigned>(i)] = patIndexSet;
+        }
     }
     _DEBUG_VEC(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();

@@ -237,6 +237,11 @@ int processContent(PublicNexusReader & nexusReader,
             numStates2CharSet[static_cast<unsigned>(i)] = patIndexSet;
         }
     }
+    if (numStates2CharSet.empty()) {
+        std::cerr << "Currently only works if the input file has charsets with names like 2_STATE_CHARS, 3_STATE_CHARS, etc.\n";
+        assert(false);
+        std::exit(1);
+    }
     _DEBUG_VEC(patternWeights);
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();

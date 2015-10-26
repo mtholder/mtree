@@ -19,9 +19,10 @@
 namespace mt {
 
 
-//void initSettings(MTInstance &instance) {
 
+// Don't need probinfo data structures/methods, at least for now
 // free nodeIDToProbInfo data structure for each node
+/*
  void freeProbInfo(PostorderForNodeIterator iter, NodeIDToProbInfo & nodeIDToProbInfo) {
       Arc travArc = iter.get();
       while (travArc.toNode)
@@ -36,23 +37,22 @@ namespace mt {
       }
 }
 
-void ProbInfo::createForTip(const MTInstance & instance) {
+void ProbInfo::createForTip(const MTInstance & instance, unsigned model) {
 	this->byParsScore.resize(1);
 	ProbForParsScore & forZeroSteps = this->byParsScore[0];
 	unsigned stateIndex = 0;
-	for (std::vector<BitField>::const_iterator scIt = GetPatData(0).singleStateCodes.begin();
-		 	scIt != GetPatData(0).singleStateCodes.end();
+	for (std::vector<BitField>::const_iterator scIt = GetPatData(model).singleStateCodes.begin();
+		 	scIt != GetPatData(model).singleStateCodes.end();
 		 	++scIt, ++stateIndex) {
 		const BitField sc = *scIt;
 		std::vector<double> & pVec = forZeroSteps.byDownPass[sc][sc];
-		pVec.assign(GetPatData(0).GetNumRates()*GetPatData(0).GetNumStates(), 0.0);
+		pVec.assign(GetPatData(model).GetNumRates()*GetPatData(model).GetNumStates(), 0.0);
 		for (unsigned r = 0; r < GetPatData(0).GetNumRates(); ++r)
-			pVec[GetPatData(0).GetNumStates()*r + stateIndex] = 1.0;
+			pVec[GetPatData(model).GetNumStates()*r + stateIndex] = 1.0;
 	}
 	this->nLeavesBelow = 1;
 }
 
-/*
 void ProbInfo::addToAncProbVecSymmetric(std::vector<double> & pVec,
 		const double *** leftPMatVec, const std::vector<double> * leftProbs,
 		const double *** rightPMatVec, const std::vector<double> * rightProbs,
@@ -136,6 +136,9 @@ std::set<BitField> toElements(BitField sc) {
 	return ret;
 }
 */
+
+// TEMP - throws exception for missing data
+// return a string of symbols for each state with length = num states
 std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
 				    BitFieldMatrix & bfMat) {
 	std::vector<const NxsDiscreteDatatypeMapper *> mappers = charsBlock.GetAllDatatypeMappers();
@@ -182,7 +185,8 @@ std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
 	return fundamentalSymbols;
 }
 
-/*
+#if 0
+
 void initInfo(MTInstance &instance) {
 	GetPatData(0).isMkvSymm = false;
 	GetPatData(0).pVecLen = GetPatData(0).GetNumStates()*GetPatData(0).GetNumRates();
@@ -268,9 +272,7 @@ void initInfo(MTInstance &instance) {
 			break;
 	}
 }
-*/
 
-/*
 // \returns true if there were probabalities that were summed
 bool ProbInfo::allCalcsForAllPairs(
 			MaskToProbsByState & forCurrScoreDownPass,
@@ -370,9 +372,7 @@ bool ProbInfo::allCalcsForAllPairs(
 	}
 	return probsAdded;
 }
-*/
 
-/*
 void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, const ProbInfo & rightPI, double rightEdgeLen,
                                   TiMatFunc fn, const MTInstance & instance)
 {
@@ -489,8 +489,7 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
   stateCodeTranslationVec[1] = 0;
 	addToAncProbVecSymmetric(*ancVec, leftPMatVec, leftProbs, rightPMatVec, rightProbs, stateCodeTranslationVec, instance);
 	addToAncProbVecSymmetric(*ancVec, rightPMatVec, rightProbs, leftPMatVec, leftProbs, stateCodeTranslationVec, instance);
-*/
-  /*
+
 	for (BitField downPass = 1; ; ++downPass) {
 		const unsigned numStatesInMask = blob.getNumStates(downPass);
 		if (numStatesInMask - 1 <= currScore) { // we cannot demand 3 states seen, but only 1 parsimony change... (all the probs will be zero, so we can skip them)
@@ -532,8 +531,8 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
 			break;
 		assert(downPass < blob.lastBitField);
 	}
-	*/
-  /*
+
+
 	if (scObserved)
 		obsmaxparscore = currscore;
 
@@ -586,9 +585,8 @@ void ProbInfo::calculateSymmetric(const ProbInfo & leftPI, double leftEdgeLen, c
 		this->byParsScore.resize(obsmaxparscore + 1);
 	}
 }
-*/
 
-/*
+
 void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
 					               const ProbInfo & rightPI, double rightEdgeLen,
 					               TiMatFunc fn, const MTInstance & instance) {
@@ -682,9 +680,9 @@ void ProbInfo::calculate(const ProbInfo & leftPI, double leftEdgeLen,
   }
 
 }
-*/
 
-/*
+
+
 unsigned PatternSummary::incrementCount(unsigned s, BitField m, unsigned toAdd) {
 	if (s >= this->byParsScore.size())
 		this->byParsScore.resize(s + 1);
@@ -698,8 +696,8 @@ unsigned PatternSummary::incrementCount(unsigned s, BitField m, unsigned toAdd) 
 	mIt->second = toAdd + prev;
 	return toAdd + prev;
 }
-*/
-/*
+
+
 ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, const MTInstance & instance) {
 	if (instance.GetCharModel().isMkvSymm) {
 		const unsigned maxNumSteps = rootProbInfo.getMaxParsScore();
@@ -790,9 +788,10 @@ ExpectedPatternSummary::ExpectedPatternSummary(const ProbInfo & rootProbInfo, co
 			}
 	}
 }
-*/
 
-// Maybe to replace ProbInfo or other data structure
+#endif
+
+
 // Class to store node data for uninformative case
 // NodeDataStructure in Uninformative_case.cpp
 class NodeInfo {
@@ -815,7 +814,7 @@ class NodeInfo {
         void setNumLeaves(int n) {
           numLeaves = n;
         }
-        
+
         void setIsMissing(bool val) {
           isMissing = val;
         }
@@ -902,18 +901,19 @@ int getNextCommStSet(const int obsStSet, int i) {
   return ind;
 }
 
-double pclassCalcTransitionProb(int ancIndex, int i, double edgeLen, MTInstance & instance){
-  double * tiVec = GetPatData(0).calcTransitionProb(edgeLen);
-  int nStates = GetPatData(0).GetNumStates();
+double pclassCalcTransitionProb(int ancIndex, int i, double edgeLen, MTInstance & instance, unsigned model){
+  double * tiVec = GetPatData(model).calcTransitionProb(edgeLen);
+  int nStates = GetPatData(model).GetNumStates();
   return tiVec[ancIndex*nStates + i];
 }
 
-double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex, int obsBits, int commonStates, double edgeLen, MTInstance &instance) {
+double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex, int obsBits, int commonStates, double edgeLen,
+                                           MTInstance &instance, unsigned model) {
   double p = 0.0;
   ProbForObsStateSet & childProbSet = subtreeInfo->getForObsStateSet(obsBits);
   std::vector<double> & childProb = childProbSet.getProbForCommState(commonStates);
-  for(int i = 0; i < GetPatData(0).GetNumStates(); i++)  {
-    double transProb = pclassCalcTransitionProb(ancIndex, i, edgeLen, instance);
+  for(int i = 0; i < GetPatData(model).GetNumStates(); i++)  {
+    double transProb = pclassCalcTransitionProb(ancIndex, i, edgeLen, instance, model);
     double partialLike = childProb[i];
     double x = transProb * partialLike;
     p += x;
@@ -921,13 +921,12 @@ double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex,
   return p;
 }
 
-double calcProbOfSubtreeForObsStSetNoRepeated(NodeInfo * subtreeInfo, int ancIndex, int obsBits, double edgeLen, MTInstance &instance){
-  return calcProbOfSubtreeForObsStSetAndComm(subtreeInfo, ancIndex, obsBits, -1, edgeLen, instance);
+double calcProbOfSubtreeForObsStSetNoRepeated(NodeInfo * subtreeInfo, int ancIndex, int obsBits, double edgeLen, MTInstance &instance, unsigned model){
+  return calcProbOfSubtreeForObsStSetAndComm(subtreeInfo, ancIndex, obsBits, -1, edgeLen, instance, model);
 }
 
+#if 0
 // Traverse the tree (postorder) and calculate pattern class probabilities
-// might not need this
-/*
 void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
 {
     initInfo(instance);
@@ -1023,16 +1022,17 @@ void calcPatternClassProbs(MTInstance &instance, TiMatFunc fn)
     if (needToDelRootProbInfo)
       delete rootpinfo;
 }
-*/
+#endif
 
 // calculate probabilities of uninformative patterns
-void calcUninformativePatterns(MTInstance & instance)
+// for one partition
+void calcUninformativePatterns(MTInstance & instance, unsigned model)
 {
   Node * nd = instance.tree.GetRoot();
   PostorderForNodeIterator poTrav = postorder(nd);
   Arc arc = poTrav.get();
   std::map<Node *, NodeInfo *> nodeToInfoMap;
-  unsigned numStates = GetPatData(0).GetNumStates();
+  unsigned numStates = GetPatData(model).GetNumStates();
   NodeInfo * currNdInfo = 0L;
   assert(arc.toNode);
   while(arc.toNode) {
@@ -1070,8 +1070,8 @@ void calcUninformativePatterns(MTInstance & instance)
       } else {}
       currNdInfo->setNumLeaves(leftNdInfo->getNumLeaves() + rightNdInfo->getNumLeaves());
 
-      stateSetContainer::const_iterator ssCit = GetPatData(0).stateSetBegin();
-      for (; ssCit != GetPatData(0).stateSetEnd(); ssCit++) {
+      stateSetContainer::const_iterator ssCit = GetPatData(model).stateSetBegin();
+      for (; ssCit != GetPatData(model).stateSetEnd(); ssCit++) {
         const int & obsStSet = *ssCit;
         int common = -1;   // this is 11... in bits
         int numObsSt = countBits(obsStSet);
@@ -1093,16 +1093,16 @@ void calcUninformativePatterns(MTInstance & instance)
                   double leftProb, rightProb;
                   double leftedgeLen = leftChild->GetEdgeLen();
                   if(leftNdInfo->getNumLeaves() == 1) {
-                    leftProb = pclassCalcTransitionProb(anc, convertBitToIndex(leftObsStSet), leftedgeLen, instance);
+                    leftProb = pclassCalcTransitionProb(anc, convertBitToIndex(leftObsStSet), leftedgeLen, instance, model);
                   } else {
-                    leftProb = calcProbOfSubtreeForObsStSetNoRepeated(leftNdInfo, anc, leftObsStSet, leftedgeLen, instance);
+                    leftProb = calcProbOfSubtreeForObsStSetNoRepeated(leftNdInfo, anc, leftObsStSet, leftedgeLen, instance, model);
                   }
 
                   double rightEdgeLen = rightChild->GetEdgeLen();
                   if(rightNdInfo->getNumLeaves() == 1) {
-                    rightProb = pclassCalcTransitionProb(anc, convertBitToIndex(rightObsStSet), rightEdgeLen, instance);
+                    rightProb = pclassCalcTransitionProb(anc, convertBitToIndex(rightObsStSet), rightEdgeLen, instance, model);
                   } else {
-                    rightProb = calcProbOfSubtreeForObsStSetNoRepeated(rightNdInfo, anc, rightObsStSet, rightEdgeLen, instance);
+                    rightProb = calcProbOfSubtreeForObsStSetNoRepeated(rightNdInfo, anc, rightObsStSet, rightEdgeLen, instance, model);
                   }
                   double jointNdProb = leftProb * rightProb;
                   currNdProbVec[anc] += jointNdProb;
@@ -1126,9 +1126,9 @@ void calcUninformativePatterns(MTInstance & instance)
 
                   double leftProb, rightProb;
                   double leftEdgeLen = leftChild->GetEdgeLen();
-                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, common, leftEdgeLen, instance);
+                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, common, leftEdgeLen, instance, model);
                   double rightEdgeLen = rightChild->GetEdgeLen();
-                  rightEdgeLen = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, common, rightEdgeLen, instance);
+                  rightEdgeLen = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, common, rightEdgeLen, instance, model);
                   double jointNdProb = leftProb * rightProb;
                   currNdProbVec[anc] += jointNdProb;
                 }
@@ -1141,16 +1141,16 @@ void calcUninformativePatterns(MTInstance & instance)
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;
                   double leftEdgeLen = leftChild->GetEdgeLen();
-                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance);
+                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance, model);
                   double rightEdgeLen = rightChild->GetEdgeLen();
-                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, common, rightEdgeLen, instance);
+                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, common, rightEdgeLen, instance, model);
                   double jointNdProb = leftProb * rightProb;
                   currNdProbVec[anc] += jointNdProb;
 
                   //Now consider when the left is not displayed by commonBits as observed States
                   leftObsStSet = obsStSet - rightObsStSet;
                   if(leftObsStSet != 0) {
-                    leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance);
+                    leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance, model);
                     jointNdProb = leftProb * rightProb;
                     currNdProbVec[anc] += jointNdProb;
                     }
@@ -1164,16 +1164,16 @@ void calcUninformativePatterns(MTInstance & instance)
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;
                   double leftEdgeLen = leftChild->GetEdgeLen();
-                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, common, leftEdgeLen, instance);
+                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, common, leftEdgeLen, instance, model);
                   double rightEdgeLen = rightChild->GetEdgeLen();
-                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance);
+                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance, model);
                   double jointNdProb = leftProb * rightProb;
                   currNdProbVec[anc] += jointNdProb;
 
                   //Now consider when the right is not displayed by commonBits as observed States
                   rightObsStSet = obsStSet - leftObsStSet;
                   if(rightObsStSet != 0) {
-                    rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance);
+                    rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance, model);
                     jointNdProb = leftProb * rightProb;
                     currNdProbVec[anc] += jointNdProb;
                   }
@@ -1187,9 +1187,9 @@ void calcUninformativePatterns(MTInstance & instance)
                   int leftObsStSet = obsStSet - rightObsStSet + commonBits;
                   double leftProb, rightProb;
                   double leftEdgeLen = leftChild->GetEdgeLen();
-                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance);
+                  leftProb = calcProbOfSubtreeForObsStSetAndComm(leftNdInfo, anc, leftObsStSet, -1, leftEdgeLen, instance, model);
                   double rightEdgeLen = rightChild->GetEdgeLen();
-                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance);
+                  rightProb = calcProbOfSubtreeForObsStSetAndComm(rightNdInfo, anc, rightObsStSet, -1, rightEdgeLen, instance, model);
                   double jointNdProb = leftProb * rightProb;
                   currNdProbVec[anc] += jointNdProb;
                 }

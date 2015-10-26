@@ -26,6 +26,8 @@ typedef std::pair<const Node *, unsigned int> NodeID;
 typedef std::map<BitField, std::vector<double> > MaskToProbsByState;
 typedef std::map<BitField, MaskToProbsByState > MaskToMaskToProbsByState;
 
+const unsigned MAX_NUM_STATES = 8*sizeof(BitField);
+
 class ProbInfo;
 class ParsInfo;
 typedef std::map<NodeID, ProbInfo *> NodeIDToProbInfo;

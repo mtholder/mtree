@@ -3,10 +3,10 @@ begin data;
 dimensions ntax=4 nchar=16;
 format datatype = standard symbols="01234" missing=? ; 
 matrix
-Taxon1 0000000111112223
-Taxon2 0000011111122223
-Taxon3 0001111112222233
-Taxon4 1111111001112234
+Taxon1 0000000111110000
+Taxon2 0000011111100000
+Taxon3 0001111110000010
+Taxon4 1111111001110011
 ;
 end;
 begin paup;
@@ -19,3 +19,8 @@ begin paup;
     lset userbr basefreq = eq rates = equal  nst=1;
     lscore /sitelike scorefile=paupLike.txt;
 end;
+
+BEGIN SETS;
+  CHARSET 1_STATE_CHARS = 13 14 ;
+  CHARSET 2_STATE_CHARS = 1 2 3 4 5 6 7 8 9 10 11 12 15 16 ;
+END;

@@ -14,7 +14,7 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
     curvatOK(true),
     numPartitions(static_cast<unsigned>(numStates2PatternIndexSet.size())),
     likelihoods(numStates2PatternIndexSet.size(),0.0),
-    dirtyFlags(numStates2PatternIndexSet.size(),false),
+    dirtyFlags(numStates2PatternIndexSet.size(), true),
     models(numStates2PatternIndexSet.size(), nullptr) {
     const unsigned numTaxa = static_cast<unsigned>(ns2RawMat.begin()->second.size());
     const unsigned numRateCats = 4; // TEMP: change to customizable value in INI

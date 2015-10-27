@@ -81,28 +81,13 @@ class CharModel {
         virtual void createGammas(double a, int cats);
 
         // Members for PhyPatClassProb calculations
-        bool isMkvSymm;
-        ScopedDblThreeDMatrix firstMatVec;
-        ScopedDblThreeDMatrix secMatVec;
-        unsigned pVecLen;
-        //std::string alphabet;
-        std::vector<std::size_t> zeroVec;
-        BitField lastBitField;
-        std::vector<double> categStateProb;
-        std::vector<BitField> singleStateCodes;
-        std::vector<BitField> stateIndexToStateCode;
-        std::vector<unsigned> stateCodeToNumStates;
-        std::vector<BitField> multiStateCodes;
-        std::map<BitField, std::string> stateCodesToSymbols;
-        VMaskToVecMaskPair pairsForIntersectionForEachDownPass;
+
+
+
+
         VMaskToVecMaskPair pairsForUnionForEachDownPass;
         BitFieldMatrix statesSupersets;
-        unsigned getnstates(BitField mask) const {
-          return stateCodeToNumStates[mask];
-        }
-        const std::string & toSymbol(BitField sc) const {
-                return this->stateCodesToSymbols.find(sc)->second;
-            }
+      
         stateSetContainer::const_iterator stateSetBegin() const  {
             return possObsStateSet.begin();
         }

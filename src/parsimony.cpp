@@ -12,8 +12,8 @@ namespace mt {
 // Functions for parsimony calcs used in likelihood search and pattern class calcs
 // Using Fitch's algorithm
 unsigned int calcParsScore(MTInstance & instance);
-
-// Set downpass state to taxon data, 
+#if 0
+// Set downpass state to taxon data,
 void ParsInfo::calculateForTip(const BitFieldRow & data, MTInstance & instance) {
     assert(instance.GetCharModel(0).zeroVec.size() >= data.size());
     this->numPatterns = data.size();
@@ -75,4 +75,5 @@ unsigned int calcParsScore(MTInstance & instance) {
     }
     return score;
 }
+#endif
 } //namespace

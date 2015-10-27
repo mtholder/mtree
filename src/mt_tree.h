@@ -83,6 +83,12 @@ class Node {
         double GetEdgeLen() const {
             return this->edgeLen;
         }
+        void SetVEdgeLen(double v) {
+            this->vEdgeLen = v;
+        }
+        double GetVEdgeLen() const {
+            return this->vEdgeLen;
+        }
         bool IsLeaf() const {
             return this->leftChild == nullptr;
         }
@@ -109,6 +115,7 @@ class Node {
         Node * rightSib;
         unsigned number;
         double edgeLen;
+        double vEdgeLen;
         std::vector<void *> data;
         std::vector<void *> work;
 };

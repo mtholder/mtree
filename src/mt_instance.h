@@ -13,7 +13,8 @@ class NCL2MT;
 
 enum ProcessActionsEnum {
     SCORE_ACTION=0,
-    TREE_SEARCH=1
+    TREE_SEARCH=1,
+    OPTIMIZE=2
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;

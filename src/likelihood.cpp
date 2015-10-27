@@ -257,11 +257,15 @@ namespace mt {
 
 
 void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
-    action = SCORE_ACTION;
     if (action == SCORE_ACTION) {
         const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
         if (os) {
             *os << "lnL = " << lnL << "\n";
+        }
+    } else if (action == OPTIMIZE_BR_LEN) {
+        const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
+        if (os) {
+            *os << "lnL before brlen optimitization = " << lnL << "\n";
         }
     } else if (action == TREE_SEARCH) {
       //int steps = 10;

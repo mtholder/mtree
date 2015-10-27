@@ -127,6 +127,7 @@ void NCL2MT::processTree(std::ostream *os,
             rawMatrix[i].reserve(currPartLen);
             for (auto j: patInds) {
                 NxsCDiscreteStateSet r = compressedMatrix[i][j];
+                //std::cerr << " compressedMatrix[" << i << "][" << j << "] << = " << (int)r << '\n';
                 if (r < 0 || r > static_cast<NxsCDiscreteStateSet>(numStates)) {
                     r = static_cast<NxsCDiscreteStateSet>(numStates);
                 }

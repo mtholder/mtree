@@ -55,8 +55,8 @@ class CharModel {
         CharModel(unsigned numStates, unsigned numRateCats)
             :nStates(numStates),
             nRateCats(numRateCats),
-            rates(1, 1.0),
-            rateProb(1, 1.0) {
+            rates(numRateCats, 1.0),
+            rateProb(numRateCats, 1.0/(static_cast<double>(numRateCats))) {
         }
         virtual ~CharModel() {
         }
@@ -73,7 +73,7 @@ class CharModel {
             return alpha;
         }
         virtual double GetRate(int pos) const {
-            return rates[pos];
+            return rates.at(pos);
         }
         /*ModelParams & GetModelParams(int model) {
             return modelList[model];
@@ -123,6 +123,7 @@ class MkCharModel: public CharModel {
     public:
         MkCharModel(unsigned numStates, unsigned numRateCats)
             :CharModel(numStates, numRateCats),
+            probMat(numRateCats*numStates*numStates, 0.0),
             rootStateFreq(numStates, 1.0/double(numStates)) {
         }
         virtual ~MkCharModel() {

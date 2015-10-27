@@ -2,6 +2,7 @@
 #include "mt_optimize_branches.h"
 #include "mt_likelihood.h"
 #include "search.h"
+#include "mt_opt_model.h"
 #include <iostream>
 
 namespace mt {
@@ -24,7 +25,11 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
             *os << "Change in lnL = " << diff << "\n";
             instance.tree.write(*os);
         }
-  
+
+    } else if (action == OPTIMIZE_PARS) {
+      double startL = ScoreTree(instance.partMat, instance.tree, instance);
+      optimizeModel(instance,.1);
+      double endL = ScoreTree(instance.partMat, instance.tree, instance);
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance);

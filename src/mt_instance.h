@@ -14,7 +14,7 @@ class NCL2MT;
 enum ProcessActionsEnum {
     SCORE_ACTION=0,
     TREE_SEARCH=1,
-    OPTIMIZE=2,
+    OPTIMIZE_PARS=2,
     OPTIMIZE_BR_LEN=3
 };
 struct OptimizationSettings {

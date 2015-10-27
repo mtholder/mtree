@@ -1,6 +1,7 @@
 #include "mt_char_model.h"
 #include "mt_instance.h"
 #include "mt_data.h"
+#include "mt_opt_model.h"
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
 #include "mt_likelihood.h"
@@ -16,11 +17,6 @@ namespace mt {
 #define ALPHA_P 1
 
 
-double LnGamma(double alph);
-double IncompleteGamma(double x, double alph, double lga);
-double PointNormal(double prob);
-double PointChi2(double prob, double df);
-void optimizeModel(MTInstance &instance, double likelihoodEpsilon);
 
 // The following four functions(LnGamma, IncompleteGamma, PointNormal, and PointChi2)
 // come from Ziheng Yang's PAML
@@ -127,17 +123,20 @@ double PointChi2(double prob, double df){
          s1, s2, s3, s4, s5, s6;
 
   g = LnGamma(df/2);
+  //_DEBUG_VAL(g);
   xx = df/2;
   c = xx - 1;
   if(df >= -1.24*log(p)) goto l1;
   ch = pow((p*xx*exp(g+xx*aa)), 1/xx);
-  if (ch < e) return ch;
+  //_DEBUG_VAL(ch);
+  if (ch-e<0) return ch;
   goto l4;
 
 l1:
   if (df > .32) goto l3;
   ch = 0.4;
   a = log(1 - p);
+  //_DEBUG_VAL(a);
 
 l2:
   q = ch;
@@ -145,6 +144,7 @@ l2:
   p2 = ch*(6.73 + ch*(6.66 + ch));
   t = -0.5 + (4.67 + 2*ch)/p1 - (6.73 + ch*(13.32 + 3*ch))/p2;
   ch -= (1 - exp(a + g + 0.5*ch + c*aa)*p2/p1)/t;
+  //_DEBUG_VAL(ch);
   if(fabs(q/ch - 1) - 0.1 <= 0) goto l4;
   else goto l2;
 
@@ -156,8 +156,11 @@ l3:
     ch = -2*(log(1 - p) - c*log(0.5*ch) + g);
 
 l4:
+  q=ch;
+  //_DEBUG_VAL(q);
   p1 = .5 * ch;
   t = IncompleteGamma(p1, xx, g);
+  //_DEBUG_VAL(t);
   assert(t >= 0);
   p2 = p - t;
   t = p2*exp(xx*aa + g + p1 - c*log(ch));
@@ -171,8 +174,10 @@ l4:
   s5 = (84 + 264*a + c*(175 + 606*a))/2520;
   s6 = (120 + c*(346 + 127*c))/5040;
   ch += t*(1 + 0.5*t*s1 - b*c*(s1 - b*(s2 - b*(s3 - b*(s4 - b*(s5 - b*s6))))));
+  //_DEBUG_VAL(ch);
   if (fabs(q/ch - 1) > e) goto l4;
 
+  //std::cerr << "Got here\n";
   return (ch);
 }
 
@@ -189,39 +194,45 @@ l4:
 
 void CharModel::createGammas(double alph, int cats){
   int i;
-  alpha = alph;
+  this->alpha = alph;
+  //_DEBUG_VAL(alpha);
   double factor = alpha / alpha * cats;
   double beta = alpha;
-  std::vector<double> gammaProbs;
+  std::vector<double> gammaProbs(cats,0.0);
 
   assert(alpha >= MT_ALPHA_MIN);
 
   double lngal = LnGamma(alpha + 1);
-  for(i = 0; i < cats - 1; i++)
+  //_DEBUG_VAL(lngal);
+  for(i = 0; i < cats - 1; i++) {
     gammaProbs[i] = MT_POINT_GAMMA((i + 1.0)/cats, alpha, beta);
+    //_DEBUG_VAL(gammaProbs[i]);
+  }
   for(i = 0; i < cats - 1; i++)
     gammaProbs[i] = IncompleteGamma(gammaProbs[i] * beta, alpha + 1, lngal);
   rates[0] = gammaProbs[0] * factor;
   rates[cats - 1] = (1 - gammaProbs[cats - 2]) * factor;
-  for(i = 1; i < cats - 1; i++)
+  for(i = 1; i < cats - 1; i++) {
     rates[i] = (gammaProbs[i] - gammaProbs[i - 1]) * factor;
-
+    //_DEBUG_VAL(rates[i]);
+  }
   return;
 }
 
 // based on "changeModelParameters" - change param of type paramType to value at position
 // old value needs to be stored first!
 static void changeParam(MTInstance &instance,
-                        int ,//model,
-                        int , //position, 
-                        double value, 
+                        int model,
+                        int , //position,
+                        double value,
                         int paramType) {
   switch (paramType){
     case SUB_RATE:
       //instance.changeRate(model, position, value);
       //break;
     case ALPHA_P:
-      instance.GetCharModel(0).createGammas(value, instance.GetCharModel(0).GetNumRates());
+      instance.GetCharModel(model).createGammas(value, instance.GetCharModel(model).GetNumRates());
+      //_DEBUG_VAL(value);
       break;
   }
 
@@ -229,7 +240,7 @@ static void changeParam(MTInstance &instance,
 
 // Evaluate change to a model in terms of likelihood
 // equivalent to evaluateChange in PLL
-static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double ,//result,
+static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double &result,//result,
                            bool ,//converged,
                            int paramType, int model)
 {
@@ -249,13 +260,15 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value,
       break;
   }
   instance.likelihoods[model] = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model),model);
+  result = instance.likelihoods[model];
+  //_DEBUG_VAL(result);
   instance.dirtyFlags[model] = true;
 }
 
 // Implementation of Brent's Method for One-Dimensional Parameter Optimization, based on brentGeneric in PLL
 
-static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double cx,double fb, double tol,
-                            double xmin, double result, int paramType, int rateNumber, double lowerBound,
+void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, double &fb, double tol,
+                            double &xmin, double &result, int paramType, int rateNumber, double lowerBound,
                             double upperBound, int model)
 {
 
@@ -284,6 +297,7 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
   // core iteration
   for (iter = 0; iter < MAX_ITERS; iter++) {
 
+    //std::cerr << "Brent iteration #: " << iter << "\n";
     if (converged)
       return;
 
@@ -330,6 +344,8 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
       }
     if (!converged)
       assert(u >= lowerBound && u <= upperBound);
+    //_DEBUG_VAL(xm);
+    //std::cerr << "Current alpha: " << instance.GetCharModel(model).GetAlpha() << "\n";
     }
 
 
@@ -370,14 +386,17 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
         assert(v >= lowerBound && v <= upperBound);
         assert(w >= lowerBound && w <= upperBound);
         assert(u >= lowerBound && u <= upperBound);
+
+        xmin = x;
       }
 }
 
 // Bracketing Function for Brent's Algorithm
 // brakGeneric in PLL
-static int mtBrakGeneric(MTInstance &instance, double param, double ax, double bx, double cx, double fa, double fb,
-                        double fc, double lowerBound, double upperBound, int model, int rateNumber, int paramType)
+int mtBrakGeneric(MTInstance &instance, double &param, double &ax, double &bx, double &cx, double &fa, double &fb,
+                        double &fc, double lowerBound, double upperBound, int model, int rateNumber, int paramType)
 {
+  //_DEBUG_VAL(cx);
   double ulim, r, q, fu=0.0, dum, temp, u;
   int state, endState;
   bool converged = false;
@@ -527,12 +546,15 @@ static int mtBrakGeneric(MTInstance &instance, double param, double ax, double b
                         }
                         }
                      }
+                   _DEBUG_VAL(cx);
                    break;
                  case 1:
                    endState = 0;
+                   _DEBUG_VAL(cx);
                    break;
                  case 2:
                    endState = 3;
+                   _DEBUG_VAL(cx);
                    break;
                  default:
                    assert(0);
@@ -551,6 +573,7 @@ static int mtBrakGeneric(MTInstance &instance, double param, double ax, double b
                    ax = bx; bx = cx; cx = u;
                    fa = fb; fb = fc; fc = fu;
                    state = 0;
+                   //_DEBUG_VAL(cx);
                    break;
                  case 1:
                    fu = temp;
@@ -582,6 +605,7 @@ static int mtBrakGeneric(MTInstance &instance, double param, double ax, double b
                            state = 1;
                          }
                      }
+                   //_DEBUG_VAL(cx);
                    break;
                  case 2:
                    fu = temp;
@@ -596,19 +620,32 @@ static int mtBrakGeneric(MTInstance &instance, double param, double ax, double b
                        ax = bx; bx = cx; cx = u;
                        fa = fb; fb = fc; fc = fu;
                      }
+                   //_DEBUG_VAL(cx);
                    break;
                  case 3:
                    fb = fc; fc = fu; fu = temp;
                    ax = bx; bx = cx; cx = u;
                    fa = fb; fb = fc; fc = fu;
                    state = 0;
+                   //_DEBUG_VAL(cx);
                    break;
                  default:
                    assert(0);
                  }
              }
     }
+//_DEBUG_VAL(cx);
 }
+
+// Set beginning parameters for optimization
+void initParams(MTInstance &instance) {
+  for(auto i = 0U; i < instance.GetModelVec().size(); i++) { // loop over partitions
+    instance.GetCharModel(i).createGammas(0.5, instance.GetCharModel(i).GetNumRates());
+    std::cerr << "Set alpha for partiton " << i << "\n";
+    // Set alphas to 0.5 for now
+  }
+}
+
 
 // Generic function for optimizing a given parameter
 // from optParamGeneric in PLL
@@ -621,10 +658,10 @@ static void optParam(MTInstance &instance, int numberOfModels,
 
   std::vector<double> startRates, startWeights, startExps;
 
-  CharModel &startModel = instance.GetCharModel(pos);
-
   for(pos = 0; pos < numberOfModels; pos++) {
+    CharModel &startModel = instance.GetCharModel(pos);
     double startLH = ScoreTreeForPartition(instance.partMat, instance.tree, startModel, pos);
+    //_DEBUG_VAL(startLH);
     double startValue = 0.0;
     switch (paramType)
     {
@@ -634,6 +671,7 @@ static void optParam(MTInstance &instance, int numberOfModels,
       case ALPHA_P:
         // function to return starting alpha parameter
         startValue = GetPatData(pos).GetAlpha();
+        _DEBUG_VAL(startValue);
         break;
     }
 
@@ -650,22 +688,29 @@ static void optParam(MTInstance &instance, int numberOfModels,
       _b = upperBound;
 
       double _c, _fa, _fb, _fc, _param, _x, endLH;
+      //_x = startValue;
+      //std::cerr << "Got to mtBrakGeneric\n";
       mtBrakGeneric(instance, _param, _a, _b, _c, _fa, _fb, _fc, lowerBound, upperBound,
                     pos, rateNumber, paramType);
+
+      //_DEBUG_VAL(_c);
 
       assert(_a >= lowerBound && _a <= upperBound);
       assert(_b >= lowerBound && _b <= upperBound);
       assert(_c >= lowerBound && _c <= upperBound);
 
+      //_DEBUG_VAL(_x);
       mtBrentGeneric(instance, _a, _b, _c, _fb, modelEpsilon, _x, endLH, paramType,
                      rateNumber, lowerBound, upperBound, pos);
 
+      //std::cerr << "Got through Brent\n";
       if (startLH > endLH)
         {
           changeParam(instance, pos, rateNumber, startValue, paramType);
 
         }
       else {
+          //_DEBUG_VAL(_x);
           changeParam(instance, pos, rateNumber, _x, paramType);
         }
   }
@@ -688,6 +733,7 @@ static void mtOptRates(MTInstance &instance, std::vector<double> ratelist, doubl
 
 static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon)
 {
+  //std::cerr << "Entering mtOptAlphas\n";
   optParam(instance, numModels, 0, 0.01, 0.99, ALPHA_P, modelEpsilon);
 }
 
@@ -695,6 +741,8 @@ static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon
 // "modOpt" in optimizeModel.c in PLL
 // for now only optimizes branch lengths, alpha params, and rates
 void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
+  std::cerr << "Beginning optimization\n";
+  initParams(instance);
   double inputLikelihood, currentLikelihood, modelEpsilon;
 
   //std::vector<double> alphalist, ratelist; // get these from instance, where they have been initialized
@@ -702,13 +750,16 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
   modelEpsilon = 0.0001;    // hard-coded value for now
 
   inputLikelihood = instance.curLikelihood;
+  int MAX_ITS = 10;
   do {
+    std::cerr << "Optimization iterations left: " << MAX_ITS << '\n';
     currentLikelihood = instance.curLikelihood;
 
     mtOptAlphas(instance, instance.numPartitions, modelEpsilon);
-    instance.curLikelihood = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(0), 0);
+    instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance);
+    MAX_ITS--;
 
-  } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon);
+  } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon && MAX_ITS);
 
 }
 

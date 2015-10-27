@@ -16,7 +16,7 @@ namespace mt {
 #define BRAK_VAR2                               100.0
 #define MT_RATE_MIN                             0.0000001
 #define MT_RATE_MAX                             1000000.0
-#define MT_ALPHA_MIN                            0.2
+#define MT_ALPHA_MIN                            0.01
 
 // Some macros
 #define MTREE_SIGN(a,b)                        ((b) > 0.0 ? fabs(a) : -fabs(a))

@@ -3,10 +3,40 @@
 #include "mt_likelihood.h"
 #include "mt_tree_traversal.h"
 namespace mt {
-double maximizeScoreForBrLen(MTInstance &instance, Arc & arc, double prevScore);
+
+typedef std::pair<double, double> val_lnl_t;
+template<typename FUN>
+val_lnl_t maximizeScoreForSmallBrLen(FUN fun, val_lnl_t);
+template<typename FUN>
+val_lnl_t maximizeScoreForLargeBrLen(FUN fun, val_lnl_t);
+template<typename FUN>
+val_lnl_t maximizeScoreForBracketed(FUN fun, val_lnl_t lower, val_lnl_t mid, val_lnl_t upper);
 
 
-double maximizeScoreForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
+template<typename FUN>
+val_lnl_t maximizeScoreForSmallBrLen(FUN fun, val_lnl_t prev) {
+    val_lnl_t best = prev;
+    return best;
+}
+
+template<typename FUN>
+val_lnl_t maximizeScoreForLargeBrLen(FUN fun, val_lnl_t prev) {
+    val_lnl_t best = prev;
+    return best;
+}
+
+template<typename FUN>
+val_lnl_t maximizeScoreForBracketed(FUN fun, val_lnl_t lower, val_lnl_t mid, val_lnl_t upper) {
+    val_lnl_t best = mid;
+    return best;
+}
+
+
+double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
+
+
+
+double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
@@ -14,21 +44,36 @@ double maximizeScoreForBrLen(MTInstance &instance, Arc & arc, double prevScore) 
         arc.SetEdgeLen(prev);
         return lnL;
     };
-
-    const double tiny = 0.001;
-    const double tinyBrLenLnL = brLenScorer(tiny);
-    const double mid = 0.05;
-    const double midBrLenLnL = brLenScorer(mid);
-    const double large = 1.0;
-    const double largeBrLenLnL = brLenScorer(large);
-    double optBrLen = mid;
-    double optBrLenLnL = midBrLenLnL;
-
-    std::cerr << "   nu = " << tiny << " ===> lnL = " << tinyBrLenLnL << '\n';
-    std::cerr << "   nu = " << mid << " ===> lnL = " << midBrLenLnL << '\n';
-    std::cerr << "   nu = " << large << " ===> lnL = " << largeBrLenLnL << '\n';
-    arc.SetEdgeLen(optBrLen);
-    return optBrLenLnL;
+    val_lnl_t soln{arc.GetEdgeLen(), prevScore};
+    const val_lnl_t tiny{0.001, brLenScorer(0.001)};
+    const val_lnl_t small{0.01, brLenScorer(0.01)};
+    std::cerr << "   nu = " << tiny.first << " ===> lnL = " << tiny.second << '\n';
+    std::cerr << "   nu = " << small.first << " ===> lnL = " << small.second << '\n';
+    if (tiny.second > small.second) {
+        soln = maximizeScoreForSmallBrLen(brLenScorer, tiny);
+    } else {
+        const val_lnl_t mid{0.05, brLenScorer(0.05)};
+        std::cerr << "   nu = " << mid.first << " ===> lnL = " << mid.second << '\n';
+        if (small.second > mid.second) {
+            soln = maximizeScoreForBracketed(brLenScorer, tiny, small, mid);
+        } else {
+            const val_lnl_t large{1.00, brLenScorer(1.00)};
+            std::cerr << "   nu = " << large.first << " ===> lnL = " << large.second << '\n';
+            if (mid.second >= large.second) {
+                soln = maximizeScoreForBracketed(brLenScorer, small, mid, large);
+            } else {
+                const val_lnl_t huge{100.00, brLenScorer(100.00)};
+                std::cerr << "   nu = " << huge.first << " ===> lnL = " << huge.second << '\n';
+                if (large.second > huge.second) {
+                    soln = maximizeScoreForBracketed(brLenScorer, mid, large, huge);
+                } else {
+                    soln = maximizeScoreForLargeBrLen(brLenScorer, huge);
+                }
+            }
+        }
+    }
+    arc.SetEdgeLen(soln.first);
+    return soln.second;
 }
 
 double optimizeAllBranchLengths(MTInstance &instance) {
@@ -44,7 +89,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();
         do {
-            currLnL = maximizeScoreForBrLen(instance, arc, currLnL);
+            currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             arc = poTrav.next();
         } while(arc.toNode);
         const auto thisRoundImprovement = currLnL - beforeThisRound;

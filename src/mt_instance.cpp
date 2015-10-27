@@ -73,22 +73,25 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
         for (auto li = 0U; li < numTaxa; ++li) {
             mt::Node * leaf = tree.GetLeaf(li);
             assert(leaf);
+            std::cerr << "Number of chars in this partition: " << rawMat[1].size() << '\n';
             leaf->SetData(partIndex, (void *) partMat.GetLeafCharacters(partIndex, li));
-            leaf->SetWork(partIndex, (void *) new mt::LeafWork(rawMat.size(),
+            leaf->SetWork(partIndex, (void *) new mt::LeafWork(rawMat[1].size(),
                                                                static_cast<unsigned>(cs2pi.size()),
                                                                currPartNumStates,
                                                                numRateCats));
         }
+
         for (auto li = numTaxa; li < numNodes; ++ li) {
             mt::Node * nd = tree.GetNode(li);
             assert(nd);
-            nd->SetWork(partIndex, (void *) new mt::InternalNodeWork(rawMat.size(),
+            nd->SetWork(partIndex, (void *) new mt::InternalNodeWork(rawMat[1].size(),
                                                                      currPartNumStates,
                                                                      numRateCats));
         }
 
         ++partIndex;
     }
+    //exit(1);
 }
 
 MTInstance::~MTInstance() {

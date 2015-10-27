@@ -3,20 +3,32 @@
 #include "mt_likelihood.h"
 #include "mt_tree_traversal.h"
 namespace mt {
-double optimizeSingleBranchLength(MTInstance & instance, Arc & arc, double prevLnL);
+double maximizeScoreForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
-double optimizeSingleBranchLength(MTInstance & instance, Arc & arc, double ) {
-    auto & tree = instance.tree;
-    arc.SetEdgeLen(0.0);
-    double zeroBrLenLnL = ScoreTree(instance.partMat, tree, instance);
-    arc.SetEdgeLen(100);
-    double saturatedBrLenLnL = ScoreTree(instance.partMat, tree, instance);
-    arc.SetEdgeLen(0.05);
-    double ptZeroFiveBrLenLnL = ScoreTree(instance.partMat, tree, instance);
-    std::cerr << "   nu = 0.000 ===> lnL = " << zeroBrLenLnL << '\n';
-    std::cerr << "   nu = 0.050 ===> lnL = " << ptZeroFiveBrLenLnL << '\n';
-    std::cerr << "   nu = 100.0 ===> lnL = " << saturatedBrLenLnL << '\n';
-    return ptZeroFiveBrLenLnL;
+
+double maximizeScoreForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
+    auto brLenScorer = [&] (double nu) {
+        const double prev = arc.GetEdgeLen();
+        arc.SetEdgeLen(nu);
+        double lnL = ScoreTree(instance.partMat, instance.tree, instance);
+        arc.SetEdgeLen(prev);
+        return lnL;
+    };
+
+    const double tiny = 0.001;
+    const double tinyBrLenLnL = brLenScorer(tiny);
+    const double mid = 0.05;
+    const double midBrLenLnL = brLenScorer(mid);
+    const double large = 1.0;
+    const double largeBrLenLnL = brLenScorer(large);
+    double optBrLen = mid;
+    double optBrLenLnL = midBrLenLnL;
+
+    std::cerr << "   nu = " << tiny << " ===> lnL = " << tinyBrLenLnL << '\n';
+    std::cerr << "   nu = " << mid << " ===> lnL = " << midBrLenLnL << '\n';
+    std::cerr << "   nu = " << large << " ===> lnL = " << largeBrLenLnL << '\n';
+    arc.SetEdgeLen(optBrLen);
+    return optBrLenLnL;
 }
 
 double optimizeAllBranchLengths(MTInstance &instance) {
@@ -32,7 +44,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();
         do {
-            currLnL = optimizeSingleBranchLength(instance, arc, currLnL);
+            currLnL = maximizeScoreForBrLen(instance, arc, currLnL);
             arc = poTrav.next();
         } while(arc.toNode);
         const auto thisRoundImprovement = currLnL - beforeThisRound;

@@ -4,9 +4,6 @@
 #include "mt_data.h"
 namespace mt {
 
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, ModelVec models);
-double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model);
-
 class ArcIterator {
     public:
         ArcIterator()

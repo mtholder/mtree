@@ -7,6 +7,7 @@ noinst_HEADERS = \
 	mt_char_model.h \
 	mt_data.h \
 	mt_log.h \
+	mt_likelihood.h \
 	mt_ini_options.h \
 	mt_optimize_branches.h \
 	mt_tree.h \
@@ -25,9 +26,12 @@ mtree_SOURCES = \
 	INIReader.cpp \
 	pattern_class.cpp \
 	parsimony.cpp \
+	mt_analysis_ui.cpp \
 	mt_data.cpp \
 	mt_instance.cpp \
+	mt_optimize_branches.cpp \
 	mt_opt_model.cpp \
+	mt_tree.cpp \
 	search.cpp
 
 mtree_LDADD =  $(LDADD) @MTREE_LIBS@

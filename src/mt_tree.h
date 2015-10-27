@@ -110,6 +110,7 @@ class Node {
         void * GetData(unsigned i) {
             return data[i];
         }
+        void write(std::ostream & out);
         Node * parent;
         Node * leftChild;
         Node * rightSib;
@@ -154,6 +155,11 @@ class Tree {
                 }
             }
         }
+        void write(std::ostream & out) const {
+            root->write(out);
+            out << ";\n";
+        }
+
     private:
         std::vector<Node> nodes;
         Node * root;

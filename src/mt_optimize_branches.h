@@ -3,8 +3,7 @@
 namespace mt {
 
 class MTInstance;
-void optimizeAllBranchLengths(MTInstance &cm);
-
+double optimizeAllBranchLengths(MTInstance &cm);
 
 } // namespace
 #endif

@@ -3,6 +3,7 @@
 #include "mt_data.h"
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
+#include "mt_likelihood.h"
 #include <vector>
 #include <cmath>
 

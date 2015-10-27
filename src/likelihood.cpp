@@ -2,13 +2,14 @@
 #include "mt_tree_traversal.h"
 #include "mt_char_model.h"
 #include "mt_log.h"
+#include "mt_likelihood.h"
 #include "mt_data.h"
-#include "search.h"
+#include "mt_instance.h"
 #include <algorithm>
 using namespace std;
 namespace mt {
 void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n);
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance);
+
 
 void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n) {
     for (auto i = 0U; i < n; ++i) {
@@ -251,33 +252,3 @@ double MkParsInfMissingModel::sumLnL(const double *cla,
 
 } // namespace
 
-#include "mt_instance.h"
-
-namespace mt {
-
-
-void doAnalysis(ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
-    if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
-        if (os) {
-            *os << "lnL = " << lnL << "\n";
-        }
-    } else if (action == OPTIMIZE_BR_LEN) {
-        const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
-        if (os) {
-            *os << "lnL before brlen optimitization = " << lnL << "\n";
-        }
-    } else if (action == TREE_SEARCH) {
-      //int steps = 10;
-      double startL = ScoreTree(instance.partMat, instance.tree, instance);
-      *os << "Starting likelihood = " << startL << "\n";
-      Node * p = instance.tree.GetLeaf(4)->parent->parent;
-      mtreeTestSPR (instance, p, 2, startL);
-      double endL = ScoreTree(instance.partMat, instance.tree, instance);
-      *os << "Likelihood after subtree removed = " << endL << "\n";
-    //  performSearch(instance, steps, instance.tree);
-    }
-}
-
-
-} //namespace

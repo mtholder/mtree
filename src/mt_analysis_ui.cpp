@@ -2,10 +2,9 @@
 #include "mt_optimize_branches.h"
 #include "mt_likelihood.h"
 #include "search.h"
-
 #include <iostream>
-namespace mt {
 
+namespace mt {
 
 void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     if (action == SCORE_ACTION) {

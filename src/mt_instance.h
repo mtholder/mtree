@@ -15,7 +15,8 @@ enum ProcessActionsEnum {
     SCORE_ACTION=0,
     TREE_SEARCH=1,
     OPTIMIZE_PARS=2,
-    OPTIMIZE_BR_LEN=3
+    OPTIMIZE_BR_LEN=3,
+    FULL_OPTIMIZE = 4
 };
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;

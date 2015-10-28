@@ -33,6 +33,19 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
       double endlnL = ScoreTree(instance.partMat, instance.tree, instance);
       *os << "lnL before param optimization: " << startlnL << "\n";
       *os << "lnL after param optimization: " << endlnL << "\n";
+    } else if (action == FULL_OPTIMIZE) {
+      double prevlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double startlnL = prevlnL;
+      double currlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double lnLEpsilon = 0.1;
+      do {
+        prevlnL = ScoreTree(instance.partMat, instance.tree, instance);
+        optimizeModel(instance,.1);
+        currlnL = optimizeAllBranchLengths(instance);
+      } while(fabs(prevlnL - currlnL) > lnLEpsilon);
+      double endlnL = currlnL;
+      *os << "lnL before full optimization = " << startlnL << "\n";
+      *os << "lnL after full optimization = " << endlnL << "\n";
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance);

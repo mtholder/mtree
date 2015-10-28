@@ -261,7 +261,7 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value,
   }
   instance.likelihoods[model] = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model),model);
   result = instance.likelihoods[model];
-  _DEBUG_VAL(result);
+  //_DEBUG_VAL(result);
   instance.dirtyFlags[model] = true;
 }
 
@@ -283,10 +283,15 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
 
   e = d = 0.0;
 
-  a = std::min(cx,ax),
-  b = std::max(cx,ax),
-  x = bx, w = bx, v = bx,
-  fw = fb, fv = fb, fx = fb;
+  a = std::min(cx,ax);
+  b = std::max(cx,ax);
+  x = bx;
+  w = bx;
+  v = bx;
+
+  fw = -fb; // negate to maximize
+  fv = -fb;
+  fx = -fb;
 
   assert(a >= lowerBound && a <= upperBound);
   assert(b >= lowerBound && b <= upperBound);
@@ -297,7 +302,7 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
   // core iteration
   for (iter = 0; iter < MAX_ITERS; iter++) {
 
-    //std::cerr << "Brent iteration #: " << iter << "\n";
+    std::cerr << "Brent iteration #: " << iter << "\n";
     if (converged)
       break; //MTH changed from return
 
@@ -349,7 +354,7 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
 
 
   mtEvaluateChange(instance, rateNumber, u, fu, allConverged, paramType, model);
-
+  fu = -fu; // negate to maximize
 
   if(!converged) {
      if(fu <= fx) {
@@ -741,7 +746,7 @@ static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon
 // "modOpt" in optimizeModel.c in PLL
 // for now only optimizes branch lengths, alpha params, and rates
 void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
-  std::cerr << "Beginning optimization\n";
+  //std::cerr << "Beginning optimization\n";
   initParams(instance);
   double inputLikelihood, currentLikelihood, modelEpsilon;
 

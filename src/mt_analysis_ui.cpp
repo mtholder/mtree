@@ -21,15 +21,18 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
         const double afterLnL = optimizeAllBranchLengths(instance);
         const double diff = afterLnL - beforelnL;
         if (os) {
+            *os << "lnL before brlen optimization = " << beforelnL << "\n";
             *os << "lnL after brlen optimization = " << afterLnL << "\n";
             *os << "Change in lnL = " << diff << "\n";
             instance.tree.write(*os);
         }
 
     } else if (action == OPTIMIZE_PARS) {
-      double startL = ScoreTree(instance.partMat, instance.tree, instance);
+      double startlnL = ScoreTree(instance.partMat, instance.tree, instance);
       optimizeModel(instance,.1);
-      double endL = ScoreTree(instance.partMat, instance.tree, instance);
+      double endlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      *os << "lnL before param optimization: " << startlnL << "\n";
+      *os << "lnL after param optimization: " << endlnL << "\n";
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance);

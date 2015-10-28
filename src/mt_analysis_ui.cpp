@@ -9,12 +9,12 @@ namespace mt {
 
 void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
     if (action == SCORE_ACTION) {
-        const double lnL = ScoreTree(instance.partMat, instance.tree, instance);
+        const double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
         if (os) {
             *os << "lnL = " << lnL << "\n";
         }
     } else if (action == OPTIMIZE_BR_LEN) {
-        const double beforelnL = ScoreTree(instance.partMat, instance.tree, instance);
+        const double beforelnL = ScoreTree(instance.partMat, instance.tree, instance, true);
         if (os) {
             *os << "lnL before brlen optimization = " << beforelnL << "\n";
         }
@@ -28,18 +28,18 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
         }
 
     } else if (action == OPTIMIZE_PARS) {
-      double startlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double startlnL = ScoreTree(instance.partMat, instance.tree, instance, true);
       optimizeModel(instance,.1);
-      double endlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double endlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "lnL before param optimization: " << startlnL << "\n";
       *os << "lnL after param optimization: " << endlnL << "\n";
     } else if (action == FULL_OPTIMIZE) {
-      double prevlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double prevlnL = ScoreTree(instance.partMat, instance.tree, instance, true);
       double startlnL = prevlnL;
-      double currlnL = ScoreTree(instance.partMat, instance.tree, instance);
+      double currlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
       double lnLEpsilon = 0.1;
       do {
-        prevlnL = ScoreTree(instance.partMat, instance.tree, instance);
+        prevlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
         optimizeModel(instance,.1);
         currlnL = optimizeAllBranchLengths(instance);
       } while(fabs(prevlnL - currlnL) > lnLEpsilon);
@@ -48,11 +48,11 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
       *os << "lnL after full optimization = " << endlnL << "\n";
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
-      double startL = ScoreTree(instance.partMat, instance.tree, instance);
+      double startL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Starting likelihood = " << startL << "\n";
       Node * p = instance.tree.GetLeaf(4)->parent->parent;
       mtreeTestSPR (instance, p, 2, startL);
-      double endL = ScoreTree(instance.partMat, instance.tree, instance);
+      double endL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree removed = " << endL << "\n";
     //  performSearch(instance, steps, instance.tree);
     }

@@ -14,6 +14,32 @@ inline void _debug_vecl(const char * file, const char * func, int lineno, const 
     }
     std::cerr << std::endl;
 }
+
+template<typename T>
+inline void _debug_last_val(const char * l, const T &v) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
+    std::cerr << " " << l << " = " << v << std::endl;
+}
+
+template<typename T>
+inline void _debug_mid_val(const char * l, const T &v) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
+    std::cerr << " " << l << " = " << v << " | ";
+}
+
+template<typename T>
+inline void _debug_first_val(const char * file, const char * func, int lineno, const char * l, const T &v) {
+    if (getenv("DEBUG_MT_TREE") == nullptr) {
+        return;
+    }
+    std::cerr << file << " line " << lineno << " func " << func << " " << l << " = " << v << " | ";
+}
+
+
 template<typename T>
 inline void _debug_val(const char * file, const char * func, int lineno, const char * l, const T &v) {
     if (getenv("DEBUG_MT_TREE") == nullptr) {
@@ -49,6 +75,9 @@ inline void _debug_cla(const char * file,
 
 #define _DEBUG_VEC(a) (_debug_vecl(__FILE__, __FUNCTION__, __LINE__, "" #a "", a))
 #define _DEBUG_VAL(a) (_debug_val(__FILE__, __FUNCTION__, __LINE__, "" #a "", a))
+#define _DEBUG_FVAL(a) (_debug_first_val(__FILE__, __FUNCTION__, __LINE__, "" #a "", a))
+#define _DEBUG_MVAL(a) (_debug_mid_val("" #a "", a))
+#define _DEBUG_LVAL(a) (_debug_last_val("" #a "", a))
 #define _DEBUG_CLA(a, r, s, c) (_debug_cla(__FILE__, __FUNCTION__, __LINE__, "" #a "", a, r, s, c))
 
 #endif

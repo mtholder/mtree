@@ -7,7 +7,7 @@ class Tree;
 class MTInstance;
 class CharModel;
 
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance);
+double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance, bool forceRecalc);
 double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model);
 
 } // namespace mt

@@ -299,7 +299,7 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
 
     //std::cerr << "Brent iteration #: " << iter << "\n";
     if (converged)
-      return;
+      break; //MTH changed from return
 
     assert(a >= lowerBound && a <= upperBound);
     assert(b >= lowerBound && b <= upperBound);
@@ -346,7 +346,6 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
       assert(u >= lowerBound && u <= upperBound);
     //_DEBUG_VAL(xm);
     //std::cerr << "Current alpha: " << instance.GetCharModel(model).GetAlpha() << "\n";
-    }
 
 
   mtEvaluateChange(instance, rateNumber, u, fu, allConverged, paramType, model);
@@ -389,6 +388,7 @@ void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, d
 
         xmin = x;
       }
+  }
 }
 
 // Bracketing Function for Brent's Algorithm

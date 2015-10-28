@@ -71,6 +71,7 @@ val_lnl_t maximizeScoreForBracketed(FUN fun,
                                     val_lnl_t lower,
                                     val_lnl_t mid,
                                     val_lnl_t upper) {
+    _DEBUG_FVAL(lower.first); _DEBUG_MVAL(lower.second); _DEBUG_MVAL(mid.first); _DEBUG_MVAL(mid.second); _DEBUG_MVAL(upper.first); _DEBUG_LVAL(upper.second);
     val_lnl_t best = mid;
     const double lowerBound = 0.0;
     const double upperBound = MAX_BR_LEN;
@@ -216,6 +217,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
             }
         }
     }
+    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
     arc.SetEdgeLen(soln.first);
     return soln.second;
 }

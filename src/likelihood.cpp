@@ -74,12 +74,10 @@ double ScoreTree(PartitionedMatrix &partMat,
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
     //_DEBUG_VAL(instance.dirtyFlags[partIndex]);
     if(forceRecalc || instance.dirtyFlags[partIndex]) {
-      result += ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
-    } else {
-      result += instance.likelihoods[partIndex];
+      instance.likelihoods[partIndex] = ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
     }
-    //_DEBUG_VAL(partIndex);
-    _DEBUG_VAL(result);
+    result += instance.likelihoods[partIndex];
+    _DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
   }
   return result;
 }

@@ -16,12 +16,12 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
     } else if (action == OPTIMIZE_BR_LEN) {
         const double beforelnL = ScoreTree(instance.partMat, instance.tree, instance);
         if (os) {
-            *os << "lnL before brlen optimitization = " << beforelnL << "\n";
+            *os << "lnL before brlen optimization = " << beforelnL << "\n";
         }
         const double afterLnL = optimizeAllBranchLengths(instance);
         const double diff = afterLnL - beforelnL;
         if (os) {
-            *os << "lnL after brlen optimitization = " << afterLnL << "\n";
+            *os << "lnL after brlen optimization = " << afterLnL << "\n";
             *os << "Change in lnL = " << diff << "\n";
             instance.tree.write(*os);
         }

@@ -176,9 +176,9 @@ class InternalNodeWork {
              claAtParFromNd(numStates*numRates*numChars),
              claAtParFromPar(numStates*numRates*numChars),
              nChars(numChars) {
-            _DEBUG_VAL(numChars);
-            _DEBUG_VAL(numStates);
-            _DEBUG_VAL(numRates);
+            //_DEBUG_VAL(numChars);
+            //_DEBUG_VAL(numStates);
+            //_DEBUG_VAL(numRates);
             //_DEBUG_VEC(claAtNdFromNd);
             //_DEBUG_VEC(claAtNdFromPar);
             //_DEBUG_VEC(claAtParFromNd);
@@ -199,8 +199,8 @@ class LeafWork: public InternalNodeWork {
         LeafWork(std::size_t numChars, unsigned numStateCodes, unsigned numStates, unsigned numRates)
             :InternalNodeWork(numChars, numStates, numRates),
             summed(numStateCodes*numStates*numRates){
-                _DEBUG_VAL(numStateCodes);
-                _DEBUG_VEC(summed);
+                //_DEBUG_VAL(numStateCodes);
+                //_DEBUG_VEC(summed);
             }
         double * GetCLAElements() {
             return &(summed[0]);

@@ -167,6 +167,7 @@ void NCL2MT::processTree(std::ostream *os,
                               nxsTree,
                               md);
     mt::ProcessActionsEnum action = configureBasedOnINI(mtInstance, iniReader, std::cerr);
+    action = OPTIMIZE_PARS;
     doAnalysis(os, mtInstance, action);
 }
 

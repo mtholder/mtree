@@ -9,6 +9,7 @@ noinst_HEADERS = \
 	mt_log.h \
 	mt_likelihood.h \
 	mt_ini_options.h \
+	mt_opt_model.h \
 	mt_optimize_branches.h \
 	mt_tree.h \
 	mt_tree_traversal.h \

@@ -30,7 +30,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   assert(c.toNode);
   std::size_t numChars =  c.GetNumChars(model);
   while (c.toNode) {
-    _DEBUG_VAL(c.fromNode->number);
+    //_DEBUG_VAL(c.fromNode->number);
     const double edgeLen = c.GetEdgeLen();
     if (c.IsFromLeaf()) {
       const LeafCharacterVector * data = c.GetFromNdData(model);
@@ -39,7 +39,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
       double * cla = c.GetFromNdCLA(model, true);
       cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
 
-      _DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      //_DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
     } else {
       vector<const double *> p = c.GetPrevCLAs(model);
       double * beforeArc = c.GetFromNdCLA(model, false);
@@ -47,8 +47,8 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
       double * afterArc = c.GetFromNdCLA(model, true);
       cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
 
-      _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-      _DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      //_DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
     }
       c = pnit.next();
   }
@@ -57,8 +57,8 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   double * beforeArc = c.GetFromNdCLA(model, false); // not valid arc, but this should work
   pruneProductStep(p, beforeArc, c.GetLenCLA(model));
 
-  _DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-  _DEBUG_VEC(partMat.patternWeights);
+  //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+  //_DEBUG_VEC(partMat.patternWeights);
 
   return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
 }
@@ -66,16 +66,16 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
 // Calculates Likelihood score for given tree and for all partitions
 double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance) {
   double result = 0.0;
-  _DEBUG_VAL(result);
+  //_DEBUG_VAL(result);
    unsigned numParts = static_cast<unsigned>(partMat.GetNumPartitions());
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
-    _DEBUG_VAL(instance.dirtyFlags[partIndex]);
+    //_DEBUG_VAL(instance.dirtyFlags[partIndex]);
     if(instance.dirtyFlags[partIndex]) {
       result += ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
     } else {
       result += instance.likelihoods[partIndex];
     }
-    _DEBUG_VAL(partIndex);
+    //_DEBUG_VAL(partIndex);
     _DEBUG_VAL(result);
   }
   return result;
@@ -122,7 +122,7 @@ void CharModel::fillLeafWork(const LeafCharacterVector *data,
         }
         summedLoc += lenCLAWord;
     }
-    _DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
+    //_DEBUG_CLA(claElements, nRateCats, nStates, numStateCodes);
     /* fill in the cla vector by copying sums */
     for (std::size_t ci = 0U; ci < numChars; ++ci) {
         const char_state_t sc = data->GetCharVec()[ci];
@@ -165,11 +165,11 @@ double CharModel::sumLnL(const double *cla,
                 rateL += cla[ri*nStates + fromState]*stateFreq[fromState];
             }
             charL += rateL*rateCatProb[ri];
-            _DEBUG_VAL(charL);
-            _DEBUG_VAL(log(charL));
+            //_DEBUG_VAL(charL);
+            //_DEBUG_VAL(log(charL));
         }
         lnL += patternWeight[i]*log(charL);
-        _DEBUG_VAL(lnL);
+        //_DEBUG_VAL(lnL);
         cla += lenCLAWord;
     }
     return lnL;
@@ -251,4 +251,3 @@ double MkParsInfMissingModel::sumLnL(const double *cla,
 }
 
 } // namespace
-

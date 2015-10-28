@@ -12,19 +12,19 @@ LeafCharacterVector::LeafCharacterVector(
         const auto c = inp[i];
         if (getenv("DEBUG_MT_TREE") != nullptr) {
             if (c >= stateToPrimStates->size()) {
-                std::cerr << " " << c << " is too big!\n";
+                //std::cerr << " " << c << " is too big!\n";
             } else {
                 const auto & sc =  stateToPrimStates->GetStateCodes(c);
-                std::cerr << " " << c << " ==> {";
+                //std::cerr << " " << c << " ==> {";
                 for (auto s : sc) {
-                    std::cerr << s << ", ";
+                    //std::cerr << s << ", ";
                 }
-                std::cerr << "}\n";
+                //std::cerr << "}\n";
             }
         }
         charVec[i] = inp[i];
     }
-    _DEBUG_VEC(charVec);
+    //_DEBUG_VEC(charVec);
 }
 
 PartitionedMatrix::PartitionedMatrix(
@@ -58,11 +58,11 @@ void PartitionedMatrix::fillPartition(unsigned partIndex,
     for (auto i = 0U; i < nTaxa; ++i) {
         const auto & row = mat[i];
         if (getenv("DEBUG_MT_TREE") != nullptr) {
-            std::cerr << "  taxon " << i << " data:  ";
+            //std::cerr << "  taxon " << i << " data:  ";
             for (auto c : row) {
-                std::cerr << c << " ";
+                //std::cerr << c << " ";
             }
-            std::cerr << "\n";
+            //std::cerr << "\n";
         }
         assert(nCharsVec[partIndex] == row.size());
         part[i] = LeafCharacterVector(&(row[0]), nCharsVec[partIndex], cs2pi);
@@ -70,4 +70,3 @@ void PartitionedMatrix::fillPartition(unsigned partIndex,
 }
 
 } // namespace mt
-

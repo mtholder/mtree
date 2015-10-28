@@ -2,6 +2,7 @@
 #include "mt_optimize_branches.h"
 #include "mt_likelihood.h"
 #include "mt_tree_traversal.h"
+#include "mt_log.h"
 namespace mt {
 
 typedef std::pair<double, double> val_lnl_t;
@@ -178,35 +179,35 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
-    std::cerr << "maximizeLnLForBrLen for arc: " << arc.fromNode->GetNumber() << " -> " << arc.toNode->GetNumber() << " ...\n";
+    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_LVAL(arc.toNode->GetNumber());
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
         double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
-        std::cerr << "  brLenScorer lambda for arc: " << arc.fromNode->GetNumber() << " -> " << arc.toNode->GetNumber() << " nu = " << nu << "  lnL = " << lnL << '\n';
+        _DEBUG_FVAL(nu); _DEBUG_LVAL(lnL);
         arc.SetEdgeLen(prev);
         return lnL;
     };
     val_lnl_t soln{arc.GetEdgeLen(), prevScore};
     const val_lnl_t tiny{0.001, brLenScorer(0.001)};
     const val_lnl_t small{0.01, brLenScorer(0.01)};
-    std::cerr << "   nu = " << tiny.first << " ===> lnL = " << tiny.second << '\n';
-    std::cerr << "   nu = " << small.first << " ===> lnL = " << small.second << '\n';
+    _DEBUG_FVAL(tiny.first); _DEBUG_LVAL(tiny.second);
+    _DEBUG_FVAL(small.first); _DEBUG_LVAL(small.second);
     if (tiny.second > small.second) {
         soln = maximizeScoreForSmallBrLen(brLenScorer, tiny, small);
     } else {
         const val_lnl_t mid{0.05, brLenScorer(0.05)};
-        std::cerr << "   nu = " << mid.first << " ===> lnL = " << mid.second << '\n';
+        _DEBUG_FVAL(mid.first); _DEBUG_LVAL(mid.second);
         if (small.second > mid.second) {
             soln = maximizeScoreForBracketed(brLenScorer, tiny, small, mid);
         } else {
             const val_lnl_t large{1.00, brLenScorer(1.00)};
-            std::cerr << "   nu = " << large.first << " ===> lnL = " << large.second << '\n';
+            _DEBUG_FVAL(large.first); _DEBUG_LVAL(large.second);
             if (mid.second >= large.second) {
                 soln = maximizeScoreForBracketed(brLenScorer, small, mid, large);
             } else {
                 const val_lnl_t huge{100.00, brLenScorer(100.00)};
-                std::cerr << "   nu = " << huge.first << " ===> lnL = " << huge.second << '\n';
+                _DEBUG_FVAL(huge.first); _DEBUG_LVAL(huge.second);
                 if (large.second > huge.second) {
                     soln = maximizeScoreForBracketed(brLenScorer, mid, large, huge);
                 } else {
@@ -236,11 +237,11 @@ double optimizeAllBranchLengths(MTInstance &instance) {
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
             assert(fabs(thisArcDiff) >= 0.0);
-            std::cerr << "   next Arc optimizeAllBranchLengths tsi = " << tsi << "  currLnL = " << currLnL << " prevLnL = " << prevLnL << '\n';
+            _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(prevLnL);
             arc = poTrav.next();
         } while(arc.toNode);
         const auto thisRoundImprovement = currLnL - beforeThisRound;
-        std::cerr << "optimizeAllBranchLengths tsi = " << tsi << "  currLnL = " << currLnL << " thisRoundImprovement = " << thisRoundImprovement << '\n';
+        _DEBUG_FVAL(tsi); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(thisRoundImprovement);
         if (thisRoundImprovement < tolForSweep) {
             return currLnL;
         }

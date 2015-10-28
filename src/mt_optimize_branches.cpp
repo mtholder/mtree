@@ -269,7 +269,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
             const auto prevLnL = currLnL;
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
-            assert(fabs(thisArcDiff) >= 0.0);
+            assert(thisArcDiff >= 0.0);
             _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(prevLnL);
             arc = poTrav.next();
         } while(arc.toNode);

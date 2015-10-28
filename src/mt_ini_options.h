@@ -47,6 +47,7 @@ class INIValueChecker {
         INIValueChecker() {
             actionAction2Enum["LScore"] = SCORE_ACTION;
             actionAction2Enum["OptimizeBranchLengths"] = OPTIMIZE_BR_LEN;
+            actionAction2Enum["OptimizeModel"] = OPTIMIZE_PARS;
         }
 
         bool isLegalActionAction(const std::string & value) const {

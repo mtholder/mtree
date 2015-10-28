@@ -761,7 +761,7 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
     currentLikelihood = instance.curLikelihood;
 
     mtOptAlphas(instance, instance.numPartitions, modelEpsilon);
-    instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance);
+    instance.curLikelihood = ScoreTree(instance.partMat, instance.tree, instance, false);
     MAX_ITS--;
 
   } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon && MAX_ITS);

@@ -114,11 +114,13 @@ class Node {
         Node * parent;
         Node * leftChild;
         Node * rightSib;
+    private:
         unsigned number;
         double edgeLen;
         double vEdgeLen;
         std::vector<void *> data;
         std::vector<void *> work;
+        friend class Arc;
 };
 class Tree {
     public:
@@ -127,7 +129,7 @@ class Tree {
         }
         void SetRoot(Node *r) {
             assert(r);
-            assert(r->number >= this->GetNumLeaves());
+            assert(r->GetNumber() >= this->GetNumLeaves());
             this->root = r;
         }
         Node * GetRoot() {
@@ -324,6 +326,7 @@ inline std::vector<const double *> GetSurroundingCLA(Node * fromNode, Node * avo
     }
     return pcla;
 }
+
 inline std::vector<const double *> Arc::GetPrevCLAs(unsigned partIndex) {
     std::vector<const double *> pcla;
     if (fromIsChild) {

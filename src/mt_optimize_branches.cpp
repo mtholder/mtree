@@ -77,8 +77,6 @@ val_lnl_t maximizeScoreForBracketed(FUN fun,
     const double TOL = 0.0001; // hard-coded. TEMP should be runtime
     const double BRENT_Z_EPSILON  = 1.e-5;
     const double BRENT_VAR_VALUE = 0.3819660;
-    //initialize variables
-    bool allConverged = false;
     bool converged = false;
     double e = 0.0;
     double d = 0.0;
@@ -180,11 +178,12 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
-    std::cerr << "maximizeLnLForBrLen for node terminating with " << arc.toNode->GetNumber() << ' ...\n';
+    std::cerr << "maximizeLnLForBrLen for arc: " << arc.fromNode->GetNumber() << " -> " << arc.toNode->GetNumber() << " ...\n";
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
-        double lnL = ScoreTree(instance.partMat, instance.tree, instance);
+        double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
+        std::cerr << "  brLenScorer lambda for arc: " << arc.fromNode->GetNumber() << " -> " << arc.toNode->GetNumber() << " nu = " << nu << "  lnL = " << lnL << '\n';
         arc.SetEdgeLen(prev);
         return lnL;
     };
@@ -226,7 +225,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
     auto & tree = instance.tree;
     auto rootPtr = tree.GetRoot();
     assert(rootPtr);
-    const double beforeOpt = ScoreTree(instance.partMat, tree, instance);
+    const double beforeOpt = ScoreTree(instance.partMat, tree, instance, true);
     double currLnL = beforeOpt;
     for (auto tsi = 0U; tsi < maxNumTreeSweeps; ++tsi) {
         const auto beforeThisRound = currLnL;

@@ -64,13 +64,16 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
 }
 
 // Calculates Likelihood score for given tree and for all partitions
-double ScoreTree(PartitionedMatrix &partMat, Tree &tree, MTInstance &instance) {
+double ScoreTree(PartitionedMatrix &partMat,
+                 Tree &tree,
+                 MTInstance &instance, 
+                 bool forceRecalc) {
   double result = 0.0;
   //_DEBUG_VAL(result);
    unsigned numParts = static_cast<unsigned>(partMat.GetNumPartitions());
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
     //_DEBUG_VAL(instance.dirtyFlags[partIndex]);
-    if(instance.dirtyFlags[partIndex]) {
+    if(forceRecalc || instance.dirtyFlags[partIndex]) {
       result += ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
     } else {
       result += instance.likelihoods[partIndex];

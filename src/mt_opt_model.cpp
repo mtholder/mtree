@@ -261,7 +261,7 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value,
   }
   instance.likelihoods[model] = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model),model);
   result = instance.likelihoods[model];
-  //_DEBUG_VAL(result);
+  _DEBUG_VAL(result);
   instance.dirtyFlags[model] = true;
 }
 
@@ -546,15 +546,15 @@ int mtBrakGeneric(MTInstance &instance, double &param, double &ax, double &bx, d
                         }
                         }
                      }
-                   _DEBUG_VAL(cx);
+                   //_DEBUG_VAL(cx);
                    break;
                  case 1:
                    endState = 0;
-                   _DEBUG_VAL(cx);
+                   //_DEBUG_VAL(cx);
                    break;
                  case 2:
                    endState = 3;
-                   _DEBUG_VAL(cx);
+                   //_DEBUG_VAL(cx);
                    break;
                  default:
                    assert(0);

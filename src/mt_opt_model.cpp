@@ -285,7 +285,7 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
   for (iter = 0; iter < MAX_ITERS; iter++) {
 
     if (converged)
-      return;
+      break; //MTH changed from return
 
     assert(a >= lowerBound && a <= upperBound);
     assert(b >= lowerBound && b <= upperBound);
@@ -330,7 +330,6 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
       }
     if (!converged)
       assert(u >= lowerBound && u <= upperBound);
-    }
 
 
   mtEvaluateChange(instance, rateNumber, u, fu, allConverged, paramType, model);
@@ -371,6 +370,7 @@ static void mtBrentGeneric (MTInstance &instance, double ax, double bx, double c
         assert(w >= lowerBound && w <= upperBound);
         assert(u >= lowerBound && u <= upperBound);
       }
+  }
 }
 
 // Bracketing Function for Brent's Algorithm

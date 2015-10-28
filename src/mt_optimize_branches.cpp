@@ -180,6 +180,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
+    std::cerr << "maximizeLnLForBrLen for node terminating with " << arc.toNode->GetNumber() << ' ...\n';
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);

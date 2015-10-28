@@ -110,7 +110,7 @@ class Node {
         void * GetData(unsigned i) {
             return data[i];
         }
-        void write(std::ostream & out);
+        void write(std::ostream & out) const;
         Node * parent;
         Node * leftChild;
         Node * rightSib;

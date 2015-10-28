@@ -72,7 +72,7 @@ val_lnl_t maximizeScoreForBracketed(FUN fun,
                                     val_lnl_t upper) {
     val_lnl_t best = mid;
     const double lowerBound = 0.0;
-    const double upperBound = 0.0;
+    const double upperBound = MAX_BR_LEN;
     const unsigned MAX_NUM_ITER = 100;
     const double TOL = 0.0001; // hard-coded. TEMP should be runtime
     const double BRENT_Z_EPSILON  = 1.e-5;

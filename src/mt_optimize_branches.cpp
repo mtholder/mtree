@@ -65,12 +65,42 @@ val_lnl_t maximizeScoreForLargeBrLen(FUN fun, val_lnl_t curr, val_lnl_t lower) {
     return best;
 }
 
-// Implementation of Brent's Method for One-Dimensional Parameter Optimization, based on brentGeneric in PLL
+// adapted from https://en.wikipedia.org/wiki/Golden_section_search
+const double GOLDEN_R = 0.6180339887498949;
+const double TOL = 0.0001; // hard-coded. TEMP should be runtime
+
 template<typename FUN>
 val_lnl_t maximizeScoreForBracketed(FUN fun,
-                                    val_lnl_t lower,
-                                    val_lnl_t mid,
-                                    val_lnl_t upper) {
+                                    val_lnl_t aPair,
+                                    val_lnl_t ,
+                                    val_lnl_t bPair) {
+    double a = aPair.first;
+    double b = bPair.first;
+    double range = b - a;
+    double c = b - GOLDEN_R*range;
+    double d = a + GOLDEN_R*range;
+    while (fabs(c - d) > TOL) {
+        const double fc = -fun(c);
+        const double fd = -fun(d);
+        if (fc < fd) {
+            b = d;
+            d = c;
+            c = b - GOLDEN_R*(b - a);
+        } else {
+            a = c;
+            c = d;
+            d = a + GOLDEN_R*(b - a);
+        }
+    }
+    const double final = (a + b)/2.0;
+    return val_lnl_t{final, fun(final)};
+}
+
+// END of https://en.wikipedia.org/wiki/Golden_section_search
+
+
+// Implementation of Brent's Method for One-Dimensional Parameter Optimization, based on brentGeneric in PLL
+#if 0
     _DEBUG_FVAL(lower.first); _DEBUG_MVAL(lower.second); _DEBUG_MVAL(mid.first); _DEBUG_MVAL(mid.second); _DEBUG_MVAL(upper.first); _DEBUG_LVAL(upper.second);
     val_lnl_t best = mid;
     const double lowerBound = 0.0;
@@ -173,6 +203,7 @@ val_lnl_t maximizeScoreForBracketed(FUN fun,
     }
     return best;
 }
+#endif
 
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
@@ -238,7 +269,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
             const auto prevLnL = currLnL;
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
-            assert(fabs(thisArcDiff) >= 0.0);
+            assert(thisArcDiff >= 0.0);
             _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(prevLnL);
             arc = poTrav.next();
         } while(arc.toNode);

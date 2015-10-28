@@ -232,8 +232,10 @@ double optimizeAllBranchLengths(MTInstance &instance) {
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();
         do {
-            double prevLnL = currLnL;
+            const auto prevLnL = currLnL;
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
+            const auto thisArcDiff = currLnL - prevLnL;
+            assert(fabs(thisArcDiff) >= 0.0);
             std::cerr << "   next Arc optimizeAllBranchLengths tsi = " << tsi << "  currLnL = " << currLnL << " prevLnL = " << prevLnL << '\n';
             arc = poTrav.next();
         } while(arc.toNode);

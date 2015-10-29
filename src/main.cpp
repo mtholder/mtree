@@ -33,7 +33,7 @@ namespace mt {
                 const NxsSimpleTree & tree,
                 const ModelDescription & md,
                 ::INIReader & iniReader);
-            ProcessActionsEnum configureBasedOnINI(MTInstance &,
+            INIBasedSettings configureBasedOnINI(MTInstance &,
                                                    ::INIReader & iniReader,
                                                    std::ostream & err);
     };
@@ -81,14 +81,17 @@ bool preDataINICheck(INIReader & iniReader, std::ostream & err) {
 }
 /* end mtree INI checking */
 namespace mt {
-ProcessActionsEnum NCL2MT::configureBasedOnINI(MTInstance & , //mInstance,
+INIBasedSettings NCL2MT::configureBasedOnINI(MTInstance & , //mInstance,
                                                ::INIReader & iniReader,
                                                std::ostream & err) {
     INIValueChecker ivc;
+    INIBasedSettings ibs;
     std::string value = iniReader.Get("action", "action", "LScore");
-    ProcessActionsEnum action = ivc.parseActionAction(value);
+    ibs.action = ivc.parseActionAction(value);
+    value = iniReader.Get("model", "ascertainment", "None");
+    ibs.modelAsc = ivc.parseModelAscertainment(value);
     err.flush();
-    return action;
+    return ibs;
 }
 
 void NCL2MT::processTree(std::ostream *os,
@@ -166,8 +169,8 @@ void NCL2MT::processTree(std::ostream *os,
                               numStates2PatternIndexSet,
                               nxsTree,
                               md);
-    mt::ProcessActionsEnum action = configureBasedOnINI(mtInstance, iniReader, std::cerr);
-    doAnalysis(os, mtInstance, action);
+    mt::INIBasedSettings ibs = configureBasedOnINI(mtInstance, iniReader, std::cerr);
+    doAnalysis(os, mtInstance, ibs.action);
 }
 
 } // namespace mt

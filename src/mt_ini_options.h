@@ -5,6 +5,7 @@
 #include <cstring>
 #include <string>
 #include "mt_instance.h"
+#include "mt_model_description.h"
 namespace mt {
 struct CaseIMapComp {
     // slow but portable case insensitive < operator. Not locale sensitive!
@@ -42,6 +43,11 @@ class IllegalINIValueError: public std::runtime_error {
         }
 };
 
+class INIBasedSettings {
+    public:
+        ProcessActionsEnum action = SCORE_ACTION;
+        ModelDescription::AscBiasMode modelAsc = ModelDescription::NO_ASC_BIAS;
+};
 class INIValueChecker {
     public:
         INIValueChecker() {
@@ -49,6 +55,12 @@ class INIValueChecker {
             actionAction2Enum["OptimizeBranchLengths"] = OPTIMIZE_BR_LEN;
             actionAction2Enum["OptimizeModel"] = OPTIMIZE_PARS;
             actionAction2Enum["FullOptimization"] = FULL_OPTIMIZE;
+            //
+            modelAscertainment2Enum["None"] = ModelDescription::NO_ASC_BIAS;
+            modelAscertainment2Enum["VarOnly"] = ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS;
+            modelAscertainment2Enum["VarOnlyMissing"] = ModelDescription::VAR_ONLY_MISSING_ASC_BIAS;
+            modelAscertainment2Enum["ParsInfOnly"] = ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS;
+            modelAscertainment2Enum["ParsInfOnlyMissing"] = ModelDescription::PARS_ONLY_MISSING_ASC_BIAS;
         }
 
         bool isLegalActionAction(const std::string & value) const {
@@ -61,8 +73,16 @@ class INIValueChecker {
             }
             return it->second;
         }
+        ModelDescription::AscBiasMode parseModelAscertainment(const std::string & value) const {
+            auto it = modelAscertainment2Enum.find(value);
+            if (it == modelAscertainment2Enum.end()) {
+                throw IllegalINIValueError("model", "ascertainment", value);
+            }
+            return it->second;
+        }
     private:
         std::map<std::string, ProcessActionsEnum, CaseIMapComp> actionAction2Enum;
+        std::map<std::string, ModelDescription::AscBiasMode, CaseIMapComp> modelAscertainment2Enum;
 };
 class INIReader;
 bool iniSettingsAreLegal(INIReader &, const INIValueChecker &, std::ostream &err);

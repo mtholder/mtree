@@ -2,6 +2,7 @@
 #define __MT_INSTANCE_H__
 
 #include "mt_tree.h"
+#include "mt_model_description.h"
 #include "mt_char_model.h"
 #include "mt_data.h"
 
@@ -18,6 +19,7 @@ enum ProcessActionsEnum {
     OPTIMIZE_BR_LEN=3,
     FULL_OPTIMIZE = 4
 };
+
 struct OptimizationSettings {
     unsigned maxIterBrLenSmoothing;
     double brLenDiffThreshold;

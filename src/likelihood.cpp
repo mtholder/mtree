@@ -9,6 +9,8 @@
 using namespace std;
 namespace mt {
 void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n);
+void terminalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars);
+void internalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars);
 
 
 void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n) {
@@ -20,6 +22,54 @@ void pruneProductStep(const vector<const double *> & v, double * dest, std::size
     }
 }
 
+void terminalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars) {
+    const double edgeLen = c.GetEdgeLen();
+    const LeafCharacterVector * data = c.GetFromNdData(model);
+    LeafWork * lw = c.GetFromNdLeafWork(model);
+    double * claElements = lw->GetCLAElements();
+    double * cla = c.GetFromNdCLA(model, true);
+    cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
+    //_DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
+}
+
+void internalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars) {
+    const double edgeLen = c.GetEdgeLen();
+    vector<const double *> p = c.GetPrevCLAs(model);
+    double * beforeArc = c.GetFromNdCLA(model, false);
+    pruneProductStep(p, beforeArc, c.GetLenCLA(model));
+    double * afterArc = c.GetFromNdCLA(model, true);
+    cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
+
+    //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+    //_DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+}
+
+// Calculate likelihood for one partition for a tree
+double ScoreTreeForPartitionOneArcDown(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model, Arc dirtyArc) {
+  Node * virtRoot = tree.GetRoot();
+  virtRoot = virtRoot->leftChild->rightSib;
+  assert(dirtyArc.toNode);
+  const std::size_t numChars =  dirtyArc.GetNumChars(model);
+  while (dirtyArc.toNode) {
+    //_DEBUG_VAL(c.fromNode->number);
+    if (dirtyArc.IsFromLeaf()) {
+      terminalArcPruneCalc(dirtyArc, cm, model, numChars);
+    } else {
+      internalArcPruneCalc(dirtyArc, cm, model, numChars);
+    }
+    dirtyArc = Arc(dirtyArc.toNode, dirtyArc.toNode->parent);
+  }
+  // create the cla for the virtual root
+  vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, model);
+  double * beforeArc = dirtyArc.GetFromNdCLA(model, false); // not valid arc, but this should work
+  pruneProductStep(p, beforeArc, dirtyArc.GetLenCLA(model));
+
+  //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+  //_DEBUG_VEC(partMat.patternWeights);
+
+  return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
+}
+
 // Calculate likelihood for one partition for a tree
 double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model) {
   Node * virtRoot = tree.GetRoot();
@@ -28,29 +78,15 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   PostorderForNodeIterator pnit = postorder(virtRoot);
   Arc c = pnit.get();
   assert(c.toNode);
-  std::size_t numChars =  c.GetNumChars(model);
+  const std::size_t numChars =  c.GetNumChars(model);
   while (c.toNode) {
     //_DEBUG_VAL(c.fromNode->number);
-    const double edgeLen = c.GetEdgeLen();
     if (c.IsFromLeaf()) {
-      const LeafCharacterVector * data = c.GetFromNdData(model);
-      LeafWork * lw = c.GetFromNdLeafWork(model);
-      double * claElements = lw->GetCLAElements();
-      double * cla = c.GetFromNdCLA(model, true);
-      cm.fillLeafWork(data, claElements, cla, edgeLen, numChars);
-
-      //_DEBUG_CLA(cla, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      terminalArcPruneCalc(c, cm, model, numChars);
     } else {
-      vector<const double *> p = c.GetPrevCLAs(model);
-      double * beforeArc = c.GetFromNdCLA(model, false);
-      pruneProductStep(p, beforeArc, c.GetLenCLA(model));
-      double * afterArc = c.GetFromNdCLA(model, true);
-      cm.conditionOnSingleEdge(beforeArc, afterArc, edgeLen, numChars);
-
-      //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
-      //_DEBUG_CLA(afterArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
+      internalArcPruneCalc(c, cm, model, numChars);
     }
-      c = pnit.next();
+    c = pnit.next();
   }
   // create the cla for the virtual root
   vector<const double *> p = GetSurroundingCLA(virtRoot, nullptr, model);
@@ -74,8 +110,25 @@ double ScoreTree(PartitionedMatrix &partMat,
   for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
     //_DEBUG_VAL(instance.dirtyFlags[partIndex]);
     if(forceRecalc || instance.dirtyFlags[partIndex]) {
-      instance.likelihoods[partIndex] = ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
+      instance.likelihoods[partIndex] = ScoreTreeForPartition(partMat, tree, instance.GetCharModel(partIndex), partIndex);
     }
+    result += instance.likelihoods[partIndex];
+    //_DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
+  }
+  return result;
+}
+
+// Calculates Likelihood score for given tree and for all partitions
+double ScoreTreeOneArcDown(PartitionedMatrix &partMat,
+                 Tree &tree,
+                 MTInstance &instance, 
+                 Arc dirtyArc) {
+  double result = 0.0;
+  //_DEBUG_VAL(result);
+   unsigned numParts = static_cast<unsigned>(partMat.GetNumPartitions());
+  for(unsigned partIndex = 0; partIndex < numParts; partIndex++){
+    //_DEBUG_VAL(instance.dirtyFlags[partIndex]);
+    instance.likelihoods[partIndex] = ScoreTreeForPartitionOneArcDown(partMat, tree, instance.GetCharModel(partIndex), partIndex, dirtyArc);
     result += instance.likelihoods[partIndex];
     //_DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
   }

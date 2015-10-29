@@ -212,17 +212,28 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     //_DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_LVAL(arc.toNode->GetNumber());
+    val_lnl_t soln{arc.GetEdgeLen(), prevScore};
+    const val_lnl_t startingSoln = soln;
+    // The first scoring might need to sweep over the whole tree
+    const double tt = 0.001;
+    arc.SetEdgeLen(tt);
+    const double ttLnL = ScoreTree(instance.partMat, instance.tree, instance, true);
+    arc.SetEdgeLen(startingSoln.first);
+    const val_lnl_t tiny{tt, ttLnL};
+    // subsequent scorings just go from this arc down to the root
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
-        double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
+#       if defined(USE_ONE_ARC_DOWN_VERSIONS)
+            double lnL = ScoreTreeOneArcDown(instance.partMat, instance.tree, instance, arc);
+#       else
+            double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
+#       endif
        // _DEBUG_FVAL(nu); _DEBUG_LVAL(lnL);
         arc.SetEdgeLen(prev);
         return lnL;
     };
-    val_lnl_t soln{arc.GetEdgeLen(), prevScore};
-    const val_lnl_t startingSoln = soln;
-    const val_lnl_t tiny{0.001, brLenScorer(0.001)};
+    //
     const val_lnl_t small{0.01, brLenScorer(0.01)};
     //_DEBUG_FVAL(tiny.first); _DEBUG_LVAL(tiny.second);
     //_DEBUG_FVAL(small.first); _DEBUG_LVAL(small.second);

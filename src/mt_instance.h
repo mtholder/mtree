@@ -10,6 +10,7 @@ class NxsSimpleTree; // TEMP, adapting should be done in main to remove this
 
 namespace mt {
 
+class INIBasedSettings;
 class NCL2MT;
 
 enum ProcessActionsEnum {
@@ -68,7 +69,7 @@ class MTInstance {
 };
 void doAnalysis(std::ostream * os,
                 MTInstance & mtInstance,
-                ProcessActionsEnum action);
+                const INIBasedSettings &ibs);
 
 } // namespace
 #endif

@@ -3,11 +3,13 @@
 #include "mt_likelihood.h"
 #include "search.h"
 #include "mt_opt_model.h"
+#include "mt_ini_options.h"
 #include <iostream>
 
 namespace mt {
 
-void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnum action) {
+void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings & ibs) {
+    const enum ProcessActionsEnum action = ibs.action;
     if (action == SCORE_ACTION) {
         const double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
         if (os) {

@@ -32,7 +32,7 @@ namespace mt {
                 const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
                 const NxsSimpleTree & tree,
                 const ModelDescription & md,
-                ::INIReader & iniReader);
+                const INIBasedSettings & ibs);
             INIBasedSettings configureBasedOnINI(MTInstance &,
                                                    ::INIReader & iniReader,
                                                    std::ostream & err);
@@ -79,17 +79,25 @@ bool preDataINICheck(INIReader & iniReader, std::ostream & err) {
     mt::INIValueChecker ivc;
     return iniSettingsAreLegal(iniReader, ivc, err);
 }
+void INIReader::fill(mt::INIBasedSettings & ibs) {
+    mt::INIValueChecker ivc;
+    std::string value = this->Get("action", "action", "LScore");
+    ibs.action = ivc.parseActionAction(value);
+    value = this->Get("model", "ascertainment", "None");
+    ibs.modelAsc = ivc.parseModelAscertainment(value);
+}
 /* end mtree INI checking */
+
 namespace mt {
+
+
+
+
 INIBasedSettings NCL2MT::configureBasedOnINI(MTInstance & , //mInstance,
                                                ::INIReader & iniReader,
                                                std::ostream & err) {
-    INIValueChecker ivc;
     INIBasedSettings ibs;
-    std::string value = iniReader.Get("action", "action", "LScore");
-    ibs.action = ivc.parseActionAction(value);
-    value = iniReader.Get("model", "ascertainment", "None");
-    ibs.modelAsc = ivc.parseModelAscertainment(value);
+    iniReader.fill(ibs);
     err.flush();
     return ibs;
 }
@@ -104,7 +112,7 @@ void NCL2MT::processTree(std::ostream *os,
             const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
             const NxsSimpleTree & nxsTree,
             const ModelDescription & md,
-            ::INIReader & iniReader) {
+            const INIBasedSettings & ibs) {
     assert(dataMapper != nullptr);
     vector<std::size_t> origToComp;
     for (auto otc : origToCompressed) {
@@ -169,8 +177,7 @@ void NCL2MT::processTree(std::ostream *os,
                               numStates2PatternIndexSet,
                               nxsTree,
                               md);
-    mt::INIBasedSettings ibs = configureBasedOnINI(mtInstance, iniReader, std::cerr);
-    doAnalysis(os, mtInstance, ibs.action);
+    doAnalysis(os, mtInstance, ibs);
 }
 
 } // namespace mt
@@ -255,8 +262,9 @@ int processContent(PublicNexusReader & nexusReader,
     NxsCDiscreteStateSet ** matrixAlias = compressedMatrix.GetAlias();
     const unsigned ntaxTotal =  charBlock->GetNTaxTotal();
     const  NxsTreesBlock * treesBlock = nexusReader.GetTreesBlock(taxaBlock, 0);
-    //mt::ModelDescription md(mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS); //@TODO should be run-time setting
-    mt::ModelDescription md(mt::ModelDescription::NO_ASC_BIAS); //@TODO should be run-time setting
+    mt::INIBasedSettings ibs;
+    iniReader.fill(ibs);
+    mt::ModelDescription md(ibs.modelAsc);
     mt::NCL2MT ncl2mt;
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
         const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
@@ -270,7 +278,7 @@ int processContent(PublicNexusReader & nexusReader,
                            numStates2CharSet,
                            nst,
                            md,
-                           iniReader);
+                           ibs);
     }
     return 0;
 }

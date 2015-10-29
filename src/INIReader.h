@@ -11,6 +11,10 @@
 #include <map>
 #include <string>
 
+namespace mt {
+    class INIBasedSettings;
+}
+
 // Read an INI file into easy-to-access name/value pairs. (Note that I've gone
 // for simplicity here rather than speed, but it should be pretty decent.)
 class INIReader
@@ -41,7 +45,7 @@ public:
     // not a valid true/false value. Valid true values are "true", "yes", "on", "1",
     // and valid false values are "false", "no", "off", "0" (not case sensitive).
     bool GetBoolean(std::string section, std::string name, bool default_value);
-
+    void fill( mt::INIBasedSettings & ibs);
 private:
     int _error;
     std::map<std::string, std::string> _values;

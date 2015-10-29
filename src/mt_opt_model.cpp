@@ -653,6 +653,7 @@ val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper
   double range = upper - lower;
   double c = upper - GOLDEN_R*range;
   double d = lower + GOLDEN_R*range;
+  int counter = 0;
 
   while(fabs(c - d) > TOL) {
     changeParam(instance, model, 1, c, ALPHA_P);
@@ -668,10 +669,12 @@ val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper
       c = d;
       d = lower + GOLDEN_R*(upper - lower);
     }
+    counter++;
   }
   const double final = (upper + lower)/2.0;
   changeParam(instance, model, 1, final, ALPHA_P);
   double endlnL = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model), model);
+  std::cerr << "Iteration: " << counter << "\n";
   return val_lnl_t{final, endlnL};
 }
 

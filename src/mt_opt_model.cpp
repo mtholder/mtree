@@ -221,7 +221,7 @@ void CharModel::createGammas(double alph, int cats){
 
 // based on "changeModelParameters" - change param of type paramType to value at position
 // old value needs to be stored first!
-static void changeParam(MTInstance &instance,
+void changeParam(MTInstance &instance,
                         int model,
                         int , //position,
                         double value,
@@ -240,7 +240,7 @@ static void changeParam(MTInstance &instance,
 
 // Evaluate change to a model in terms of likelihood
 // equivalent to evaluateChange in PLL
-static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double &result,//result,
+void mtEvaluateChange(MTInstance &instance, int rateNumber, double value, double &result,//result,
                            bool ,//converged,
                            int paramType, int model)
 {
@@ -266,6 +266,7 @@ static void mtEvaluateChange(MTInstance &instance, int rateNumber, double value,
 }
 
 // Implementation of Brent's Method for One-Dimensional Parameter Optimization, based on brentGeneric in PLL
+
 
 void mtBrentGeneric (MTInstance &instance, double &ax, double &bx, double &cx, double &fb, double tol,
                             double &xmin, double &result, int paramType, int rateNumber, double lowerBound,
@@ -642,6 +643,38 @@ int mtBrakGeneric(MTInstance &instance, double &param, double &ax, double &bx, d
 //_DEBUG_VAL(cx);
 }
 
+
+typedef std::pair<double, double> val_lnl_t;
+
+const double GOLDEN_R = 0.6180339887498949;
+const double TOL = 0.0001; // hard-coded. TEMP should be runtime
+
+val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper, unsigned model) {
+  double range = upper - lower;
+  double c = upper - GOLDEN_R*range;
+  double d = lower + GOLDEN_R*range;
+
+  while(fabs(c - d) > TOL) {
+    changeParam(instance, model, 1, c, ALPHA_P);
+    double fc = -ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model), model);
+    changeParam(instance, model, 1, d, ALPHA_P);
+    double fd = -ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model), model);
+    if(fc < fd) {
+      upper = d;
+      d  = c;
+      c = upper - GOLDEN_R*(upper - lower);
+    } else {
+      lower = c;
+      c = d;
+      d = lower + GOLDEN_R*(upper - lower);
+    }
+  }
+  const double final = (upper + lower)/2.0;
+  changeParam(instance, model, 1, final, ALPHA_P);
+  double endlnL = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(model), model);
+  return val_lnl_t{final, endlnL};
+}
+
 // Set beginning parameters for optimization
 void initParams(MTInstance &instance) {
   for(auto i = 0U; i < instance.GetModelVec().size(); i++) { // loop over partitions
@@ -766,6 +799,17 @@ void optimizeModel(MTInstance &instance, double likelihoodEpsilon) {
 
   } while (fabs(currentLikelihood - instance.curLikelihood) > likelihoodEpsilon && MAX_ITS);
 
+}
+
+void optimizeModelUsingGolden(MTInstance &instance){
+  initParams(instance);
+  for(auto i = 0U; i < instance.numPartitions; i++) {
+    double startlnL = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(i), i);
+    std::cerr << "Starting partition lnL = " << startlnL << "\n";
+    val_lnl_t optPair = goldenSectionMaximize(instance, 0.01, 0.99, i);
+    std::cerr << "End partition alpha = " << optPair.first << "\n";
+    std::cerr << "End partition lnL = " << optPair.second << "\n";
+  }
 }
 
 } //namespace mt

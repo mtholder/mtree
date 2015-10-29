@@ -16,6 +16,10 @@ namespace mt {
 
   void optimizeModel(MTInstance &instance, double likelihoodEpsilon);
 
+  typedef std::pair<double,double> val_lnl_t;
+
+  void optimizeModelUsingGolden(MTInstance &instance);
+
   static void changeParam(MTInstance &instance,
                           int ,//model,
                           int , //position,

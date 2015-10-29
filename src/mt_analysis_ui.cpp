@@ -29,7 +29,8 @@ void doAnalysis(std::ostream * os, MTInstance & instance, enum ProcessActionsEnu
 
     } else if (action == OPTIMIZE_PARS) {
       double startlnL = ScoreTree(instance.partMat, instance.tree, instance, true);
-      optimizeModel(instance,.1);
+      //optimizeModel(instance,.1);
+      optimizeModelUsingGolden(instance);
       double endlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "lnL before param optimization: " << startlnL << "\n";
       *os << "lnL after param optimization: " << endlnL << "\n";

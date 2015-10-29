@@ -129,18 +129,26 @@ void NCL2MT::processTree(std::ostream *os,
         rawMatrix.resize(numTaxa);
         vector<mt::char_state_t> bogusChar;
         std::size_t currPartLen = patInds.size();
+        // Add bogus chars here...
         if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
             currPartLen += numStates;
             for (auto i = 0U; i < numStates; ++i) {
                 bogusChar.push_back(i);
                 paddedPatternWeights.push_back(0.0);
             }
+        } else if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
+            for (auto i = 0U; i < currPartLen; ++i) {
+                bogusChar.push_back(0U);
+                paddedPatternWeights.push_back(0.0);
+            }
+            currPartLen *= 2;
         }
 
         numStates2NumBogusChar[numStates] = bogusChar.size();
         NxsCDiscreteStateSet maxStateCode = 0;
         for (auto i = 0U; i < numTaxa; ++i) {
-            rawMatrix[i].reserve(currPartLen);
+            auto & rawRow = rawMatrix[i];
+            rawRow.reserve(currPartLen);
             for (auto j: patInds) {
                 NxsCDiscreteStateSet r = compressedMatrix[i][j];
                 //std::cerr << " compressedMatrix[" << i << "][" << j << "] << = " << (int)r << '\n';
@@ -150,10 +158,22 @@ void NCL2MT::processTree(std::ostream *os,
                 if (r > maxStateCode) {
                     maxStateCode = r;
                 }
-                rawMatrix[i].push_back((mt::char_state_t) r);
+                rawRow.push_back((mt::char_state_t) r);
             }
+            // FILL in bogusChars...
+            const std::size_t firstBogusInd = rawRow.size();
             for (auto k : bogusChar) {
-                rawMatrix[i].push_back(k);
+                rawRow.push_back(k);
+            }
+            if (md.GetAscBiasMode() == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
+                for (auto j = firstBogusInd; j < rawRow.size(); ++j) {
+                    const auto origInd = j - firstBogusInd;
+                    if (rawRow[origInd] == numStates) {
+                        rawRow[j] = numStates;
+                    } else {
+                        assert(rawRow[origInd] < numStates);
+                    }
+                }
             }
         }
         if (maxStateCode < (NxsCDiscreteStateSet) numStates) {

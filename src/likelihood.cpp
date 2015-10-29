@@ -251,18 +251,20 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
 double MkVarMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          std::size_t numChars) const {
-    std::size_t numRealPatterns =  numChars - nStates;
+    assert(!(numChars % 2));
+    std::size_t numRealPatterns =  numChars / 2;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
-    const double fake = 1.0;
-    double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
-    double oneStateCorrectionL = exp(oneStateCorrectionLnL);
-    double correctionL = 1 - (nStates * oneStateCorrectionL);
-    double corrLnL = log(correctionL);
-    double sw = 0.0;
-    for (auto i = 0U; i < numRealPatterns; ++i) {
-        sw = patternWeight[i];
+    double totalCorrection = 0.0;
+    for (auto i = numRealPatterns; i < numChars; ++i) {
+      const double fake = 1.0;
+      double oneStateCorrectionLnL = CharModel::sumLnL(cla + i, &fake, 1);
+      double oneStateCorrectionL = exp(oneStateCorrectionLnL);
+      double correctionL = 1 - (nStates * oneStateCorrectionL);
+      double corrLnL = log(correctionL);
+      const auto realInd = i - numRealPatterns;
+      double thisPatterCorrLnL = patternWeight[realInd] * corrLnL;
+      totalCorrection += thisPatterCorrLnL;
     }
-    double totalCorrection = corrLnL*sw;
     return uncorrLnL - totalCorrection;
 }
 

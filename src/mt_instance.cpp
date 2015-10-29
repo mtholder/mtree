@@ -7,8 +7,13 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
                        const std::vector<std::size_t> &orig2compressed,
                        const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
                        const NxsSimpleTree & nxsTree, // should be adapted in main
-                       const ModelDescription & md)
-    :partMat(static_cast<unsigned>(ns2RawMat.begin()->second.size()), patternWts, orig2compressed, numStates2PatternIndexSet),
+                       const ModelDescription & md,
+                       const std::map<unsigned, std::size_t> & numStates2NumBogusChar)
+    :partMat(static_cast<unsigned>(ns2RawMat.begin()->second.size()),
+             patternWts,
+             orig2compressed,
+             numStates2PatternIndexSet,
+             numStates2NumBogusChar),
     tree(2*static_cast<unsigned>(ns2RawMat.begin()->second.size()) - 1, static_cast<unsigned>(ns2RawMat.begin()->second.size())),
     HasSearchConverged(false),
     curvatOK(true),

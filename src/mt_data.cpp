@@ -31,7 +31,8 @@ PartitionedMatrix::PartitionedMatrix(
         unsigned numTaxa,
         const std::vector<double> &patternWts,
         const std::vector<std::size_t> &orig2compressed,
-        const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet)
+        const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
+        const std::map<unsigned, std::size_t> & numStates2NumBogusChar)
     :nTaxa(numTaxa),
      nCharsVec(numStates2PatternIndexSet.size()),
      partitions(numStates2PatternIndexSet.size()),
@@ -40,7 +41,7 @@ PartitionedMatrix::PartitionedMatrix(
      patternWeights(patternWts) {
     std::size_t partIndex = 0;
     for (auto i : numStates2PatternIndexSet) {
-        nCharsVec[partIndex] = i.second.size();
+        nCharsVec[partIndex] = i.second.size() + numStates2NumBogusChar.at(i.first);
         nStatesVec[partIndex] = i.first;
         ++partIndex;
     }

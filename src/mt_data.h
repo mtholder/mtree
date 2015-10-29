@@ -77,8 +77,8 @@ class PartitionedMatrix {
         PartitionedMatrix(unsigned numTaxa,
                           const std::vector<double> &patternWts,
                           const std::vector<std::size_t> &orig2compressed,
-                          const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet
-                          );
+                          const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
+                          const std::map<unsigned, std::size_t> & numStates2NumBogusChar);
         std::size_t GetNumPartitions() const {
             return this->partitions.size();
         }

@@ -65,7 +65,8 @@ class MTInstance {
                    const std::vector<std::size_t> &orig2compressed,
                    const std::map<unsigned, std::set<unsigned> > & numStates2PatternIndexSet,
                    const NxsSimpleTree & nxsTree, //
-                   const ModelDescription & md);
+                   const ModelDescription & md,
+                   const std::map<unsigned, std::size_t> & numStates2NumBogusChar);
 };
 void doAnalysis(std::ostream * os,
                 MTInstance & mtInstance,

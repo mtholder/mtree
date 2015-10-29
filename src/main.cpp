@@ -120,6 +120,8 @@ void NCL2MT::processTree(std::ostream *os,
     }
     std::map<unsigned, vector< vector<mt::char_state_t> > > rawPartMatrix;
     std::map<unsigned, mt::CharStateToPrimitiveInd > numStates2Cs2Pi;
+    std::vector<double> paddedPatternWeights = patternWeights;
+    std::map<unsigned, std::size_t> numStates2NumBogusChar;
     for (auto ns2pis : numStates2PatternIndexSet) {
         const unsigned numStates = ns2pis.first;
         const auto & patInds = ns2pis.second;
@@ -131,8 +133,11 @@ void NCL2MT::processTree(std::ostream *os,
             currPartLen += numStates;
             for (auto i = 0U; i < numStates; ++i) {
                 bogusChar.push_back(i);
+                paddedPatternWeights.push_back(0.0);
             }
         }
+
+        numStates2NumBogusChar[numStates] = bogusChar.size();
         NxsCDiscreteStateSet maxStateCode = 0;
         for (auto i = 0U; i < numTaxa; ++i) {
             rawMatrix[i].reserve(currPartLen);
@@ -176,7 +181,8 @@ void NCL2MT::processTree(std::ostream *os,
                               origToComp,
                               numStates2PatternIndexSet,
                               nxsTree,
-                              md);
+                              md,
+                              numStates2NumBogusChar);
     doAnalysis(os, mtInstance, ibs);
 }
 

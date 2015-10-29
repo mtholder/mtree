@@ -18,6 +18,16 @@
 
 namespace mt {
 
+void patClassInitialize(MTInstance &instance) {
+  for(int m = 0; m < instance.numPartitions; m++) {
+    int numstates = GetPatData(m).GetNumStates();
+    int endIndex = 1<<(numstates);
+    for (int i = 1; i < endIndex; i++){
+      GetPatData(m).possObsStateSet.push_back(i);
+    }
+  }
+}
+
 // TEMP - throws exception for missing data
 // return a string of symbols for each state with length = num states
 std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock,
@@ -255,8 +265,8 @@ NodeInfo * calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned 
       for(auto i = 0U; i < numStates; i++) {
         int ss=1 << i;
         ProbForObsStateSet & p = currNdInfo->getForObsStateSet(ss);
-        std::vector<double> & v = p.getProbForCommState(-1);
-        v[i] = 1.0;
+        //std::vector<double> & v = p.getProbForCommState(-1);
+        //v[i] = 1.0;
         currNdInfo->setNumLeaves(1);
       }
     } else {

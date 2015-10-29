@@ -87,7 +87,7 @@ class CharModel {
 
         VMaskToVecMaskPair pairsForUnionForEachDownPass;
         BitFieldMatrix statesSupersets;
-      
+
         stateSetContainer::const_iterator stateSetBegin() const  {
             return possObsStateSet.begin();
         }
@@ -99,7 +99,7 @@ class CharModel {
           this->rates[position] = value;
         }*/
 
-
+        stateSetContainer possObsStateSet;
         virtual const double * GetRootStateFreq() const = 0;
         virtual double sumLnL(const double * cla, const double * patternWt, std::size_t numChars) const;
         virtual void fillLeafWork(const LeafCharacterVector *, double * claElements, double * cla, double edgeLen, std::size_t numChars);
@@ -116,7 +116,7 @@ class CharModel {
         double alpha;
         std::vector<double> patternWeights;
         //std::vector<ModelParams> modelList;
-        stateSetContainer possObsStateSet;
+
 };
 
 class MkCharModel: public CharModel {

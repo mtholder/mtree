@@ -221,6 +221,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
         return lnL;
     };
     val_lnl_t soln{arc.GetEdgeLen(), prevScore};
+    const val_lnl_t startingSoln = soln;
     const val_lnl_t tiny{0.001, brLenScorer(0.001)};
     const val_lnl_t small{0.01, brLenScorer(0.01)};
     _DEBUG_FVAL(tiny.first); _DEBUG_LVAL(tiny.second);
@@ -228,17 +229,17 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     if (tiny.second > small.second) {
         soln = maximizeScoreForSmallBrLen(brLenScorer, tiny, small);
     } else {
-        const val_lnl_t mid{0.05, brLenScorer(0.05)};
+        const val_lnl_t mid{0.1, brLenScorer(0.1)};
         _DEBUG_FVAL(mid.first); _DEBUG_LVAL(mid.second);
         if (small.second > mid.second) {
             soln = maximizeScoreForBracketed(brLenScorer, tiny, small, mid);
         } else {
-            const val_lnl_t large{1.00, brLenScorer(1.00)};
+            const val_lnl_t large{2.00, brLenScorer(2.00)};
             _DEBUG_FVAL(large.first); _DEBUG_LVAL(large.second);
             if (mid.second >= large.second) {
                 soln = maximizeScoreForBracketed(brLenScorer, small, mid, large);
             } else {
-                const val_lnl_t huge{100.00, brLenScorer(100.00)};
+                const val_lnl_t huge{10.00, brLenScorer(10.00)};
                 _DEBUG_FVAL(huge.first); _DEBUG_LVAL(huge.second);
                 if (large.second > huge.second) {
                     soln = maximizeScoreForBracketed(brLenScorer, mid, large, huge);
@@ -247,6 +248,9 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
                 }
             }
         }
+    }
+    if (startingSoln.second > soln.second) {
+        soln = startingSoln;
     }
     _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
     arc.SetEdgeLen(soln.first);
@@ -269,8 +273,8 @@ double optimizeAllBranchLengths(MTInstance &instance) {
             const auto prevLnL = currLnL;
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
-            assert(thisArcDiff >= 0.0);
-            _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(prevLnL);
+            _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_MVAL(prevLnL); _DEBUG_LVAL(thisArcDiff);
+            assert(thisArcDiff >= -tolForSweep);
             arc = poTrav.next();
         } while(arc.toNode);
         const auto thisRoundImprovement = currLnL - beforeThisRound;

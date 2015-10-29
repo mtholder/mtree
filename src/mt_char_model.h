@@ -7,7 +7,7 @@
 #include "ncl/nxsallocatematrix.h"
 #include "pattern_class.h"
 #include "mt_data.h"
-
+#include "mt_log.h"
 namespace mt {
 
 class LeafCharacterVector;
@@ -125,6 +125,7 @@ class MkCharModel: public CharModel {
             :CharModel(numStates, numRateCats),
             probMat(numRateCats*numStates*numStates, 0.0),
             rootStateFreq(numStates, 1.0/double(numStates)) {
+            assert(numRateCats > 0);
         }
         virtual ~MkCharModel() {
         }
@@ -149,7 +150,8 @@ class MkCharModel: public CharModel {
                     }
                 }
             }
-          return &(probMat[0]);
+            //_DEBUG_VEC(probMat);
+            return &(probMat[0]);
         }
     private:
         std::vector<double> probMat;

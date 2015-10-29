@@ -77,7 +77,7 @@ double ScoreTree(PartitionedMatrix &partMat,
       instance.likelihoods[partIndex] = ScoreTreeForPartition(partMat,tree,instance.GetCharModel(partIndex),partIndex);
     }
     result += instance.likelihoods[partIndex];
-    _DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
+    //_DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
   }
   return result;
 }

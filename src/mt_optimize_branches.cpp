@@ -211,12 +211,12 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore);
 
 
 double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
-    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_LVAL(arc.toNode->GetNumber());
+    //_DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_LVAL(arc.toNode->GetNumber());
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
         double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
-        _DEBUG_FVAL(nu); _DEBUG_LVAL(lnL);
+       // _DEBUG_FVAL(nu); _DEBUG_LVAL(lnL);
         arc.SetEdgeLen(prev);
         return lnL;
     };
@@ -224,23 +224,23 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     const val_lnl_t startingSoln = soln;
     const val_lnl_t tiny{0.001, brLenScorer(0.001)};
     const val_lnl_t small{0.01, brLenScorer(0.01)};
-    _DEBUG_FVAL(tiny.first); _DEBUG_LVAL(tiny.second);
-    _DEBUG_FVAL(small.first); _DEBUG_LVAL(small.second);
+    //_DEBUG_FVAL(tiny.first); _DEBUG_LVAL(tiny.second);
+    //_DEBUG_FVAL(small.first); _DEBUG_LVAL(small.second);
     if (tiny.second > small.second) {
         soln = maximizeScoreForSmallBrLen(brLenScorer, tiny, small);
     } else {
         const val_lnl_t mid{0.1, brLenScorer(0.1)};
-        _DEBUG_FVAL(mid.first); _DEBUG_LVAL(mid.second);
+        //_DEBUG_FVAL(mid.first); _DEBUG_LVAL(mid.second);
         if (small.second > mid.second) {
             soln = maximizeScoreForBracketed(brLenScorer, tiny, small, mid);
         } else {
             const val_lnl_t large{2.00, brLenScorer(2.00)};
-            _DEBUG_FVAL(large.first); _DEBUG_LVAL(large.second);
+            //_DEBUG_FVAL(large.first); _DEBUG_LVAL(large.second);
             if (mid.second >= large.second) {
                 soln = maximizeScoreForBracketed(brLenScorer, small, mid, large);
             } else {
                 const val_lnl_t huge{10.00, brLenScorer(10.00)};
-                _DEBUG_FVAL(huge.first); _DEBUG_LVAL(huge.second);
+                //_DEBUG_FVAL(huge.first); _DEBUG_LVAL(huge.second);
                 if (large.second > huge.second) {
                     soln = maximizeScoreForBracketed(brLenScorer, mid, large, huge);
                 } else {
@@ -252,7 +252,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     if (startingSoln.second > soln.second) {
         soln = startingSoln;
     }
-    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
+    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(startingSoln.first); _DEBUG_MVAL(startingSoln.second); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
     arc.SetEdgeLen(soln.first);
     return soln.second;
 }

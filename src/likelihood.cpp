@@ -259,11 +259,15 @@ double MkVarMissingAscCharModel::sumLnL(const double *cla,
       const double fake = 1.0;
       double oneStateCorrectionLnL = CharModel::sumLnL(cla + i, &fake, 1);
       double oneStateCorrectionL = exp(oneStateCorrectionLnL);
-      double correctionL = 1 - (nStates * oneStateCorrectionL);
-      double corrLnL = log(correctionL);
-      const auto realInd = i - numRealPatterns;
-      double thisPatterCorrLnL = patternWeight[realInd] * corrLnL;
-      totalCorrection += thisPatterCorrLnL;
+      if (oneStateCorrectionL > .51) {
+          assert(fabs(oneStateCorrectionL- 1.0) < 0.0001);
+      } else {
+        double correctionL = 1 - (nStates * oneStateCorrectionL);
+        double corrLnL = log(correctionL);
+        const auto realInd = i - numRealPatterns;
+        double thisPatterCorrLnL = patternWeight[realInd] * corrLnL;
+        totalCorrection += thisPatterCorrLnL;
+      }
     }
     return uncorrLnL - totalCorrection;
 }

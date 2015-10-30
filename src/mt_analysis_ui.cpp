@@ -50,10 +50,11 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
         howmanyloops++;
       } while(fabs(prevlnL - currlnL) > lnLEpsilon);
       double endlnL = currlnL;
-      *os << "lnL before full optimization = " << startlnL << "\n";
-      *os << "lnL after full optimization = " << endlnL << "\n";
-      *os << "Number of high level optimization loops: " << howmanyloops << "\n";
-      instance.tree.write(*os);
+      std::cerr << "lnL before full optimization = " << startlnL << "\n";
+      std::cerr << "lnL after full optimization = " << endlnL << "\n";
+      *os << endlnL << "\t";
+      std::cerr << "Number of high level optimization loops: " << howmanyloops << "\n";
+      //instance.tree.write(*os);
     } else if (action == TREE_SEARCH) {
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance, false);

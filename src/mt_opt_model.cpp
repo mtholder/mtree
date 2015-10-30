@@ -670,6 +670,8 @@ val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper
       d = lower + GOLDEN_R*(upper - lower);
     }
     counter++;
+    std::cerr << "Upper alpha: " << d << "\n";
+    std::cerr << "Lower alpha: " << c << "\n";
   }
   const double final = (upper + lower)/2.0;
   changeParam(instance, model, 1, final, ALPHA_P);
@@ -809,7 +811,7 @@ void optimizeModelUsingGolden(MTInstance &instance){
   for(auto i = 0U; i < instance.numPartitions; i++) {
     double startlnL = ScoreTreeForPartition(instance.partMat, instance.tree, instance.GetCharModel(i), i);
     std::cerr << "Starting partition lnL = " << startlnL << "\n";
-    val_lnl_t optPair = goldenSectionMaximize(instance, 0.01, 0.99, i);
+    val_lnl_t optPair = goldenSectionMaximize(instance, 0.01, 100, i);
     std::cerr << "End partition alpha = " << optPair.first << "\n";
     std::cerr << "End partition lnL = " << optPair.second << "\n";
   }

@@ -293,7 +293,11 @@ int processContent(PublicNexusReader & nexusReader,
     mt::ModelDescription md(ibs.modelAsc);
     mt::NCL2MT ncl2mt;
     for (unsigned nti = 0; nti < treesBlock->GetNumTrees(); ++nti) {
-        const NxsSimpleTree nst(treesBlock->GetFullTreeDescription(nti), 1, 0.1, true);
+        const auto & ntd = treesBlock->GetFullTreeDescription(nti);
+        if (os) {
+            *os << "About to process " << ntd.GetName() << '\n';
+        }
+        const NxsSimpleTree nst(ntd, 1, 0.1, true);
         ncl2mt.processTree(os,
                            ntaxTotal,
                            charBlock,

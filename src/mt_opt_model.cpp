@@ -670,8 +670,8 @@ val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper
       d = lower + GOLDEN_R*(upper - lower);
     }
     counter++;
-    std::cerr << "Upper alpha: " << d << "\n";
-    std::cerr << "Lower alpha: " << c << "\n";
+    //std::cerr << "Upper alpha: " << d << "\n";
+    //std::cerr << "Lower alpha: " << c << "\n";
   }
   const double final = (upper + lower)/2.0;
   changeParam(instance, model, 1, final, ALPHA_P);
@@ -684,7 +684,7 @@ val_lnl_t goldenSectionMaximize(MTInstance &instance, double lower, double upper
 void initParams(MTInstance &instance) {
   for(auto i = 0U; i < instance.GetModelVec().size(); i++) { // loop over partitions
     instance.GetCharModel(i).createGammas(0.5, instance.GetCharModel(i).GetNumRates());
-    std::cerr << "Set alpha for partiton " << i << "\n";
+    //std::cerr << "Set alpha for partiton " << i << "\n";
     // Set alphas to 0.5 for now
   }
 }

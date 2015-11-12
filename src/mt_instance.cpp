@@ -57,10 +57,13 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
         const auto & rawMat = ns2RawMat.at(currPartNumStates);
         mt::CharModel *m = nullptr;
         if (abm == mt::ModelDescription::NO_ASC_BIAS) {
+            std::cerr << "Initializing character model for no ascertainment bias correction\n";
             m = new mt::MkCharModel(currPartNumStates, numRateCats);
         } else if (abm == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
+            std::cerr << "Mkv no missing charmodel initialization\n";
             m = new mt::MkVarNoMissingAscCharModel(currPartNumStates, numRateCats);
         } else if (abm == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
+            std::cerr << "Mkv w/ missing charmodel initialization\n";
             m = new mt::MkVarMissingAscCharModel(currPartNumStates, numRateCats);
         } else if (abm == mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS) {
             m = new mt::MkParsInfNoMissingModel(currPartNumStates, numRateCats);

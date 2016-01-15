@@ -51,7 +51,7 @@ double ScoreTreeForPartitionOneArcDown(PartitionedMatrix &partMat, Tree &tree, C
   assert(dirtyArc.toNode);
   const std::size_t numChars =  dirtyArc.GetNumChars(model);
   while (dirtyArc.toNode) {
-    //_DEBUG_VAL(c.fromNode->number);
+    //_DEBUG_VAL(dirtyArc.fromNode->GetNumber());
     if (dirtyArc.IsFromLeaf()) {
       terminalArcPruneCalc(dirtyArc, cm, model, numChars);
     } else {
@@ -80,7 +80,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   assert(c.toNode);
   const std::size_t numChars =  c.GetNumChars(model);
   while (c.toNode) {
-    //_DEBUG_VAL(c.fromNode->number);
+    //_DEBUG_VAL(c.fromNode->GetNumber());
     if (c.IsFromLeaf()) {
       terminalArcPruneCalc(c, cm, model, numChars);
     } else {
@@ -226,7 +226,7 @@ double CharModel::sumLnL(const double *cla,
         //_DEBUG_VAL(lnL);
         cla += lenCLAWord;
     }
-    std::cerr << "lnL: " << lnL << "\n";
+    //std::cerr << "lnL: " << lnL << "\n";
     return lnL;
 }
 
@@ -234,7 +234,7 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          std::size_t numChars) const {
     std::size_t numRealPatterns =  numChars - nStates;
-    std::cerr << "Mkv sumlnl\n";
+    //std::cerr << "Mkv sumlnl\n";
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     const double fake = 1.0;
     double oneStateCorrectionLnL = CharModel::sumLnL(cla + numChars + 1 - nStates, &fake, 1);
@@ -246,8 +246,8 @@ double MkVarNoMissingAscCharModel::sumLnL(const double *cla,
         sw = patternWeight[i];
     }
     double totalCorrection = corrLnL*sw;
-    std::cerr << "Correction: " << totalCorrection << "\n";
-    std::cerr << "Uncorrected: " << uncorrLnL << "\n";
+    //std::cerr << "Correction: " << totalCorrection << "\n";
+    //std::cerr << "Uncorrected: " << uncorrLnL << "\n";
     return uncorrLnL - totalCorrection;
 }
 
@@ -256,7 +256,7 @@ double MkVarMissingAscCharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          std::size_t numChars) const {
     assert(!(numChars % 2));
-    std::cerr << "Mkvm sumlnl\n";
+    //std::cerr << "Mkvm sumlnl\n";
     std::size_t numRealPatterns =  numChars / 2;
     double uncorrLnL = CharModel::sumLnL(cla, patternWeight, numRealPatterns);
     double totalCorrection = 0.0;
@@ -274,8 +274,8 @@ double MkVarMissingAscCharModel::sumLnL(const double *cla,
         totalCorrection += thisPatterCorrLnL;
       }
     }
-    std::cerr << "Correction: " << totalCorrection << "\n";
-    std::cerr << "Uncorrected: " << uncorrLnL << "\n";
+    //std::cerr << "Correction: " << totalCorrection << "\n";
+    //std::cerr << "Uncorrected: " << uncorrLnL << "\n";
     return uncorrLnL - totalCorrection;
 }
 

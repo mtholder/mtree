@@ -2,6 +2,7 @@
 #include "mt_optimize_branches.h"
 #include "mt_likelihood.h"
 #include "search.h"
+#include "pattern_class.h"
 #include "mt_opt_model.h"
 #include "mt_ini_options.h"
 #include <iostream>
@@ -64,7 +65,11 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       double endL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree removed = " << endL << "\n";
     //  performSearch(instance, steps, instance.tree);
-    }
+  } else if (action == MISC_TEST) {
+    //std::cout << "Made it here\n";
+    double result = addUninformativePatternProbs(instance);
+    *os << "Probability of uninformative patterns = " << result << "\n";
+  }
 }
 
 

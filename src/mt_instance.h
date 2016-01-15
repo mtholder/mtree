@@ -18,7 +18,8 @@ enum ProcessActionsEnum {
     TREE_SEARCH=1,
     OPTIMIZE_PARS=2,
     OPTIMIZE_BR_LEN=3,
-    FULL_OPTIMIZE = 4
+    FULL_OPTIMIZE = 4,
+    MISC_TEST = 5
 };
 
 struct OptimizationSettings {

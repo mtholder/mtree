@@ -47,7 +47,8 @@ double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex,
                                            MTInstance &instance, unsigned model);
 double calcProbOfSubtreeForObsStSetNoRepeated(NodeInfo * subtreeInfo, int ancIndex, int obsBits, double edgeLen, MTInstance &instance, unsigned model);
 void cleanVirtualEdgeLens(Node * root);
-NodeInfo * calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned charIndex, unsigned model);
+double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned charIndex, unsigned model);
+double addUninformativePatternProbs(MTInstance & instance);
 
 
 
@@ -81,6 +82,15 @@ class ProbForObsStateSet{ //for each state want to set -1 to 1 and all else to 0
             if(commState == -1)
                 return noRepeatedState;
             return probVec.at(commState);
+        }
+        void write_pv() const {
+          for(std::vector<probvec_t>::const_iterator pIt = probVec.begin(); pIt != probVec.end(); pIt++){
+            std::vector<double> vec = *pIt;
+            for(std::vector<double>::const_iterator vecIt = vec.begin(); vecIt != vec.end(); vecIt++){
+              std::cerr << *vecIt << " ";
+            }
+            std::cerr << "\n";
+          }
         }
         /*void writeDebug(std::ostream & o, const CommonInfo & blob) const {
             o << "ProbForObsStateSet{\n  ";

@@ -224,11 +224,11 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
-#       if defined(USE_ONE_ARC_DOWN_VERSIONS)
-            double lnL = ScoreTreeOneArcDown(instance.partMat, instance.tree, instance, arc);
-#       else
+        //if defined(USE_ONE_ARC_DOWN_VERSIONS)
+        //double lnL = ScoreTreeOneArcDown(instance.partMat, instance.tree, instance, arc);
+       //else
             double lnL = ScoreTree(instance.partMat, instance.tree, instance, true);
-#       endif
+       //endif
        // _DEBUG_FVAL(nu); _DEBUG_LVAL(lnL);
         arc.SetEdgeLen(prev);
         return lnL;
@@ -263,7 +263,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     if (startingSoln.second > soln.second) {
         soln = startingSoln;
     }
-    _DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(startingSoln.first); _DEBUG_MVAL(startingSoln.second); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
+    //_DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(startingSoln.first); _DEBUG_MVAL(startingSoln.second); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
     arc.SetEdgeLen(soln.first);
     return soln.second;
 }
@@ -284,12 +284,12 @@ double optimizeAllBranchLengths(MTInstance &instance) {
             const auto prevLnL = currLnL;
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
-            _DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_MVAL(prevLnL); _DEBUG_LVAL(thisArcDiff);
+            //_DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_MVAL(prevLnL); _DEBUG_LVAL(thisArcDiff);
             assert(thisArcDiff >= -tolForSweep);
             arc = poTrav.next();
         } while(arc.toNode);
         const auto thisRoundImprovement = currLnL - beforeThisRound;
-        _DEBUG_FVAL(tsi); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(thisRoundImprovement);
+        //_DEBUG_FVAL(tsi); _DEBUG_MVAL(currLnL); _DEBUG_LVAL(thisRoundImprovement);
         if (thisRoundImprovement < tolForSweep) {
             return currLnL;
         }
@@ -300,4 +300,3 @@ double optimizeAllBranchLengths(MTInstance &instance) {
 
 
 } // namespace mt
-

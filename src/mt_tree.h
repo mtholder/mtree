@@ -115,6 +115,7 @@ class Node {
         std::vector<void *> work;
         friend class Arc;
 };
+
 class Tree {
     public:
         std::size_t GetNumLeaves() const {
@@ -143,22 +144,36 @@ class Tree {
         Tree(unsigned numNodes, unsigned numLeaves)
             :nodes(numNodes),
              root(nullptr) {
-            assert(numLeaves < numNodes);
-            leaves.resize(numLeaves);
-            for (auto i = 0U; i < numNodes; ++i) {
-                Node & node = this->nodes[i];
-                node.SetNumber(i);
-                if (i < numLeaves) {
-                    leaves[i] = &node;
-                }
-            }
+            initPointers(numLeaves);
         }
+        Tree(const Tree &other)
+            :nodes(other.nodes.size()),
+            root(nullptr) {
+            initPointers(other.leaves.size());
+            copyTopology(other);
+        }
+        void copyTopology(const Tree & other) {
+
+        }
+
         void write(std::ostream & out) const {
             root->write(out);
             out << ";\n";
         }
 
     private:
+        void initPointers(unsigned numLeaves) {
+          const unsigned numNodes = nodes.size();
+          assert(numLeaves < numNodes);
+          leaves.resize(numLeaves);
+          for (auto i = 0U; i < numNodes; ++i) {
+              Node & node = this->nodes[i];
+              node.SetNumber(i);
+              if (i < numLeaves) {
+                  leaves[i] = &node;
+              }
+          }
+        }
         std::vector<Node> nodes;
         Node * root;
         std::vector<Node *> leaves;

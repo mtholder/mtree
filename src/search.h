@@ -4,25 +4,29 @@
 #define __SEARCH_H__
 #include "mt_tree.h"
 #include "mt_instance.h"
+#include "mt_data.h"
 
 namespace mt {
 
-/*class BestTree {
-  double LnL;
-  Tree tree;
-  BestTree(double likelihood, Tree tr)
-    :LnL(likelihood),
-    Tree(tr) {
+class searchInfo {
+  double bestLnL;
+  Tree bestTree;
+  bool converged;
+  searchInfo(MTInstance &instance)
+    :bestLnL(MT_UNLIKELY),
+    converged(false),
+    bestTree(instance.tree.GetNumNodes(), instance.tree.GetNumLeaves()) {
+      initBestTree(instance);
     }
+  void initBestTree(MTInstance &instance);
 };
-*/
-/* rearrange functions (NNI and SPR) */
-void performSearch(MTInstance &instance, int steps, Node *p);
-void searchStep(MTInstance &instance);
-int bestSPR(MTInstance &instance, Node *p, int mintrav, int maxtrav);
-int performNNI(MTInstance &instance);
+
+/* funcs */
+
+//void searchInfo::initBestTree(MTInstance &instance);
 void mtreeTestSPR(MTInstance &instance, Node * p, int maxtrav, double bestLnL);
-Node * removeSubtree(MTInstance &instance, Node * p);
+Node * removeSubTree(MTInstance &instance, Node * p);
+Node * insertSubTree(MTInstance &instance, Node *p, Node *q, Node *s);
 
 } //namespace mt
 

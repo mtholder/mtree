@@ -60,6 +60,13 @@ class Node {
             }
             return c;
         }
+        Node * GetRoot() {
+          Node * r = this;
+          while(r) {
+            if(r->parent == nullptr) return r;
+            r = r->parent;
+          }
+        }
         void SetEdgeLen(double e) {
             this->edgeLen = e;
         }
@@ -74,6 +81,9 @@ class Node {
         }
         bool IsLeaf() const {
             return this->leftChild == nullptr;
+        }
+        bool IsLeftChild() const {
+            return this->parent->leftChild == this;
         }
         void SetData(unsigned i, void * d) {
             while (this->data.size() <= i) {
@@ -109,6 +119,9 @@ class Tree {
     public:
         std::size_t GetNumLeaves() const {
             return leaves.size();
+        }
+        std::size_t GetNumNodes() const {
+            return nodes.size();
         }
         void SetRoot(Node *r) {
             assert(r);

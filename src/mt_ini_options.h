@@ -55,6 +55,7 @@ class INIValueChecker {
             actionAction2Enum["OptimizeBranchLengths"] = OPTIMIZE_BR_LEN;
             actionAction2Enum["OptimizeModel"] = OPTIMIZE_PARS;
             actionAction2Enum["FullOptimization"] = FULL_OPTIMIZE;
+            actionAction2Enum["TreeSearch"] = TREE_SEARCH;
             actionAction2Enum["MiscTest"] = MISC_TEST;
             //
             modelAscertainment2Enum["None"] = ModelDescription::NO_ASC_BIAS;

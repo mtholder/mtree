@@ -61,9 +61,14 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       double startL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Starting likelihood = " << startL << "\n";
       Node * p = instance.tree.GetLeaf(4)->parent->parent;
-      mtreeTestSPR (instance, p, 2, startL);
+      Node *par = p->parent;
+      Node *subt = removeSubTree(instance, p);
       double endL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree removed = " << endL << "\n";
+      assert(p->parent);
+      p = insertSubTree(instance, subt, p->parent, par);
+      double nextL = ScoreTree(instance.partMat, instance.tree, instance, false);
+      *os << "Likelihood after subtree inserted = " << nextL << "\n";
     //  performSearch(instance, steps, instance.tree);
   } else if (action == MISC_TEST) {
     //std::cout << "Made it here\n";

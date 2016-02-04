@@ -17,6 +17,7 @@ namespace mt {
 #define MT_RATE_MIN                             0.0000001
 #define MT_RATE_MAX                             1000000.0
 #define MT_ALPHA_MIN                            0.01
+#define MT_UNLIKELY                             1.e-200
 
 // Some macros
 #define MTREE_SIGN(a,b)                        ((b) > 0.0 ? fabs(a) : -fabs(a))

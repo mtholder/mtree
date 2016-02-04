@@ -114,6 +114,7 @@ class Node {
         std::vector<void *> data;
         std::vector<void *> work;
 };
+
 class Tree {
     public:
         unsigned GetNumLeaves() const {
@@ -139,6 +140,20 @@ class Tree {
         Tree(unsigned numNodes, unsigned numLeaves)
             :nodes(numNodes),
              root(nullptr) {
+            initPointers(numLeaves);
+        }
+        Tree(const Tree &other)
+            :nodes(other.nodes.size()),
+            root(nullptr) {
+            initPointers(other.leaves.size());
+            copyTopology(other);
+        }
+        void copyTopology(const Tree & other) {
+
+        }
+    private:
+        void initPointers(unsigned numLeaves) {
+            const unsigned numNodes = nodes.size();
             assert(numLeaves < numNodes);
             leaves.resize(numLeaves);
             for (auto i = 0U; i < numNodes; ++i) {
@@ -149,7 +164,6 @@ class Tree {
                 }
             }
         }
-    private:
         std::vector<Node> nodes;
         Node * root;
         std::vector<Node *> leaves;

@@ -63,10 +63,11 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       Node * p = instance.tree.GetLeaf(4)->parent->parent;
       Node *par = p->parent;
       Node *subt = removeSubTree(instance, p);
+      std::cout << "Got here\n";
       double endL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree removed = " << endL << "\n";
-      assert(p->parent);
-      p = insertSubTree(instance, subt, p->parent, par);
+      //assert(p->parent);
+      p = insertSubTree(instance, subt, instance.tree.GetRoot()->leftChild->rightSib, par);
       double nextL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree inserted = " << nextL << "\n";
     //  performSearch(instance, steps, instance.tree);

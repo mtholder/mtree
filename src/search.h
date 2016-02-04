@@ -24,6 +24,7 @@ class searchInfo {
 /* funcs */
 
 //void searchInfo::initBestTree(MTInstance &instance);
+void copyNode(Node *r, Node *s);
 void mtreeTestSPR(MTInstance &instance, Node * p, int maxtrav, double bestLnL);
 Node * removeSubTree(MTInstance &instance, Node * p);
 Node * insertSubTree(MTInstance &instance, Node *p, Node *q, Node *s);

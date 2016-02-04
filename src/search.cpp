@@ -14,7 +14,7 @@ void copyNode(Node * l, Node * k) {
     k->SetEdgeLen(l->GetEdgeLen());
 }
 
-
+/*
 // frees tree data structure
 // recursively deletes nodes in tree
 
@@ -36,46 +36,27 @@ void freeTree(Node * nd){
     freeTree(rs);
   }
 }
+*/
 
 // recursively copies tree structure and basic node data
 // from nodes starting from treenode to nodes starting at nodecopy (roots)
 
 // is recursion best for this?
 
-void hardCopyTree(Node * treenode, Node * nodecopy) {
-  if(!treenode->IsLeaf()) {
-    // if not a leaf function does nothing because leaf node has already between
-    // allocated by previous call
 
-    Node *lc, *rs;
-    lc = new Node;
-    rs = new Node;
-
-    copyNode(treenode->leftChild, lc);
-    copyNode(treenode->leftChild->rightSib, rs);
-
-    nodecopy->leftChild = lc;
-    nodecopy->leftChild->rightSib = rs;
-
-    lc->parent = nodecopy;
-    rs->parent = nodecopy;
-
-    // function recursively called on both children
-    hardCopyTree(treenode->leftChild, lc);
-    hardCopyTree(treenode->leftChild->rightSib, rs);
-  }
-}
 
 // allocate memory for best tree topology to be saved
 // and copy from current tree
 void searchInfo::initBestTree(MTInstance &instance){
 
-  Node * r = new Node;
-  Node * root = instance.tree.GetRoot();
+  Tree * scratch = new Tree(instance.tree);
+}
+  /*Node * root = instance.tree.GetRoot();
   copyNode(root, r);
 
   hardCopyTree(root, r);
-}
+  */
+
 
 // remove and return subtree located at node p, collapse branch on other tree
 // should optimize new branch length between p->parent->parent and p's sibling after removal

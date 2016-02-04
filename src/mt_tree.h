@@ -132,6 +132,9 @@ class Tree {
         Node * GetRoot() {
             return this->root;
         }
+        const Node * GetRoot() const {
+            return this->root;
+        }
         Node * GetNode(unsigned i) {
             return &(this->nodes[i]);
         }
@@ -152,9 +155,7 @@ class Tree {
             initPointers(other.leaves.size());
             copyTopology(other);
         }
-        void copyTopology(const Tree & other) {
-
-        }
+        void copyTopology(const Tree & other);
 
         void write(std::ostream & out) const {
             root->write(out);

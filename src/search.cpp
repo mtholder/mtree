@@ -146,7 +146,8 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
             if (!instance.tree.GetNode(j)->parent) continue;
               Node * newroot = insertSubTree(instance, snipNode, instance.tree.GetNode(j), temp);
               // only scores new lnl if subtree has been reinserted
-              if (double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false) > sInfo.bestLnL) {
+              double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+              if (newlnl > sInfo.bestLnL) {
                   sInfo.bestLnL = newlnl;
                   std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
                   sInfo.bestTree.copyTopology(instance.tree);

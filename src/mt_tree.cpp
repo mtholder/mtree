@@ -35,6 +35,16 @@ void Tree::copyTopology(const Tree &other){
   copyTree(*this, currNdNum, other.GetRoot(), r);
 }
 
+bool Tree::isNodeConnected(Node *n, int id){
+  if(id == n->GetNumber()) return true;
+  if(n->IsLeaf()) return false;
+  return (this->isNodeConnected(n->leftChild, id) ||
+          this->isNodeConnected(n->leftChild->rightSib, id));
+  // default case
+  std::cout << "Something went wrong in Tree::isNodeConnected(...)\n";
+  return false;
+}
+
 void Node::write(std::ostream & os) const {
     const Node * c = leftChild;
     if (c) {

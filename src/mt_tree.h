@@ -156,7 +156,7 @@ class Tree {
             copyTopology(other);
         }
         void copyTopology(const Tree & other);
-
+        bool isNodeConnected(Node *n, int id);
         void write(std::ostream & out) const {
             root->write(out);
             out << ";\n";

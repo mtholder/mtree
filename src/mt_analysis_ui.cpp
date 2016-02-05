@@ -57,6 +57,8 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       std::cerr << "Number of high level optimization loops: " << howmanyloops << "\n";
       //instance.tree.write(*os);
     } else if (action == TREE_SEARCH) {
+      simpleSPRSearch(instance, 100);
+      /*
       //int steps = 10;
       double startL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Starting likelihood = " << startL << "\n";
@@ -70,6 +72,7 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       p = insertSubTree(instance, subt, instance.tree.GetRoot()->leftChild->rightSib, par);
       double nextL = ScoreTree(instance.partMat, instance.tree, instance, false);
       *os << "Likelihood after subtree inserted = " << nextL << "\n";
+      */
     //  performSearch(instance, steps, instance.tree);
   } else if (action == MISC_TEST) {
     //std::cout << "Made it here\n";

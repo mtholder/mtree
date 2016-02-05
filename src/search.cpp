@@ -1,5 +1,6 @@
 #include "search.h"
 #include "mt_tree.h"
+#include "mt_likelihood.h"
 
 #include <assert.h>
 #include <vector>
@@ -124,6 +125,49 @@ Node * insertSubTree(MTInstance &instance, Node * p, Node * q, Node *s) {
    //
 }
 
+void simpleSPRSearch(MTInstance &instance, int maxloops) {
+  searchInfo sInfo(instance);
+  sInfo.bestLnL = ScoreTree(instance.partMat, instance.tree, instance, false);
+  std::cout << "Starting ln likelihood = " << sInfo.bestLnL << "\n";
+  bool changed = false;
+  int step = 0;
+  while(step++ < maxloops) {
+    std::cout << "Now on loop # " << step << "\n";
+    for(int i = 0; i < instance.tree.GetNumNodes(); i++) {
+      std::cout << "Trying node " << i << "\n";
+      if (!instance.tree.GetNode(i)->parent->parent) continue;
+      Node * snipNode = instance.tree.GetNode(i);
+      Node * temp = snipNode->parent;
+      Node * subt = removeSubTree(instance, snipNode);
+      changed = false;
+      // try insertions at all nodes not in subtree
+      for(int j = 0; j < instance.tree.GetNumNodes(); j++) {
+          if(!instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
+            if (!instance.tree.GetNode(j)->parent) continue;
+              Node * newroot = insertSubTree(instance, snipNode, instance.tree.GetNode(j), temp);
+              // only scores new lnl if subtree has been reinserted
+              if (double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false) > sInfo.bestLnL) {
+                  sInfo.bestLnL = newlnl;
+                  std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
+                  sInfo.bestTree.copyTopology(instance.tree);
+                  changed = true;
+                  break;
+              } else {
+                  temp = snipNode->parent; // is this necessary?
+                  subt = removeSubTree(instance, snipNode);
+              }
+          }
+      }
+      instance.tree.copyTopology(sInfo.bestTree);
+    }
+    // break out of while loop if there is no improvement in lnl
+    if(!changed) break;
+  }
+  std::cout << "End ln likelihood = " << sInfo.bestLnL << "\n";
+  std::cout << "Total steps: " << step << "\n";
+}
+
+/*
 // Tries SPR moves for a subtree rooted at node p up to maxtrav nodes away.
 // Derived from pllTestSPR.
 void mtreeTestSPR (MTInstance &instance,
@@ -132,7 +176,7 @@ void mtreeTestSPR (MTInstance &instance,
                    double bestLnL
                    ) {
   assert(false);
-  if (1)/*(!IsLeaf(p))*/ {
+  //if (1) {
     //double bl = p->edgeLen;
     //Node * n = p->parent;
     //Node * fromnode = p->parent->parent;
@@ -140,5 +184,6 @@ void mtreeTestSPR (MTInstance &instance,
                      removeSubTree(instance, p);
   }
 }
+*/
 
 } //namespace mt

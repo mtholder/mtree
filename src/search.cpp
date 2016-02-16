@@ -68,7 +68,7 @@ Node * removeSubTree(MTInstance & instance, Node * p) {
   assert (p);
   assert (p->parent);
   assert (p->parent->parent); // parent must have a parent b/c root is constrained
-  cout << p->parent->parent << "\n";
+  //cout << p->parent->parent << "\n";
   // assert(IsInTree(instance, p));
   //if (!p.IsLeaf()) {} should not matter if it is leaf or internal node
   if (p->parent == p->parent->parent->leftChild) {

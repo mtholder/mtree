@@ -1,4 +1,5 @@
 #include "mt_tree.h"
+#include "mt_tree_traversal.h"
 #include "mt_optimize_branches.h"
 #include "search.h"
 
@@ -33,6 +34,29 @@ void Tree::copyTopology(const Tree &other){
   Node * r = this->GetNode(currNdNum++);
   this->SetRoot(r);
   copyTree(*this, currNdNum, other.GetRoot(), r);
+}
+
+void Tree::TreeDebug() {
+    Node * r = this->GetRoot();
+    // verify that root's parent points to null
+    assert(!r->parent && "r->parent not null");
+    int nodeCount = 1;
+    assert(r->GetEdgeLen() && "edge length is nonzero");
+    PostorderForNodeIterator ptrav = postorder(r);
+    Arc arc = ptrav.get();
+    while(arc.toNode) {
+      nodeCount++;
+      assert(arc.toNode->GetEdgeLen() && "edge length is nonzero");
+      if (this->isLeaf2(arc.toNode)) {
+          // leaves should not have children
+          assert((!arc.toNode->leftChild) && "leaf has no children");
+      } else {
+          // should have both left and right child
+          assert(arc.toNode->leftChild && arc.toNode->leftChild->rightSib && "internal node has two children");
+      }
+      arc = ptrav.next();
+    }
+    assert(nodeCount == nodes.size() && "node count is correct");
 }
 
 bool Tree::isNodeConnected(Node *n, int id){

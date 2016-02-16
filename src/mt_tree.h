@@ -5,6 +5,7 @@
 #include <climits>
 #include <iostream>
 #include <vector>
+#include <algorithm>
 #include "mt_log.h"
 #include "mt_model_description.h"
 namespace mt {
@@ -144,6 +145,10 @@ class Tree {
         const Node * GetLeaf(unsigned i) const {
             return this->leaves[i];
         }
+        // tree method to check if node is a leaf
+        bool isLeaf2(Node * q) {
+            return (q->GetNumber() < leaves.size());
+        }
         Tree(unsigned numNodes, unsigned numLeaves)
             :nodes(numNodes),
              root(nullptr) {
@@ -161,6 +166,7 @@ class Tree {
             root->write(out);
             out << ";\n";
         }
+        void TreeDebug();
 
     private:
         void initPointers(unsigned numLeaves) {

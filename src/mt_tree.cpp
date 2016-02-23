@@ -26,7 +26,7 @@ void copyTree(Tree &tree, int &currndnum, const Node * treenode, Node * nodecopy
       // function recursively called on both children
       copyTree(tree, currndnum, treenode->leftChild, lc);
       copyTree(tree, currndnum, treenode->leftChild->rightSib, rs);
-    }
+    } else return;
 }
 
 void Tree::copyTopology(const Tree &other){
@@ -36,16 +36,18 @@ void Tree::copyTopology(const Tree &other){
   copyTree(*this, currNdNum, other.GetRoot(), r);
 }
 
+// assertions fail if full tree is not properly assembled/initialized
 void Tree::TreeDebug() {
     Node * r = this->GetRoot();
     // verify that root's parent points to null
     assert(!r->parent && "r->parent not null");
-    int nodeCount = 1;
+    int nodeCount = 2;
     assert(r->GetEdgeLen() && "edge length is nonzero");
     PostorderForNodeIterator ptrav = postorder(r);
     Arc arc = ptrav.get();
     while(arc.toNode) {
       nodeCount++;
+      //std::cout << "Node encountered: " << arc.fromNode->GetNumber() << "\n";
       assert(arc.toNode->GetEdgeLen() && "edge length is nonzero");
       if (this->isLeaf2(arc.toNode)) {
           // leaves should not have children
@@ -56,9 +58,12 @@ void Tree::TreeDebug() {
       }
       arc = ptrav.next();
     }
+    std::cout << "Nodes counted: " << nodeCount << "\n";
+    std::cout << "Expected value: " << nodes.size() << "\n";
     assert(nodeCount == nodes.size() && "node count is correct");
 }
 
+// look for node with id in tree rooted at n
 bool Tree::isNodeConnected(Node *n, int id){
   if(id == n->GetNumber()) return true;
   if(n->IsLeaf()) return false;

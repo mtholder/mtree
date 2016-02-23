@@ -64,33 +64,34 @@ void searchInfo::initBestTree(MTInstance &instance){
 // N.B. need to pass parent of p to a placeholder before calling this function
 // otherwise the removed node will be lost!
 Node * removeSubTree(MTInstance & instance, Node * p) {
-  //cout << "removeSubTree called\n";
+  cout << "removeSubTree called\n";
   assert (p);
   assert (p->parent);
   assert (p->parent->parent); // parent must have a parent b/c root is constrained
   //cout << p->parent->parent << "\n";
   // assert(IsInTree(instance, p));
   //if (!p.IsLeaf()) {} should not matter if it is leaf or internal node
-  if (p->parent == p->parent->parent->leftChild) {
-    if (p == p->parent->leftChild) {
-      //cout <<"left child of a left child\n";
+  if (p->parent->IsLeftChild()) {
+    if (p->IsLeftChild()) {
+      cout <<"left child of a left child\n";
       p->parent->parent->leftChild = p->rightSib;
       p->rightSib->parent = p->parent->parent;
+      p->rightSib->rightSib = p->parent->rightSib;
       p->rightSib = nullptr;
     } else {
-      //cout << "right child of a left child\n";
+      cout << "right child of a left child\n";
       p->parent->parent->leftChild = p->parent->leftChild;
       p->parent->leftChild->parent = p->parent->parent;
-      p->parent->leftChild->rightSib = p->parent->parent->leftChild->rightSib;
+      p->parent->leftChild->rightSib = p->parent->rightSib;
     }
   } else {
-    if (p == p->parent->leftChild) {
-      //cout << "left child of a right child\n";
+    if (p->IsLeftChild()) {
+      cout << "left child of a right child\n";
       p->parent->parent->leftChild->rightSib = p->rightSib;
       p->rightSib->parent = p->parent->parent;
       p->rightSib = nullptr;
     } else {
-      //cout << "right child of a right child\n";
+      cout << "right child of a right child\n";
       p->parent->parent->leftChild->rightSib = p->parent->leftChild;
       p->parent->leftChild->parent = p->parent->parent;
       p->parent->leftChild->rightSib = nullptr;
@@ -101,19 +102,20 @@ Node * removeSubTree(MTInstance & instance, Node * p) {
   return p;
 }
 
-// inserts subtree p below node q on main tree
-// sets p as rightSib of q (arbitrary)
-// uses s placeholder for new node parent to p
+// inserts subtree p as rightSib to node q on main tree
+// inserts saved node s as parent to q and p
 // returns root to tree
 Node * insertSubTree(MTInstance &instance, Node * p, Node * q, Node *s) {
   assert(q->parent); // for now only dealing with rooted trees
+  assert(s);
+  bool lc = q->IsLeftChild();
 
   // these pointers don't depend on whether q is a right or left child
   p->parent = s;
   s->leftChild = q;
   s->parent = q->parent;
 
-  if (q->IsLeftChild()){
+  if (lc){
     s->rightSib = q->rightSib;
     q->parent->leftChild = s;
   } else {
@@ -122,11 +124,18 @@ Node * insertSubTree(MTInstance &instance, Node * p, Node * q, Node *s) {
 
   q->rightSib = p;
   q->parent = s;
-   //
+
+  assert(q->parent);
+  assert(s->parent);
+  assert(q->rightSib);
+
+
+  return instance.tree.GetRoot();
 }
 
 void simpleSPRSearch(MTInstance &instance, int maxloops) {
   searchInfo sInfo(instance);
+  instance.tree.TreeDebug();
   sInfo.bestLnL = ScoreTree(instance.partMat, instance.tree, instance, false);
   std::cout << "Starting ln likelihood = " << sInfo.bestLnL << "\n";
   bool changed = false;
@@ -139,26 +148,35 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
       Node * snipNode = instance.tree.GetNode(i);
       Node * temp = snipNode->parent;
       Node * subt = removeSubTree(instance, snipNode);
+      //instance.tree.TreeDebug();
       changed = false;
       // try insertions at all nodes not in subtree
       for(int j = 0; j < instance.tree.GetNumNodes(); j++) {
-          if(!instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
-            if (!instance.tree.GetNode(j)->parent) continue;
-              Node * newroot = insertSubTree(instance, snipNode, instance.tree.GetNode(j), temp);
-              // only scores new lnl if subtree has been reinserted
-              double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
-              if (newlnl > sInfo.bestLnL) {
-                  sInfo.bestLnL = newlnl;
-                  std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
-                  sInfo.bestTree.copyTopology(instance.tree);
-                  changed = true;
-                  break;
-              } else {
-                  temp = snipNode->parent; // is this necessary?
-                  subt = removeSubTree(instance, snipNode);
+        if (instance.tree.GetNode(j)->parent == nullptr ||
+            instance.tree.GetNode(j)->parent == instance.tree.GetRoot()) {
+              std::cout << "Not valid insertion point\n";
+              continue;
+            } else {
+              if(!instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
+                std::cout << "Trying insertion at node " << j << "\n";
+                Node * newroot = insertSubTree(instance, subt, instance.tree.GetNode(j), temp);
+                instance.tree.TreeDebug();
+                // only scores new lnl if subtree has been reinserted
+                double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+                if (newlnl > sInfo.bestLnL) {
+                    sInfo.bestLnL = newlnl;
+                    std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
+                    sInfo.bestTree.copyTopology(instance.tree);
+                    changed = true;
+                    break;
+                  } else {
+                    //temp = snipNode->parent; // is this necessary?
+                    subt = removeSubTree(instance, snipNode);
+                  }
               }
           }
-      }
+        }
+      std::cout << "Got to end of insertion for loop\n";
       instance.tree.copyTopology(sInfo.bestTree);
     }
     // break out of while loop if there is no improvement in lnl

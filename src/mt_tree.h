@@ -84,7 +84,7 @@ class Node {
             return this->leftChild == nullptr;
         }
         bool IsLeftChild() const {
-            return this->parent->leftChild == this;
+            return this->rightSib != nullptr;
         }
         void SetData(unsigned i, void * d) {
             while (this->data.size() <= i) {

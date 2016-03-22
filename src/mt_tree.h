@@ -137,7 +137,7 @@ class Tree {
             return this->root;
         }
         Node * GetNode(unsigned i) {
-            return &(this->nodes[i]);
+            return &(this->nodes.at(i));
         }
         Node * GetLeaf(unsigned i) {
             return this->leaves[i];
@@ -166,7 +166,7 @@ class Tree {
             root->write(out);
             out << ";\n";
         }
-        void TreeDebug();
+        void TreeDebug() const;
 
     private:
         void initPointers(unsigned numLeaves) {

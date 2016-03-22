@@ -5,43 +5,56 @@
 
 namespace mt {
 
-void copyTree(Tree &tree, int &currndnum, const Node * treenode, Node * nodecopy) {
+void copyTree(Tree &tree, const Node * treenode, Node * nodecopy) {
     if(!treenode->IsLeaf()) {
-      // if not a leaf function does nothing because leaf node has already between
+      // if a leaf function does nothing because leaf node has already between
       // allocated by previous call
 
+      //std::cout << "Beginning of copyTree\n";
       Node *lc, *rs;
-      lc = tree.GetNode(currndnum++);
-      rs = tree.GetNode(currndnum++);
-
+      lc = tree.GetNode(treenode->leftChild->GetNumber());
+      rs = tree.GetNode(treenode->leftChild->rightSib->GetNumber());
+      //std::cout << "currndnum: " << currndnum << "\n";
+      assert(lc);
+      assert(rs);
+      assert(treenode->leftChild);
+      assert(treenode->leftChild->rightSib);
+      //std::cout << "Got here1\n";
       copyNode(treenode->leftChild, lc);
       copyNode(treenode->leftChild->rightSib, rs);
 
+      //std::cout << "Got here2\n";
       nodecopy->leftChild = lc;
       nodecopy->leftChild->rightSib = rs;
 
       lc->parent = nodecopy;
       rs->parent = nodecopy;
 
+      //std::cout << "Got here3\n";
+
       // function recursively called on both children
-      copyTree(tree, currndnum, treenode->leftChild, lc);
-      copyTree(tree, currndnum, treenode->leftChild->rightSib, rs);
+      copyTree(tree, treenode->leftChild, lc);
+      copyTree(tree, treenode->leftChild->rightSib, rs);
     } else return;
 }
 
 void Tree::copyTopology(const Tree &other){
-  int currNdNum = other.GetNumLeaves();
-  Node * r = this->GetNode(currNdNum++);
+  //int currNdNum = other.GetNumLeaves();
+  Node * r = this->GetNode(other.GetRoot()->GetNumber());
   this->SetRoot(r);
-  copyTree(*this, currNdNum, other.GetRoot(), r);
+  other.TreeDebug();
+  std::cout << "Calling copyTree\n";
+  copyTree(*this, other.GetRoot(), r);
 }
 
 // assertions fail if full tree is not properly assembled/initialized
-void Tree::TreeDebug() {
-    Node * r = this->GetRoot();
+void Tree::TreeDebug() const {
+    Tree *tr = const_cast<Tree*>(this);
+    // need a const node iterator but this will work for now
+    Node * r = tr->GetRoot();
     // verify that root's parent points to null
     assert(!r->parent && "r->parent not null");
-    int nodeCount = 2;
+    int nodeCount = 1;
     assert(r->GetEdgeLen() && "edge length is nonzero");
     PostorderForNodeIterator ptrav = postorder(r);
     Arc arc = ptrav.get();
@@ -49,7 +62,7 @@ void Tree::TreeDebug() {
       nodeCount++;
       //std::cout << "Node encountered: " << arc.fromNode->GetNumber() << "\n";
       assert(arc.toNode->GetEdgeLen() && "edge length is nonzero");
-      if (this->isLeaf2(arc.toNode)) {
+      if (tr->isLeaf2(arc.toNode)) {
           // leaves should not have children
           assert((!arc.toNode->leftChild) && "leaf has no children");
       } else {
@@ -58,13 +71,16 @@ void Tree::TreeDebug() {
       }
       arc = ptrav.next();
     }
-    std::cout << "Nodes counted: " << nodeCount << "\n";
-    std::cout << "Expected value: " << nodes.size() << "\n";
+    //std::cout << "Nodes counted: " << nodeCount << "\n";
+    //std::cout << "Expected value: " << nodes.size() << "\n";
     assert(nodeCount == nodes.size() && "node count is correct");
 }
 
 // look for node with id in tree rooted at n
 bool Tree::isNodeConnected(Node *n, int id){
+  //std::cout << "Checking whether node " << id << " is connected\n";
+  //std::cout << "At " << n->GetNumber() << "\n";
+
   if(id == n->GetNumber()) return true;
   if(n->IsLeaf()) return false;
   return (this->isNodeConnected(n->leftChild, id) ||

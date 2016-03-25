@@ -92,7 +92,11 @@ val_lnl_t maximizeScoreForBracketed(FUN fun,
             d = a + GOLDEN_R*(b - a);
         }
     }
-    const double final = (a + b)/2.0;
+    double final = (a + b)/2.0;
+    if (final < 0.00001) {
+      std::cout << "Hitting very small branch lengths\n";
+      final = 0.00001;
+    }
     return val_lnl_t{final, fun(final)};
 }
 
@@ -277,6 +281,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
     const double beforeOpt = ScoreTree(instance.partMat, tree, instance, true);
     double currLnL = beforeOpt;
     for (auto tsi = 0U; tsi < maxNumTreeSweeps; ++tsi) {
+        std::cout << "Tree sweep # " << tsi << "\n";
         const auto beforeThisRound = currLnL;
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();

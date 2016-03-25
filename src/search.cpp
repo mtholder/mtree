@@ -1,6 +1,7 @@
 #include "search.h"
 #include "mt_tree.h"
 #include "mt_likelihood.h"
+#include "mt_opt_model.h"
 
 #include <assert.h>
 #include <vector>
@@ -162,8 +163,8 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
       Node * temp = snipNode->parent;
       Node * subt = removeSubTree(instance, snipNode);
 
-      double templnl = ScoreTree(instance.partMat, instance.tree, instance, false);
-      std::cout << "Lnl of pruned tree: " << templnl << "\n";
+      //double templnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+      //std::cout << "Lnl of pruned tree: " << templnl << "\n";
       //instance.tree.TreeDebug();
 
       changed = false;
@@ -181,7 +182,7 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
                 instance.tree.TreeDebug();
                 // only scores new lnl if subtree has been reinserted
                 //std::cout << "Scoring new tree\n";
-                double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+                double newlnl = fullOptimize(instance);
                 if (newlnl > sInfo.bestLnL) {
                     sInfo.bestLnL = newlnl;
                     std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";

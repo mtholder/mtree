@@ -6,6 +6,8 @@ namespace mt {
   class MTInstance;
   class CharModel;
 
+  // definitely don't need all these functions in header file
+
   double LnGamma(double alph);
 
   double IncompleteGamma(double x, double alph, double lga);
@@ -43,6 +45,8 @@ namespace mt {
   static void mtOptAlphas(MTInstance &instance, int numModels, double modelEpsilon);
 
   void initParams(MTInstance &instance);
+
+  double fullOptimize(MTInstance &instance);
 
 } // namespace mt
 

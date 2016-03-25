@@ -5,6 +5,7 @@
 #include "mt_tree.h"
 #include "mt_tree_traversal.h"
 #include "mt_likelihood.h"
+#include "mt_optimize_branches.h"
 #include <vector>
 #include <cmath>
 
@@ -815,6 +816,25 @@ void optimizeModelUsingGolden(MTInstance &instance){
     std::cerr << "End partition alpha = " << optPair.first << "\n";
     std::cerr << "End partition lnL = " << optPair.second << "\n";
   }
+}
+
+double fullOptimize(MTInstance &instance) {
+  double prevlnL = ScoreTree(instance.partMat, instance.tree, instance, true);
+  double startlnL = prevlnL;
+  double currlnL = prevlnL;
+  double lnLEpsilon = 0.1; // should be run-time variable
+  int howmanyloops = 0;
+  do {
+    prevlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
+    //optimizeModel(instance,.1);
+    optimizeModelUsingGolden(instance);
+    currlnL = optimizeAllBranchLengths(instance);
+    howmanyloops++;
+  } while(fabs(prevlnL - currlnL) > lnLEpsilon);
+  std::cerr << "lnL before full optimization = " << startlnL << "\n";
+  std::cerr << "lnL after full optimization = " << currlnL << "\n";
+  std::cerr << "Number of high level optimization loops: " << howmanyloops << "\n";
+  return currlnL;
 }
 
 } //namespace mt

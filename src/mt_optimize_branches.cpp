@@ -268,7 +268,12 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
         soln = startingSoln;
     }
     //_DEBUG_FVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(startingSoln.first); _DEBUG_MVAL(startingSoln.second); _DEBUG_MVAL(soln.first); _DEBUG_LVAL(soln.second);
-    arc.SetEdgeLen(soln.first);
+    if (soln.first > 0.0001) {
+      arc.SetEdgeLen(soln.first);
+    } else {
+      std::cout << "Hitting very small branch length\n";
+      arc.SetEdgeLen(0.0001);
+    }
     return soln.second;
 }
 
@@ -281,7 +286,8 @@ double optimizeAllBranchLengths(MTInstance &instance) {
     const double beforeOpt = ScoreTree(instance.partMat, tree, instance, true);
     double currLnL = beforeOpt;
     for (auto tsi = 0U; tsi < maxNumTreeSweeps; ++tsi) {
-        std::cout << "Tree sweep # " << tsi << "\n";
+        int k = tsi + 1;
+        std::cout << "Tree sweep # " << k << "\n";
         const auto beforeThisRound = currLnL;
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();

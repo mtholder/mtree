@@ -12,6 +12,30 @@ void pruneProductStep(const vector<const double *> & v, double * dest, std::size
 void terminalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars);
 void internalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const std::size_t numChars);
 
+// Set flags indicating whether nodes should be rescored after edgeLen is changed at Node nd
+void setScoreFlags(Tree &tree, Node *nd) {
+  //std::cout << "Setting scoring flags\n";
+  for (auto i = 0U; i < tree.GetNumNodes(); i++) {
+    tree.GetNode(i)->SetFlag(false);
+  }
+  nd->SetFlag(true);
+  Node * root = tree.GetRoot();
+  PostorderForNodeIterator poTrav = postorder(root);
+  Arc arc = poTrav.get();
+  while(arc.toNode) {
+    if (arc.toNode->leftChild->GetFlag() || arc.toNode->leftChild->rightSib->GetFlag()) {
+      arc.toNode->SetFlag(true);
+    }
+    arc = poTrav.next();
+  }
+}
+
+// Set all score flags to true for a tree
+void resetScoreFlags(Tree &tree) {
+  for (auto i = 0U; i < tree.GetNumNodes(); i++){
+    tree.GetNode(i)->SetFlag(true);
+  }
+}
 
 void pruneProductStep(const vector<const double *> & v, double * dest, std::size_t n) {
     for (auto i = 0U; i < n; ++i) {
@@ -72,6 +96,7 @@ double ScoreTreeForPartitionOneArcDown(PartitionedMatrix &partMat, Tree &tree, C
 
 // Calculate likelihood for one partition for a tree
 double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model) {
+  //int numScorings = 0;
   Node * virtRoot = tree.GetRoot();
   virtRoot = virtRoot->leftChild->rightSib;
   //Set up a traversal
@@ -81,10 +106,13 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   const std::size_t numChars =  c.GetNumChars(model);
   while (c.toNode) {
     //_DEBUG_VAL(c.fromNode->GetNumber());
-    if (c.IsFromLeaf()) {
-      terminalArcPruneCalc(c, cm, model, numChars);
-    } else {
-      internalArcPruneCalc(c, cm, model, numChars);
+    if (c.toNode->GetFlag()) {
+      //numScorings++;
+      if (c.IsFromLeaf()) {
+        terminalArcPruneCalc(c, cm, model, numChars);
+      } else {
+        internalArcPruneCalc(c, cm, model, numChars);
+      }
     }
     c = pnit.next();
   }
@@ -96,6 +124,7 @@ double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &
   //_DEBUG_CLA(beforeArc, cm.GetNumRates(), cm.GetNumStates(), numChars);
   //_DEBUG_VEC(partMat.patternWeights);
 
+  //if (numScorings != 104) std::cout << "Number of scorings: " << numScorings << "\n";
   return cm.sumLnL(beforeArc, &(partMat.patternWeights[0]), numChars);
 }
 

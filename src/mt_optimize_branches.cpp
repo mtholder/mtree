@@ -225,6 +225,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     arc.SetEdgeLen(startingSoln.first);
     const val_lnl_t tiny{tt, ttLnL};
     // subsequent scorings just go from this arc down to the root
+    setScoreFlags(instance.tree, arc.toNode);
     auto brLenScorer = [&] (double nu) {
         const double prev = arc.GetEdgeLen();
         arc.SetEdgeLen(nu);
@@ -271,7 +272,7 @@ double maximizeLnLForBrLen(MTInstance &instance, Arc & arc, double prevScore) {
     if (soln.first > 0.0001) {
       arc.SetEdgeLen(soln.first);
     } else {
-      std::cout << "Hitting very small branch length\n";
+      //std::cout << "Hitting very small branch length\n";
       arc.SetEdgeLen(0.0001);
     }
     return soln.second;
@@ -293,6 +294,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
         Arc arc = poTrav.get();
         do {
             const auto prevLnL = currLnL;
+            resetScoreFlags(instance.tree);
             currLnL = maximizeLnLForBrLen(instance, arc, currLnL);
             const auto thisArcDiff = currLnL - prevLnL;
             //_DEBUG_FVAL(tsi); _DEBUG_MVAL(arc.fromNode->GetNumber()); _DEBUG_MVAL(currLnL); _DEBUG_MVAL(prevLnL); _DEBUG_LVAL(thisArcDiff);

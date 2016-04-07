@@ -21,6 +21,7 @@ class Node {
              leftChild(nullptr),
              rightSib(nullptr),
              number(UINT_MAX),
+             scoreFlag(true),
              edgeLen(-1.0) {
         }
         std::vector<Node *> GetChildren() const {
@@ -37,6 +38,12 @@ class Node {
         }
         unsigned GetNumber() const {
             return this->number;
+        }
+        void SetFlag(bool v) {
+          this->scoreFlag = v;
+        }
+        bool GetFlag() {
+          return this->scoreFlag;
         }
         void AddChild(Node *c, double newEdgeLen) {
             assert(c);
@@ -112,6 +119,7 @@ class Node {
         unsigned number;
         double edgeLen;
         double vEdgeLen;
+        bool scoreFlag;
         std::vector<void *> data;
         std::vector<void *> work;
         friend class Arc;

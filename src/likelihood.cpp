@@ -15,15 +15,20 @@ void internalArcPruneCalc(Arc & c, CharModel &cm, const unsigned model, const st
 // Set flags indicating whether nodes should be rescored after edgeLen is changed at Node nd
 void setScoreFlags(Tree &tree, Node *nd) {
   //std::cout << "Setting scoring flags\n";
+  // flags are true as a default
   for (auto i = 0U; i < tree.GetNumNodes(); i++) {
     tree.GetNode(i)->SetFlag(false);
   }
   nd->SetFlag(true);
   Node * root = tree.GetRoot();
+  //root->SetFlag(true);
   PostorderForNodeIterator poTrav = postorder(root);
   Arc arc = poTrav.get();
   while(arc.toNode) {
-    if (arc.toNode->leftChild->GetFlag() || arc.toNode->leftChild->rightSib->GetFlag()) {
+    if //(arc.toNode->GetFlag()) {
+      //arc.fromNode->SetFlag(true);
+    //}
+      (arc.toNode->leftChild->GetFlag() || arc.toNode->leftChild->rightSib->GetFlag()) {
       arc.toNode->SetFlag(true);
     }
     arc = poTrav.next();

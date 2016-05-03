@@ -37,18 +37,9 @@ typedef std::map<BitField, VecMaskPair> MaskToVecMaskPair;
 typedef std::vector<VecMaskPair> VMaskToVecMaskPair;
 typedef std::vector<int> stateSetContainer;
 
-int convertBitToIndex(int i);
-std::vector<int> subsetsContainingGivenState(int fullSet, int givenState);
-std::vector<int> subsetsOfGivenSize(int obsStSet, int numBits);
-int getNextCommStSet(const int obsStSet, int i);
-std::string convertToBitFieldMatrix(const NxsCharactersBlock & charsBlock, BitFieldMatrix & bfMat);
-double pclassCalcTransitionProb(int ancIndex, int i, double edgeLen, MTInstance & instance, unsigned model);
-double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex, int obsBits, int commonStates, double edgeLen,
-                                           MTInstance &instance, unsigned model);
-double calcProbOfSubtreeForObsStSetNoRepeated(NodeInfo * subtreeInfo, int ancIndex, int obsBits, double edgeLen, MTInstance &instance, unsigned model);
-void cleanVirtualEdgeLens(Node * root);
+
 double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned charIndex, unsigned model);
-double addUninformativePatternProbs(MTInstance & instance);
+double totalInformativePatternProb(MTInstance & instance);
 
 
 

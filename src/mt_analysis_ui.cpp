@@ -42,6 +42,7 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
       double startlnL = prevlnL;
       double currlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
       double lnLEpsilon = 0.1;
+      double diff = 0.0;
       int howmanyloops = 0;
       do {
         prevlnL = ScoreTree(instance.partMat, instance.tree, instance, false);
@@ -49,6 +50,8 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
         optimizeModelUsingGolden(instance);
         currlnL = optimizeAllBranchLengths(instance);
         howmanyloops++;
+        diff = prevlnL - currlnL;
+        std::cerr << "lnL difference for high level opt loop: " << diff << "\n";
       } while(fabs(prevlnL - currlnL) > lnLEpsilon);
       double endlnL = currlnL;
       std::cerr << "lnL before full optimization = " << startlnL << "\n";
@@ -76,8 +79,9 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
     //  performSearch(instance, steps, instance.tree);
   } else if (action == MISC_TEST) {
     //std::cout << "Made it here\n";
-    double result = addUninformativePatternProbs(instance);
-    *os << "Probability of uninformative patterns = " << result << "\n";
+    double result = totalInformativePatternProb(instance);
+    std::cerr << "Probability of only informative patterns = " << result << "\n";
+    std::cerr << "lnL of only informative patters = " << log(result) << "\n";
   }
 }
 

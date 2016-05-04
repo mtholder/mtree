@@ -43,6 +43,7 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
             assert (ncl2nodeNumber.find(par) != ncl2nodeNumber.end());
             unsigned parNodeNumber = ncl2nodeNumber[par];
             mt::Node * parNode = tree.GetNode(parNodeNumber);
+            //std::cerr << nd->GetEdgeToParent().GetDblEdgeLen() << "\n";
             parNode->AddChild(treeNode, nd->GetEdgeToParent().GetDblEdgeLen());
         }
         ncl2nodeNumber[nd] = num;

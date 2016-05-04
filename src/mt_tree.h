@@ -175,6 +175,7 @@ class Tree {
             out << ";\n";
         }
         void TreeDebug() const;
+        void initBrLens();
 
     private:
         void initPointers(unsigned numLeaves) {

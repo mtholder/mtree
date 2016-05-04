@@ -18,6 +18,15 @@
 
 namespace mt {
 
+void Tree::initBrLens() {
+    PostorderForNodeIterator pTrav = postorder(root);
+    Arc arc = pTrav.get();
+    while(arc.toNode) {
+      arc.fromNode->SetEdgeLen(0.1);
+      arc = pTrav.next();
+    }
+}
+
 void patClassInitialize(MTInstance &instance) {
   for(int m = 0; m < instance.numPartitions; m++) {
     int numstates = GetPatData(m).GetNumStates();
@@ -302,6 +311,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
   assert(arc.toNode);
   while(arc.toNode) {
     Node * currNd = arc.fromNode;
+    //std::cerr << "Branch length: " << currNd->GetEdgeLen() << "\n";
     std::vector<Node *> children = currNd->GetChildren();
     const auto numChildren = children.size();
     //std::cout << "Creating new NodeInfo, Node = " << currNd->GetNumber() << "\n";
@@ -505,12 +515,12 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
   int numRates = GetPatData(model).GetNumRates();
   int pveclen = numStates*numRates;
   std::vector<double> categStateProbs(numStates*GetPatData(model).GetNumRates(), 1.0/((double)pveclen));
-  for (unsigned i = 0; i < numRates; ++i) {
+  /*for (unsigned i = 0; i < numRates; ++i) {
         const double rp = GetPatData(model).GetRateCatProb()[i];
         for (unsigned j = 0; j < numStates; ++j) {
             categStateProbs[i*numStates + j] = rp*(1.0/((double)numStates));
         }
-    }
+    }*/
   for (; ssCit != GetPatData(model).stateSetEnd(); ssCit++) {
     const int & obsStSet = *ssCit;
     int common = -1;
@@ -535,6 +545,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
 // used for ascertainment bias correction
 double totalInformativePatternProb(MTInstance & instance) {
   patClassInitialize(instance);
+  instance.tree.initBrLens();
   double total = 1.0;
   Node * root = instance.tree.GetRoot();
 

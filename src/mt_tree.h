@@ -5,6 +5,7 @@
 #include <climits>
 #include <iostream>
 #include <vector>
+#include <sstream>
 #include <algorithm>
 #include "mt_log.h"
 #include "mt_model_description.h"
@@ -13,6 +14,14 @@ class PartitionedMatrix;
 class LeafCharacterVector;
 class LeafWork;
 class InternalNodeWork;
+
+// replacement for std::to_string
+template <typename T>
+ std::string numtostring(T num) {
+   std::ostringstream st;
+   st << num;
+   return st.str();
+ }
 
 class Node {
     public:
@@ -150,6 +159,7 @@ class Tree {
         Node * GetLeaf(unsigned i) {
             return this->leaves[i];
         }
+        std::string write(Node * nd);
         const Node * GetLeaf(unsigned i) const {
             return this->leaves[i];
         }

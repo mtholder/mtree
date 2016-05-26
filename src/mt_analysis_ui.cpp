@@ -79,9 +79,15 @@ void doAnalysis(std::ostream * os, MTInstance & instance, const INIBasedSettings
     //  performSearch(instance, steps, instance.tree);
   } else if (action == MISC_TEST) {
     //std::cout << "Made it here\n";
+    /*
     double result = totalInformativePatternProb(instance);
     std::cerr << "Probability of only informative patterns = " << result << "\n";
     std::cerr << "lnL of only informative patters = " << log(result) << "\n";
+    */
+
+    simpleSPRSearch(instance, 100);
+    std::string newick = instance.tree.write(instance.tree.GetRoot());
+    std::cout << "Tree = (" << newick << ")\n";
   }
 }
 

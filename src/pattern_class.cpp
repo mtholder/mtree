@@ -533,9 +533,9 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
       common = getNextCommStSet(obsStSet, common);
     }
   }
-    std::cerr << "Freeing NodeInfos\n";
+    //std::cerr << "Freeing NodeInfos\n";
     freeNodeInfo(instance, nd, nodeToInfoMap);
-    std::cerr << "Nodes freed\n";
+    //std::cerr << "Nodes freed\n";
     return total;
     //return currNdInfo;
     //do something else
@@ -554,13 +554,13 @@ double totalInformativePatternProb(MTInstance & instance) {
     // return probability for uniformative pattern for one character
     // should be same for all chars with same number of states
     double uninfCharProb = calcUninformativePatterns(instance, root, 0, m);
-    std::cerr << "Partition uninformative prob: " << uninfCharProb << "\n";
+    //std::cerr << "Partition uninformative prob: " << uninfCharProb << "\n";
     //subtract from total probability to get probability of informative pattern
     double infcharProb = 1.0 - uninfCharProb;
     // raise to power of numChar to get prob of all patterns being informative for that partition
     double partProb = pow(infcharProb, (double) numChars);
     total *= partProb;
-    std::cerr << "Partition total: " << partProb << "\n";
+    //std::cerr << "Partition total: " << partProb << "\n";
   }
   return total;
 }

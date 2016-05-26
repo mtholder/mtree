@@ -60,19 +60,26 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
         if (abm == mt::ModelDescription::NO_ASC_BIAS) {
             std::cerr << "Initializing character model for no ascertainment bias correction\n";
             m = new mt::MkCharModel(currPartNumStates, numRateCats);
+            ABMode = 0;
         } else if (abm == mt::ModelDescription::VAR_ONLY_NO_MISSING_ASC_BIAS) {
             std::cerr << "Mkv no missing charmodel initialization\n";
             m = new mt::MkVarNoMissingAscCharModel(currPartNumStates, numRateCats);
+            ABMode = 1;
         } else if (abm == mt::ModelDescription::VAR_ONLY_MISSING_ASC_BIAS) {
             std::cerr << "Mkv w/ missing charmodel initialization\n";
             m = new mt::MkVarMissingAscCharModel(currPartNumStates, numRateCats);
+            ABMode = 2;
         } else if (abm == mt::ModelDescription::PARS_ONLY_NO_MISSING_ASC_BIAS) {
+            std::cerr << "Mkv pars-inf only no missing charmodel initialization\n";
             m = new mt::MkParsInfNoMissingModel(currPartNumStates, numRateCats);
+            ABMode = 3;
         } else if (abm == mt::ModelDescription::PARS_ONLY_MISSING_ASC_BIAS) {
-            m = new mt::MkParsInfMissingModel(currPartNumStates, numRateCats);
+            std::cerr << "Mkv pars-inf only w/ missing charmodel initialization\n";
+            m = new mt::MkCharModel(currPartNumStates, numRateCats);
+            ABMode = 4;
         } else {
             assert(false);
-            std::cerr << "Unrecognoized ASC BIAS MODE\n";
+            std::cerr << "Unrecognized ASC BIAS MODE\n";
             std::exit(1);
         }
         //m->alphabet = convertToBitFieldMatrix(*charsBlock, bMat);

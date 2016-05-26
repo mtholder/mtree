@@ -13,6 +13,7 @@ val_lnl_t maximizeScoreForLargeBrLen(FUN fun, val_lnl_t better, val_lnl_t lower)
 template<typename FUN>
 val_lnl_t maximizeScoreForBracketed(FUN fun, val_lnl_t lower, val_lnl_t mid, val_lnl_t upper);
 
+
 const double SAME_LN_L_TOL = 1e-04;
 template<typename FUN>
 val_lnl_t maximizeScoreForSmallBrLen(FUN fun, val_lnl_t curr, val_lnl_t upper) {
@@ -288,7 +289,7 @@ double optimizeAllBranchLengths(MTInstance &instance) {
     double currLnL = beforeOpt;
     for (auto tsi = 0U; tsi < maxNumTreeSweeps; ++tsi) {
         int k = tsi + 1;
-        std::cout << "Tree sweep # " << k << "\n";
+        std::cerr << "Tree sweep # " << k << "\n";
         const auto beforeThisRound = currLnL;
         PostorderForNodeIterator poTrav = postorder(rootPtr);
         Arc arc = poTrav.get();

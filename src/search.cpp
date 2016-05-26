@@ -51,7 +51,8 @@ void freeTree(Node * nd){
 // allocate memory for best tree topology to be saved
 // and copy from current tree
 void searchInfo::initBestTree(MTInstance &instance){
-
+  instance.tree.TreeDebug();
+  std::cerr << instance.tree.write(instance.tree.GetRoot()) << "\n";
   Tree * scratch = new Tree(instance.tree);
 }
   /*Node * root = instance.tree.GetRoot();
@@ -137,8 +138,10 @@ Node * insertSubTree(MTInstance &instance, Node * p, Node * q, Node *s) {
 }
 
 void simpleSPRSearch(MTInstance &instance, int maxloops) {
+  //std::cerr << "Initiating tree search\n";
   searchInfo sInfo(instance);
   instance.tree.TreeDebug();
+  std::cerr << "Scoring tree\n";
   sInfo.bestLnL = ScoreTree(instance.partMat, instance.tree, instance, false);
   std::cout << "Starting ln likelihood = " << sInfo.bestLnL << "\n";
   bool changed = false;
@@ -187,6 +190,8 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
                     sInfo.bestLnL = newlnl;
                     std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
                     //sInfo.bestTree.copyTopology(instance.tree);
+                    std::string newick = instance.tree.write(instance.tree.GetRoot());
+                    std::cout << "New tree = (" << newick << ")\n";
                     changed = true;
                     break;
                   } else {

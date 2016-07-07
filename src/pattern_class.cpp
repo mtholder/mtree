@@ -18,6 +18,7 @@
 
 namespace mt {
 
+//debug function
 void Tree::initBrLens() {
     PostorderForNodeIterator pTrav = postorder(root);
     Arc arc = pTrav.get();
@@ -272,7 +273,12 @@ double calcProbOfSubtreeForObsStSetAndComm(NodeInfo * subtreeInfo, int ancIndex,
   std::vector<double> & childProb = childProbSet.getProbForCommState(commonStates);
   for(auto i = 0U; i < GetPatData(model).GetNumStates(); i++)  {
     double transProb = pclassCalcTransitionProb(ancIndex, i, edgeLen, instance, model);
+    //std::cerr << "transProb = " << transProb << "\n";
     double partialLike = childProb[i];
+    if(partialLike > 1.0){
+      partialLike = 0.0;
+    }
+    //std::cerr << "partialLike = " << partialLike << "\n";
     double x = transProb * partialLike;
     p += x;
   }
@@ -306,7 +312,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
   Arc arc = poTrav.get();
   std::map<Node *, NodeInfo *> nodeToInfoMap;
   unsigned numStates = GetPatData(model).GetNumStates();
-  std::cout << "Model = " << model <<", numStates = " << numStates << "\n";
+  //std::cerr << "Model = " << model <<", numStates = " << numStates << "\n";
   NodeInfo * currNdInfo = 0L;
   assert(arc.toNode);
   while(arc.toNode) {
@@ -319,6 +325,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
     NodeID currNdID(currNd, 0);
     nodeToInfoMap[currNd] = currNdInfo;
     if (numChildren == 0) {
+      // Node is a leaf
       unsigned li = currNd->GetNumber();
       if (instance.partMat.GetLeafCharacters(model,li)->GetCharVec()[charIndex] == numStates) {
         //std::cout << "Data missing at character " << charIndex << "at leaf "<< li <<"\n";
@@ -339,7 +346,8 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
       std::cerr << "Trees must be binary \n";
       exit(1);
     }
-      // Node is a leaf
+
+      // Node is internal node
       Node * leftChild = children[0];
       NodeInfo * leftNdInfo = nodeToInfoMap[leftChild];
       Node * rightChild = children[1];
@@ -349,6 +357,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
           currNdInfo->setIsMissing(true);
           arc = poTrav.next();
           continue;
+          //std::cerr << "Continuing after missing data @ internal node\n";
         } else {
           // add edge lengths and progress to next node
           if(leftNdInfo->getIsMissing()) {
@@ -357,24 +366,26 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
             currNdInfo->copyProbVec(rightNdInfo);
             arc = poTrav.next();
             continue;
+            //std::cerr << "Continuing after missing data @ left child\n";
           } else { // right is missing
             currNd->SetVEdgeLen(leftChild->GetEdgeLen());
             currNdInfo->setNumLeaves(leftNdInfo->getNumLeaves());
             currNdInfo->copyProbVec(leftNdInfo);
             arc = poTrav.next();
             continue;
+            //std::cerr << "Continuing after missing data @ right child\n";
           }
         }
       } else {
       currNdInfo->setNumLeaves(leftNdInfo->getNumLeaves() + rightNdInfo->getNumLeaves());
 
-      //std::cout << "Reading stateset iterator\n";
+      //std::cerr << "Reading stateset iterator\n";
       stateSetContainer::const_iterator ssCit = GetPatData(model).stateSetBegin();
-      //std::cout << "Read stateset iterator\n";
+      //std::cerr << "Read stateset iterator\n";
       for (; ssCit != GetPatData(model).stateSetEnd(); ssCit++) {
-        //std::cout << "got this far\n";
+        //std::cerr << "got this far\n";
         const int & obsStSet = *ssCit;
-        //std::cout << "got this far\n";
+        //std::cerr << "got this far\n";
         int common = -1;   // this is 111... in bits
         int numObsSt = countBits(obsStSet);
 
@@ -528,6 +539,9 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
       ProbForObsStateSet & currNdProbSet = currNdInfo->getForObsStateSet(obsStSet);
       std::vector<double> & currNdProbVec = currNdProbSet.getProbForCommState(common);
       for (int s = 0; s < GetPatData(model).GetNumStates(); s++) {
+        //std::cerr << GetPatData(model).GetNumStates() << "\n";
+        std::cerr << currNdProbVec[s] << "\n";
+        std::cerr << categStateProbs[s] << "\n";
         total += currNdProbVec[s]*categStateProbs[s];
       }
       common = getNextCommStSet(obsStSet, common);
@@ -545,7 +559,7 @@ double calcUninformativePatterns(MTInstance & instance, Node * nd, unsigned char
 // used for ascertainment bias correction
 double totalInformativePatternProb(MTInstance & instance) {
   patClassInitialize(instance);
-  instance.tree.initBrLens();
+  //instance.tree.initBrLens();
   double total = 1.0;
   Node * root = instance.tree.GetRoot();
 
@@ -554,13 +568,13 @@ double totalInformativePatternProb(MTInstance & instance) {
     // return probability for uniformative pattern for one character
     // should be same for all chars with same number of states
     double uninfCharProb = calcUninformativePatterns(instance, root, 0, m);
-    //std::cerr << "Partition uninformative prob: " << uninfCharProb << "\n";
+    std::cerr << "Partition uninformative prob: " << uninfCharProb << "\n";
     //subtract from total probability to get probability of informative pattern
     double infcharProb = 1.0 - uninfCharProb;
     // raise to power of numChar to get prob of all patterns being informative for that partition
     double partProb = pow(infcharProb, (double) numChars);
     total *= partProb;
-    //std::cerr << "Partition total: " << partProb << "\n";
+    std::cerr << "Partition total: " << partProb << "\n";
   }
   return total;
 }

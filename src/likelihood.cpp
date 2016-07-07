@@ -102,7 +102,7 @@ double ScoreTreeForPartitionOneArcDown(PartitionedMatrix &partMat, Tree &tree, C
 
 // Calculate likelihood for one partition for a tree
 double ScoreTreeForPartition(PartitionedMatrix &partMat, Tree &tree, CharModel &cm, unsigned model) {
-  std::cerr << "Calling ScoreTreeForPartition\n";
+  //std::cerr << "Calling ScoreTreeForPartition\n";
   //int numScorings = 0;
   Node * virtRoot = tree.GetRoot();
   virtRoot = virtRoot->leftChild->rightSib;
@@ -151,12 +151,18 @@ double ScoreTree(PartitionedMatrix &partMat,
     result += instance.likelihoods[partIndex];
     //_DEBUG_FVAL(partIndex); _DEBUG_MVAL(instance.likelihoods[partIndex]); _DEBUG_LVAL(result);
   }
-  if(instance.ABMode == 4) {
-    std::cerr << "Calling Pattern Class Algorithm\n";
-    double pParsInfOnly = totalInformativePatternProb(instance);
-    double lnCorrection = log(pParsInfOnly);
-    result -= lnCorrection;
+  if(instance.ABMode > 2) {
+    if(instance.patClassFlag) {
+      std::cerr << "Calling Pattern Class Algorithm\n";
+      double pParsInfOnly = totalInformativePatternProb(instance);
+      double lnCorrection = log(pParsInfOnly);
+      std::cerr << "Uncorrected lnl = " << result << "\n";
+      std::cerr << "lnCorrection = " << lnCorrection << "\n";
+      result -= lnCorrection;
+    }
   }
+  //std::cerr << "New likelihood = " << result << "\n";
+  //std::cerr << tree.write(tree.GetRoot()) << "\n";
   return result;
 }
 
@@ -249,7 +255,7 @@ void CharModel::conditionOnSingleEdge(const double * beforeEdge, double * afterE
 double CharModel::sumLnL(const double *cla,
                          const double * patternWeight,
                          std::size_t numChars) const {
-    std::cerr << "sumLnL\n";
+    //std::cerr << "sumLnL\n";
     const unsigned lenCLAWord = nStates*nRateCats;
     const double * rateCatProb = GetRateCatProb();
     const double * stateFreq = GetRootStateFreq();

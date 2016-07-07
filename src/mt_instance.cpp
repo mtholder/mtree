@@ -17,6 +17,7 @@ MTInstance::MTInstance(const std::map<unsigned, std::vector< std::vector<mt::cha
     tree(2*static_cast<unsigned>(ns2RawMat.begin()->second.size()) - 1, static_cast<unsigned>(ns2RawMat.begin()->second.size())),
     HasSearchConverged(false),
     curvatOK(true),
+    patClassFlag(true),
     numPartitions(static_cast<unsigned>(numStates2PatternIndexSet.size())),
     likelihoods(numStates2PatternIndexSet.size(),0.0),
     dirtyFlags(numStates2PatternIndexSet.size(), true),

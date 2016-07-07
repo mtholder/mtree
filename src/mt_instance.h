@@ -41,6 +41,7 @@ class MTInstance {
         OptimizationSettings optSettings;
         bool HasSearchConverged;
         bool curvatOK;
+        bool patClassFlag;
         unsigned int ABMode;
         CharModel & GetCharModel(int i) const {
           return *(models[i]);

@@ -137,8 +137,10 @@ Node * insertSubTree(MTInstance &instance, Node * p, Node * q, Node *s) {
   return instance.tree.GetRoot();
 }
 
+// simple hill climbing algorithm, brlen optimization at every step
 void simpleSPRSearch(MTInstance &instance, int maxloops) {
   //std::cerr << "Initiating tree search\n";
+  instance.patClassFlag = false;
   searchInfo sInfo(instance);
   instance.tree.TreeDebug();
   std::cerr << "Scoring tree\n";
@@ -149,10 +151,10 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
   int location = 0;
   while(step++ < maxloops) {
 
-    std::cout << "Now on loop # " << step << "\n";
+    std::cerr << "Now on loop # " << step << "\n";
 
     for(int i = 0; i < instance.tree.GetNumNodes(); i++) {
-      std::cout << "Trying node " << i << "\n";
+      std::cerr << "Trying node " << i << "\n";
       if (!instance.tree.GetNode(i)->parent) continue;
       if (!instance.tree.GetNode(i)->parent->parent) continue;
       Node * snipNode = instance.tree.GetNode(i);
@@ -180,7 +182,7 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
               continue;
             } else {
               if(instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
-                std::cout << "Trying insertion at node " << j << "\n";
+                std::cerr << "Trying insertion at node " << j << "\n";
                 Node * newroot = insertSubTree(instance, subt, instance.tree.GetNode(j), temp);
                 instance.tree.TreeDebug();
                 // only scores new lnl if subtree has been reinserted
@@ -203,7 +205,7 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
         }
       // if likelihood has not improved, reinsert to original location
       if (!changed) Node * resetroot = insertSubTree(instance, subt, instance.tree.GetNode(location), temp);
-      std::cout << "Got to end of insertion for loop\n";
+      std::cerr << "Got to end of insertion loop\n";
       //std::cout << "Debugging bestTree\n";
       //sInfo.bestTree.TreeDebug();
       //std::cout << "Debugging instance tree\n";
@@ -218,6 +220,143 @@ void simpleSPRSearch(MTInstance &instance, int maxloops) {
   std::cout << "End ln likelihood = " << sInfo.bestLnL << "\n";
   std::cout << "Total steps: " << step << "\n";
 }
+
+void lazySPRSearch(MTInstance &instance, int maxloops){
+  //std::cerr << "Initiating tree search\n";
+  searchInfo sInfo(instance);
+  instance.tree.TreeDebug();
+  std::cerr << "Scoring tree\n";
+  instance.patClassFlag = false;
+  sInfo.bestLnL = fullOptimize(instance);
+  //instance.patClassFlag = true;
+  sInfo.bestLnL = ScoreTree(instance.partMat, instance.tree, instance, false);
+  std::cout << "Starting ln likelihood = " << sInfo.bestLnL << "\n";
+  bool changed = false;
+  //instance.patClassFlag = false;
+  int step = 0;
+  int location = 0;
+  while(step++ < maxloops) {
+
+    for(int i = 0; i < instance.tree.GetNumNodes(); i++) {
+
+      if (!instance.tree.GetNode(i)->parent) continue;
+      if (!instance.tree.GetNode(i)->parent->parent) continue;
+      Node * snipNode = instance.tree.GetNode(i);
+
+      if (snipNode->IsLeftChild()) {
+        location = snipNode->rightSib->GetNumber();
+      } else {
+        location = snipNode->parent->leftChild->GetNumber();
+      }
+
+      Node * temp = snipNode->parent;
+      Node * subt = removeSubTree(instance, snipNode);
+
+      // perform quick check if any rearrangements are immediately better than
+      // current tree without optimization
+      for(int j = 0; j < instance.tree.GetNumNodes(); j++) {
+        if (instance.tree.GetNode(j)->parent == nullptr ||
+            instance.tree.GetNode(j)->parent == instance.tree.GetRoot()) {
+              //std::cout << "Not valid insertion point\n";
+              continue;
+            } else {
+              if(instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
+                std::cerr << "Trying insertion at node " << j << "\n";
+                Node * newroot = insertSubTree(instance, subt, instance.tree.GetNode(j), temp);
+                instance.tree.TreeDebug();
+                // only scores new lnl if subtree has been reinserted
+                //std::cout << "Scoring new tree\n";
+                //instance.patClassFlag = true;
+                double newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+                //instance.patClassFlag = false;
+                if (newlnl > sInfo.bestLnL) {
+                    sInfo.bestLnL = newlnl;
+                    std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
+                    //sInfo.bestTree.copyTopology(instance.tree);
+                    std::string newick = instance.tree.write(instance.tree.GetRoot());
+                    std::cout << "New tree = (" << newick << ")\n";
+                    changed = true;
+                    break;
+                  } else {
+                    //temp = snipNode->parent; // is this necessary?
+                    subt = removeSubTree(instance, snipNode);
+                  }
+              }
+          }
+        }
+
+        if(changed) {
+          // restart loop
+          i = -1;
+          continue;
+        } else {
+          // try optimized loop
+          for(int j = 0; j < instance.tree.GetNumNodes(); j++) {
+            if (instance.tree.GetNode(j)->parent == nullptr ||
+                instance.tree.GetNode(j)->parent == instance.tree.GetRoot()) {
+                  //std::cout << "Not valid insertion point\n";
+                  continue;
+                } else {
+                  if(instance.tree.isNodeConnected(instance.tree.GetRoot(), j)) {
+                    std::cerr << "Trying insertion at node " << j << "\n";
+                    Node * newroot = insertSubTree(instance, subt, instance.tree.GetNode(j), temp);
+                    instance.tree.TreeDebug();
+                    // only scores new lnl if subtree has been reinserted
+                    //std::cout << "Scoring new tree\n";
+                    double newlnl = fullOptimize(instance);
+                    if (newlnl > sInfo.bestLnL) {
+                        //instance.patClassFlag = true;
+                        newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+                        //instance.patClassFlag = false;
+                        sInfo.bestLnL = newlnl;
+                        std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
+                        //sInfo.bestTree.copyTopology(instance.tree);
+                        std::string newick = instance.tree.write(instance.tree.GetRoot());
+                        std::cout << "New tree = (" << newick << ")\n";
+                        changed = true;
+                        break;
+                      } else {
+                        if(sInfo.bestLnL - newlnl < 10) {
+                          // see if pattern class correction makes the difference
+                          //instance.patClassFlag = true;
+                          newlnl = ScoreTree(instance.partMat, instance.tree, instance, false);
+                          //instance.patClassFlag = false;
+                          if (newlnl > sInfo.bestLnL) {
+                            sInfo.bestLnL = newlnl;
+                            std::cout << "New ln likelihood = " << sInfo.bestLnL << "\n";
+                            //sInfo.bestTree.copyTopology(instance.tree);
+                            std::string newick = instance.tree.write(instance.tree.GetRoot());
+                            std::cout << "New tree = (" << newick << ")\n";
+                            changed = true;
+                            break;
+                          } else {
+                            subt = removeSubTree(instance, snipNode);
+                          }
+                        } else {
+                          subt = removeSubTree(instance, snipNode);
+                        }
+                        //temp = snipNode->parent; // is this necessary?
+                        subt = removeSubTree(instance, snipNode);
+                      }
+                  }
+              }
+            } // end of optimized insertion loop
+            if(changed) {
+              // restart loop
+              i = -1;
+              continue;
+            }
+
+        } // conditional space of using optimized loop
+        // if likelihood has not improved, reinsert to original location
+        if (!changed) Node * resetroot = insertSubTree(instance, subt, instance.tree.GetNode(location), temp);
+        std::cerr << "Got to end of insertion loop\n";
+    } // end of loop over removed nodes
+    if(!changed) break;
+  } // end of loop over maxloops
+  std::cout << "End ln likelihood = " << sInfo.bestLnL << "\n";
+  std::cout << "Total steps: " << step << "\n";
+} // lazySPRSearch end
 
 /*
 // Tries SPR moves for a subtree rooted at node p up to maxtrav nodes away.
